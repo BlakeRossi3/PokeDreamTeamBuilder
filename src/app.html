@@ -198,7 +198,7 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 .btn.primary:active{transform:translateY(3px); box-shadow:0 1px 0 var(--accent-d)}
 :root[data-mode="2d"] .btn{border-radius:var(--r-sm); border-color:var(--line)}
 :root[data-mode="2d"] .btn.primary{background:var(--accent); border-color:var(--line); box-shadow:none}
-:root[data-mode="2d"] .btn:hover::before{content:"▶"; font-size:.7em}
+:root[data-mode="2d"] .btn:hover::before{content:"▶"; font-size:.7em; display:inline-block; width:1.1em; margin-left:-1.1em}   /* sits in the padding, so hovering never changes the button's width */
 .btn.sm{padding:5px 12px; font-size:var(--fs-sm)}
 .btn.plain{background:transparent}
 .btn:disabled{opacity:.45; cursor:not-allowed}
