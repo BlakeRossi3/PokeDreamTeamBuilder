@@ -39,6 +39,11 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `.wasm` is only a container name so hosts serve them compressed; they are not WebAssembly. Packs are large
   binaries: don't rewrite them unless asked.
 - `site/` — icons, share image, service worker template, notes for other hosts.
+- `art/2d/` — the 2D pixel art (Hall of Fame backgrounds `hof/<scene>[_sunset|_night]`, Home `furn/<id>`, `room/…`
+  walls/floors/windows, `div/<type>_col|cap|post|door` room dividers). Embedded in the page at build time (`/*ART2D*/`);
+  the app looks them up with `artOf(key)` and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
+- `art-src/` — how that art was made: `raw/` Retro Diffusion downloads, `jobs.tsv` (image → job id), `process.py`
+  (cut-outs, trophy recolours, clear window glass, wood/carpet floors) which writes `art/2d/`. Re-run it after changing `raw/`.
 - `scripts/` — build and lint. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
 
 ## Map of src/app.html (search for these banners)
@@ -70,7 +75,11 @@ Boot code is at the very end of the script.
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
 - **Size:** the site is ~255 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
-  outside asset. Original drawings (Home furniture, backgrounds) are made with canvas code, not image files.
+  outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
+  everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
+- **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
+  whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
+  furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
 
 ## Blake's preferences
 - Keep it free and non-profit. Polished, "production-ready" feel; he likes bold improvements when asked to clean up.

@@ -7,11 +7,12 @@
 No third-party packages needed. The source of truth is src/app.html; data placeholders like /*DATA*/ in it are
 filled from data/ and packs/index.json.
 """
-import hashlib, json, os, shutil, sys
+import base64, hashlib, json, os, shutil, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC, DATA, PACKS, SITE, DIST = ROOT / "src", ROOT / "data", ROOT / "packs", ROOT / "site", ROOT / "dist"
+ART = ROOT / "art" / "2d"   # 2D pixel art (Hall of Fame backgrounds, Home furniture and rooms), embedded in the page
 
 PLACEHOLDERS = [
     ("DATA", DATA / "data.json"), ("IDX", PACKS / "index.json"), ("TRAINERS", DATA / "trainer_names2.json"),
@@ -31,6 +32,11 @@ def assemble() -> str:
         tag = f"/*{ph}*/"
         assert page.count(tag) == 1, f"{tag} appears {page.count(tag)} times in src/app.html"
         page = page.replace(tag, f.read_text(encoding="utf-8").strip())
+    art = {p.relative_to(ART).with_suffix("").as_posix(): "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()
+           for p in sorted(ART.rglob("*.png"))}
+    assert art, "art/2d is empty"
+    assert page.count("/*ART2D*/") == 1, "/*ART2D*/ must appear once in src/app.html"
+    page = page.replace("/*ART2D*/", json.dumps(art, separators=(",", ":")))
     return page
 
 

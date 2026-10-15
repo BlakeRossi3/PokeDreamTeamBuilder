@@ -36,5 +36,6 @@ Progress lives in each player's browser (several save files per device, optional
 devices with Account menu → **Download a backup** / **Restore a backup**.
 
 ## Credits
-Full credits are in the app under Settings → Credits. Dream Team Dex is a free, non-profit fan project.
+Full credits are in the app under Settings → Credits. The 2D Hall of Fame backgrounds and Pokémon Home art were made
+with [Retro Diffusion](https://retrodiffusion.ai/). Dream Team Dex is a free, non-profit fan project.
 Pokémon and all related names and images are © Nintendo, Game Freak, Creatures and The Pokémon Company.

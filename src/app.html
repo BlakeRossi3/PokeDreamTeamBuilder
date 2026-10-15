@@ -3033,6 +3033,27 @@ function openAccountMenu(){
   paintAll(md);
 }
 
+// ================= 2D ART (pixel art made with Retro Diffusion, see Credits) =================
+// Hall of Fame backgrounds (hof/<scene>[_sunset|_night]), Home furniture (furn/<id>), rooms (room/…) and room
+// dividers (div/…). Used in the 2D style only; the canvas drawings stay as the 3D look and as the fallback until
+// an image has decoded. The images are embedded in the page at build time from art/2d/.
+const ART_SRC = /*ART2D*/;
+const ART = new Map();
+const artOf = k => ART.get(k) || null;
+function artReady(){   // drop anything that was drawn before the art arrived
+  if (typeof furnCache !== "undefined") furnCache.clear();
+  if (typeof HS !== "undefined") HS.layerKey = "";
+  for (const st of [typeof hofStage !== "undefined" && hofStage, typeof startStage !== "undefined" && startStage]) if (st) st.bgKey = "";
+}
+let artTimer = 0;
+for (const [k, src] of Object.entries(ART_SRC)) {
+  const img = new Image();
+  img.onload = () => { ART.set(k, img); clearTimeout(artTimer); artTimer = setTimeout(artReady, 30); };
+  img.src = src;
+}
+// the image for a scene at a time of day, falling back to its daytime picture
+const hofArt = (id, tod) => artOf(`hof/${id}_${tod}`) || artOf(`hof/${id}`);
+
 // ================= HALL OF FAME (full-page animated scene) =================
 const INTRO_DELAY = 250, INTRO_STEP = 230, INTRO_POP = 820, INTRO_LEN = INTRO_DELAY + 5*INTRO_STEP + INTRO_POP + 400, CAM_P = 6000;
 const SCENES = [
@@ -3556,6 +3577,16 @@ function cityBlocks(K){
 function paintBg(id, tod, V, S, pixel){
   const c = mkCanvas(V.W, V.H), ctx = c.getContext("2d"); ctx.imageSmoothingEnabled = !pixel;
   const P = PAINT[id], def = SCENE_BY.get(id), useTod = def.tod ? tod : "day";
+  const img = pixel && hofArt(id, useTod);
+  if (img) {   // 2D: the pixel-art picture fills the stage; a soft, darkened copy fills anything outside it
+    const fit = (box, cover) => { const s = cover ? Math.max(box.w/img.width, box.h/img.height) : 1, w = img.width*s, h = img.height*s; return [box.x + (box.w - w)/2, box.y + box.h - h, w, h]; };
+    const tiny = mkCanvas(32, 18), tx = tiny.getContext("2d"); tx.imageSmoothingEnabled = true; tx.drawImage(img, 0, 0, 32, 18);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(tiny, ...fit({x:0, y:0, w:V.W, h:V.H}, true));
+    ctx.fillStyle = "rgba(10,12,24,.35)"; ctx.fillRect(0, 0, V.W, V.H);
+    const [x, y, w, h] = fit(S, true);
+    ctx.imageSmoothingEnabled = w < img.width; ctx.drawImage(img, Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    c.art = true; return c;
+  }
   P.sky(kit(ctx, V, S, pixel), useTod);
   const T = mkCanvas(V.W, V.H), tctx = T.getContext("2d");
   P.land(kit(tctx, V, S, pixel), useTod);
@@ -3730,10 +3761,11 @@ function renderScene(ctx, V, S, t, o){
   ctx.save(); ctx.imageSmoothingEnabled = !pixel; if (!pixel) ctx.imageSmoothingQuality = "high";
   const cam = o.layout === "lineup" ? null : camXf(sc, o.camT ?? t, S); o.cam = cam;
   if (cam) { ctx.save(); ctx.translate(cam.cx + cam.dx, cam.cy); ctx.scale(cam.z, cam.z); ctx.translate(-cam.cx, -cam.cy); }
-  ctx.drawImage(o.bg, 0, 0);
+  const art = o.art || !!(o.bg && o.bg.art);   // a pixel-art picture already has its sky, light and time of day
+  if (o.bg) ctx.drawImage(o.bg, 0, 0); else ctx.clearRect(0, 0, V.W, V.H);
   const K = kit(ctx, V, S, pixel);
   const tod0 = todOf(sc);
-  if (PAINT[sc.bg].anim) PAINT[sc.bg].anim(K, def.tod ? tod0 : "day", t);
+  if (PAINT[sc.bg].anim && !art) PAINT[sc.bg].anim(K, def.tod ? tod0 : "day", t);
   o.tags = [];
   let boxes = o.A ? drawItems(ctx, K, S, sceneItems(sc, o.A, o.layout), t, o) : [];
   if (!pixel) for (const [txt, x, y] of o.tags) nameTag(ctx, K, txt, x, y, false);
@@ -3744,8 +3776,8 @@ function renderScene(ctx, V, S, t, o){
     boxes = boxes.map(b => ({...b, x:X(b.x), y:Y(b.y), w:b.w*cam.z, h:b.h*cam.z, ih:(b.ih || b.h)*cam.z, gx:X(b.gx), gy:Y(b.gy), sw:b.sw*cam.z}));
     o.tags = o.tags.map(([s2, x, y]) => [s2, X(x), Y(y)]);
   }
-  if (def.tod && tod0 === "night") { ctx.globalCompositeOperation = "multiply"; ctx.fillStyle = "rgba(120,140,220,1)"; ctx.globalAlpha = .28; ctx.fillRect(0, 0, V.W, V.H); ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; }
-  if (def.tod && tod0 === "sunset") { ctx.fillStyle = "rgba(255,150,90,.08)"; ctx.fillRect(0, 0, V.W, V.H); }
+  if (def.tod && tod0 === "night" && !art) { ctx.globalCompositeOperation = "multiply"; ctx.fillStyle = "rgba(120,140,220,1)"; ctx.globalAlpha = .28; ctx.fillRect(0, 0, V.W, V.H); ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; }
+  if (def.tod && tod0 === "sunset" && !art) { ctx.fillStyle = "rgba(255,150,90,.08)"; ctx.fillRect(0, 0, V.W, V.H); }
   const T = hofTitle(o.teamId, sc); drawTitleFrame(ctx, K, S, {...sc, showTitle: o.title !== false && sc.showTitle, frame: o.frame !== false && sc.frame}, pixel, T.title, T.sub);
   if (!pixel) { const g = ctx.createRadialGradient(V.W/2, V.H/2, Math.min(V.W, V.H)*.45, V.W/2, V.H/2, Math.max(V.W, V.H)*.75); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); ctx.fillStyle = g; ctx.fillRect(0, 0, V.W, V.H); }
   ctx.restore();
@@ -3797,10 +3829,17 @@ class Stage {
     if (this.intro && this.intro.pending && this.A) this.intro = {t0:t};
     let iv = this.intro && !this.intro.pending ? t - this.intro.t0 : null; if (iv !== null && iv > INTRO_LEN) { this.intro = null; iv = null; }
     const V = pixel ? this.LV : this.V, S = pixel ? this.LS : this.S, ctx = pixel ? this.lctx : this.ctx;
-    const key = [sc.bg, todOf(sc), V.W, V.H, pixel].join("|");
-    if (this.bgKey !== key) { this.bg = paintBg(sc.bg, todOf(sc), V, S, pixel); this.bgKey = key; }
-    const ro = {pixel, sc, A:this.A, bg:this.bg, teamId:id, layout:this.o.layout, title:this.o.title, frame:this.o.frame, names:this.o.names, intro:iv, camT:this.camT};
+    // in 2D a pixel-art background is drawn at full resolution so its pixels stay even; the sprites go on top
+    const hiArt = pixel && !!hofArt(sc.bg, SCENE_BY.get(sc.bg).tod ? todOf(sc) : "day");
+    const key = [sc.bg, todOf(sc), V.W, V.H, pixel, hiArt].join("|");
+    if (this.bgKey !== key) { this.bg = hiArt ? paintBg(sc.bg, todOf(sc), this.V, this.S, true) : paintBg(sc.bg, todOf(sc), V, S, pixel); this.bgKey = key; }
+    const ro = {pixel, sc, A:this.A, bg:hiArt ? null : this.bg, art:hiArt, teamId:id, layout:this.o.layout, title:this.o.title, frame:this.o.frame, names:this.o.names, intro:iv, camT:this.camT};
     let boxes = renderScene(ctx, V, S, t, ro); this.lastTags = ro.tags || []; this.camXf = ro.cam || null;
+    if (hiArt) {
+      const c = this.ctx, cam = ro.cam, k = this.k; c.save(); c.imageSmoothingEnabled = false;
+      if (cam) { c.translate((cam.cx + cam.dx)*k, cam.cy*k); c.scale(cam.z, cam.z); c.translate(-cam.cx*k, -cam.cy*k); }
+      c.drawImage(this.bg, 0, 0); c.restore();
+    }
     if (pixel) { this.ctx.imageSmoothingEnabled = false; this.ctx.drawImage(this.low, 0, 0, this.low.width*this.k, this.low.height*this.k); const k = this.k; pixelTags(this.ctx, this.lastTags, k, this.S.h/100); boxes = boxes.map(b => ({...b, x:b.x*k, y:b.y*k, w:b.w*k, h:b.h*k, ih:(b.ih || b.h)*k, gx:b.gx*k, gy:b.gy*k, sw:b.sw*k})); }
     this.boxes = boxes;
     const sel = this.sel && boxes.find(b => b.key === this.sel), c = this.ctx, px = this.V.W/Math.max(1, this.cvs.getBoundingClientRect().width);
@@ -5129,6 +5168,15 @@ const FURN_H = {bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.3
 const furnCache = new Map();
 function furnSprite(it, ts, pixel, flip){
   const k = [it.id, Math.round(ts*10), pixel, flip].join("|"); if (furnCache.has(k)) return furnCache.get(k);
+  const img = pixel && artOf("furn/" + it.id);
+  if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
+    const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
+    const off = isFloorItem(it) ? (floorD - h)/2 : floorD - h;   // rugs sit in the middle of their footprint
+    const c = mkCanvas(Math.ceil(it.w*ts + pad*2), Math.ceil(h + pad*2)), x = c.getContext("2d"); x.imageSmoothingEnabled = false;
+    if (flip) { x.translate(c.width, 0); x.scale(-1, 1); }
+    x.drawImage(img, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
+    const out = {c, pad, h:-off/ts, art:true}; if (furnCache.size > 300) furnCache.clear(); furnCache.set(k, out); return out;
+  }
   const h = isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + .3, pad = Math.ceil(ts*.25), W = Math.ceil(it.w*ts + pad*2), H = Math.ceil(it.d*ts*HM.SQ + h*ts + pad*2);
   const c = mkCanvas(W, H), x = c.getContext("2d"); x.imageSmoothingEnabled = !pixel;
   x.translate(pad, pad + h*ts); if (flip) { x.translate(it.w*ts, 0); x.scale(-1, 1); }
@@ -5136,7 +5184,9 @@ function furnSprite(it, ts, pixel, flip){
   const out = {c, pad, h}; if (furnCache.size > 300) furnCache.clear(); furnCache.set(k, out); return out;
 }
 function homeItemThumb(x, it, pixel){
-  x.clearRect(0, 0, 160, 96); const ts = Math.min(150/(it.w + .6), 84/(it.d*HM.SQ + (FURN_H[it.kind] || .3) + .6)) / (pixel ? 2 : 1);
+  x.clearRect(0, 0, 160, 96);
+  const img = pixel && artOf("furn/" + it.id);
+  if (img) { const k = Math.max(1, Math.floor(Math.min(150/img.width, 86/img.height))); x.imageSmoothingEnabled = false; x.drawImage(img, Math.round((160 - img.width*k)/2), Math.round((96 - img.height*k)/2), img.width*k, img.height*k); return; } const ts = Math.min(150/(it.w + .6), 84/(it.d*HM.SQ + (FURN_H[it.kind] || .3) + .6)) / (pixel ? 2 : 1);
   const s = furnSprite(it, ts, pixel, false), k = pixel ? 2 : 1; x.imageSmoothingEnabled = !pixel;
   x.drawImage(s.c, (160 - s.c.width*k)/2, (96 - s.c.height*k)/2, s.c.width*k, s.c.height*k);
 }
@@ -5145,7 +5195,37 @@ function homeRoomThumb(x, room, pixel){
   paintRoom(cx, {...room, x0:0}, ts, pixel, "day", W/ts); x.imageSmoothingEnabled = !pixel; x.drawImage(c, 0, 0, 160, 96);
 }
 // ---- the room: walls + floor ----
-function paintRoom(c, r, ts, pixel, tod, wTiles){
+// the pictures for a room in 2D, or null to draw it from shapes
+function roomArt(r){
+  const wall = artOf(r.wall ? "room/wall_" + r.id : "room/back_" + r.id), floor = artOf("room/floor_" + r.floor);
+  return wall && floor ? {wall, floor, win:artOf("room/win_" + r.id), pond:r.pond && artOf("room/pond")} : null;
+}
+function paintRoomArt(c, r, ts, tod, wTiles, A, head){
+  const X0 = Math.round(r.x0*ts), W = Math.round((wTiles ?? r.w)*ts), wallH = Math.round(HM.WALL*ts), floorH = Math.round(HM.D*ts*HM.SQ), k = ts/32, R = Math.round;
+  const sky = tod === "night" ? ["#0d1330", "#1f2b5a"] : tod === "sunset" ? ["#ff9a5a", "#ffd39a"] : ["#7cc4ff", "#d8f0ff"];
+  const skyFill = (y0, y1) => { const g = c.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]); c.fillStyle = g; };
+  c.save(); c.beginPath(); c.rect(X0, -head, W + 1, head + wallH + floorH + 2); c.clip(); c.imageSmoothingEnabled = false;
+  const ww = R(A.wall.width*k), wh = R(A.wall.height*k), wy = wallH - wh;
+  if (!r.wall) { skyFill(-head, wy + wh*.6); c.fillRect(X0, -head, W + 1, head + wallH); }   // outdoors: open sky above the hedge
+  for (let x = X0; x < X0 + W; x += ww) {
+    c.drawImage(A.wall, x, wy, ww, wh);
+  }
+  if (r.wall && head + wy > 0) {   // indoors the spare height is the cut-away ceiling
+    c.fillStyle = "#2a2433"; c.fillRect(X0, -head, W + 1, head + wy);
+    c.fillStyle = "#4a4057"; c.fillRect(X0, wy - R(3*k), W + 1, R(3*k));
+  }
+  if (r.wall && A.win) for (let i = 1; i < W/ts - 1.5; i += 4.5) {   // windows show the sky outside
+    const w = R(A.win.width*k), h = R(A.win.height*k), x = R(X0 + (i + 1.4)*ts - w/2), y = R(wallH*.13);
+    skyFill(y, y + h); c.fillRect(x + R(3*k), y + R(3*k), w - R(6*k), h - R(6*k)); c.drawImage(A.win, x, y, w, h);
+  }
+  const fw = R(A.floor.width*k), fh = R(A.floor.height*k);
+  for (let y = wallH; y < wallH + floorH; y += fh) for (let x = X0 - ((X0 % fw) + fw) % fw; x < X0 + W; x += fw) c.drawImage(A.floor, x, y, fw, fh);
+  c.fillStyle = "rgba(0,0,0,.18)"; c.fillRect(X0, wallH, W + 1, Math.max(1, R(2*k)));   // shadow where wall meets floor
+  if (A.pond) { const w = R(A.pond.width*k), h = R(A.pond.height*k); c.drawImage(A.pond, R(X0 + W/2 - w/2), R(wallH + floorH*.55 - h/2), w, h); }
+  c.restore();
+}
+function paintRoom(c, r, ts, pixel, tod, wTiles, head = 0){
+  const A = pixel && roomArt(r); if (A) { paintRoomArt(c, r, ts, tod, wTiles, A, head); return; }
   const SQ = HM.SQ, X0 = r.x0*ts, W = (wTiles ?? r.w)*ts, wallH = HM.WALL*ts, floorH = HM.D*ts*SQ, R = v => pixel ? Math.round(v) : v;
   const sky = tod === "night" ? ["#0d1330", "#1f2b5a"] : tod === "sunset" ? ["#ff9a5a", "#ffd39a"] : ["#7cc4ff", "#d8f0ff"];
   if (!r.wall) {   // outdoors: sky, distant hedge and a fence
@@ -5174,6 +5254,37 @@ function paintRoom(c, r, ts, pixel, tod, wTiles){
   // back-wall shadow on the floor and the edge of the room
   if (!pixel) { const g = c.createLinearGradient(0, fy, 0, fy + ts*.6); g.addColorStop(0, "rgba(0,0,0,.18)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(R(X0), R(fy), R(W), R(ts*.6)); }
 }
+// ---- walls and doorways between rooms ----
+// Each pair of rooms is split by a low cut-away wall with a doorway in the middle; its look depends on what it joins:
+// an indoor wall (bedroom ↔ living room), the house's back wall and door (house ↔ garden or pond), a hedge with a
+// rose arch (garden ↔ pond) or the marble entrance of the Grand hall.
+const DOOR = [2.6, 4.6];
+const roomKind = r => r.id === "hall" ? "hall" : r.wall ? "house" : "out";
+const divType = (a, b) => { const A = roomKind(a), B = roomKind(b); return A === "hall" || B === "hall" ? "hall" : A === "out" && B === "out" ? "hedge" : A === "house" && B === "house" ? "in" : "ext"; };
+const DIV = {in:{h:.45, cap:"#e9dcc4", face:"#9a7a55", col:"#efe2c6"}, ext:{h:.55, cap:"#9b9ba3", face:"#a8442f", col:"#f2eadb"},
+  hedge:{h:.8, cap:"#4f9e58", face:"#2f6b3a", col:"#3f8f4f"}, hall:{h:.5, cap:"#f2f0f8", face:"#cfc8e0", col:"#ffffff"}};
+const dividers = () => HS.rooms.slice(1).map((r, i) => ({x:r.x0, t:divType(HS.rooms[i], r)}));
+const inWall = (x, y) => HS.rooms.some((r, i) => i && Math.abs(x - r.x0) < .6 && (y < DOOR[0] + .15 || y > DOOR[1] - .15));
+function paintDivider(c, d, ts, pixel, head){
+  const T = DIV[d.t], R = v => pixel ? Math.round(v) : v, X0 = d.x*ts - ts/2, wallH = HM.WALL*ts, fy = y => wallH + y*ts*HM.SQ, h = T.h*ts, k = ts/32;
+  const col = pixel && artOf(`div/${d.t}_col`), cap = pixel && artOf(`div/${d.t}_cap`), door = pixel && artOf(`div/${d.t}_door`);
+  if (col) { const w = col.width*k, hh = col.height*k; c.drawImage(col, R(d.x*ts - w/2), R(wallH - hh), R(w), R(hh)); }   // the wall's end
+  else { c.fillStyle = T.col; c.fillRect(R(X0 + ts*.1), R(-head), R(ts*.8), R(wallH + head)); c.fillStyle = "rgba(0,0,0,.15)"; c.fillRect(R(X0 + ts*.78), R(-head), R(ts*.12), R(wallH + head)); }
+  for (const [a, b] of [[0, DOOR[0]], [DOOR[1], HM.D]]) {   // the wall either side of the doorway
+    const top = fy(a) - h, bot = fy(b) - h;
+    if (cap) { c.save(); c.beginPath(); c.rect(R(X0), R(top), R(ts), R(bot - top)); c.clip(); const th = cap.height*k; for (let y = top; y < bot; y += th) c.drawImage(cap, R(X0), R(y), R(ts), R(th)); c.restore(); }
+    else { c.fillStyle = T.cap; c.fillRect(R(X0), R(top), R(ts), R(bot - top)); }
+    c.fillStyle = T.face; c.fillRect(R(X0), R(bot), R(ts), R(h)); c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(R(X0), R(bot), R(ts), Math.max(1, R(ts*.05)));
+  }
+  const y0 = fy(DOOR[0]), y1 = fy(DOOR[1]);   // the doorway: a mat, a step or stepping stones
+  if (door) c.drawImage(door, R(X0), R(y0), R(ts), R(y1 - y0));
+  else { c.fillStyle = "rgba(0,0,0,.12)"; c.fillRect(R(X0 + ts*.1), R(y0 + ts*.05), R(ts*.8), R(y1 - y0 - ts*.1)); }
+}
+function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are drawn in depth order with everyone else
+  const ts = HS.ts, img = pixel && artOf(`div/${d.t}_post`), X = scrX(d.x), Y = scrY(y), T = DIV[d.t];
+  if (img) { const w = img.width*ts/32, h = img.height*ts/32; c.drawImage(img, Math.round(X - w/2), Math.round(Y - h), Math.round(w), Math.round(h)); return; }
+  const w = ts*.34, h = ts*1.25; c.fillStyle = T.face; c.fillRect(X - w/2, Y - h, w, h); c.fillStyle = T.cap; c.fillRect(X - w/2, Y - h, w, ts*.12);
+}
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
 
 // ---- state of the running Home ----
@@ -5184,7 +5295,7 @@ function homeLayout(){
 const roomAt = x => HS.rooms.find(r => x >= r.x0 && x < r.x0 + r.w) || HS.rooms[HS.rooms.length - 1];
 function placedItems(){ return homeData().items.map(p => ({...p, it:unlockOf("furn", p.id)})).filter(p => p.it && p.x + p.it.w <= HS.W); }
 function blocked(x, y, swim){
-  if (x < .3 || x > HS.W - .3 || y < .35 || y > HM.D - .15) return true;
+  if (x < .3 || x > HS.W - .3 || y < .35 || y > HM.D - .15 || inWall(x, y)) return true;
   const r = roomAt(x); if (inPond(r, x, y) && !swim) return true;
   for (const p of placedItems()) { if (isFloorItem(p.it)) continue; if (x > p.x - .1 && x < p.x + p.it.w + .1 && y > p.y + .05 && y < p.y + p.it.d + .25) return true; }
   return false;
@@ -5258,24 +5369,36 @@ function homeSyncMons(){
 }
 function homeResize(){
   const st = $("hmStage"); if (!st || !HS.cv) return;
-  const cssW = st.clientWidth, cssH = Math.max(Math.min(320, Math.round(innerHeight*.5)), Math.min(Math.round(innerHeight*.62), Math.round(cssW*.62))), dpr = Math.min(2, devicePixelRatio || 1), pixel = state.mode === "2d";
+  const cssW = st.clientWidth, dpr = Math.min(2, devicePixelRatio || 1), pixel = state.mode === "2d", fullPx = (HM.WALL + HM.D*HM.SQ)*32;
+  let cssH = Math.max(Math.min(320, Math.round(innerHeight*.5)), Math.min(Math.round(innerHeight*.62), Math.round(cssW*.62)));
+  if (pixel) {   // 2D: a whole number of screen pixels per art pixel; sized from the window so a scrollbar can't make it flip-flop
+    const want = Math.max(Math.min(320, Math.round(innerHeight*.5)), Math.min(Math.round(innerHeight*.62), Math.round(Math.min(innerWidth, 1200)*.62)));
+    cssH = Math.floor(Math.max(1, Math.round(want*dpr/fullPx))*fullPx/dpr);
+  }
   HS.cv.style.height = cssH + "px"; HS.cv.width = Math.round(cssW*dpr); HS.cv.height = Math.round(cssH*dpr);
   HS.k = pixel ? Math.max(1, Math.round(HS.cv.height/250)) : 1;
   HS.V = {W:Math.ceil(HS.cv.width/HS.k), H:Math.ceil(HS.cv.height/HS.k)};
   if (pixel) { HS.low = mkCanvas(HS.V.W, HS.V.H); HS.lctx = HS.low.getContext("2d"); }
   // fill the width when the house is narrower than the view by zooming in and cropping up to one tile of wall
-  const full = HM.WALL + HM.D*HM.SQ; let ts = HS.V.H/full; const fit = HS.V.W/Math.max(1, HS.W); if (fit > ts) ts = Math.min(fit, HS.V.H/(full - 1));
-  HS.ts = ts; HS.camY = Math.max(0, Math.round(full*ts - HS.V.H)); HS.layerKey = "";
+  const full = HM.WALL + HM.D*HM.SQ;
+  if (pixel) {   // 2D: exactly 32 px per tile so the pixel art is drawn at its own size; spare height shows more wall or sky
+    HS.k = Math.max(1, Math.round(HS.cv.height/(full*32)));
+    HS.V = {W:Math.ceil(HS.cv.width/HS.k), H:Math.ceil(HS.cv.height/HS.k)}; HS.low = mkCanvas(HS.V.W, HS.V.H); HS.lctx = HS.low.getContext("2d");
+    HS.ts = 32; HS.camY = Math.round(full*32 - HS.V.H); HS.head = Math.max(0, -HS.camY); HS.layerKey = ""; return;
+  }
+  let ts = HS.V.H/full; const fit = HS.V.W/Math.max(1, HS.W); if (fit > ts) ts = Math.min(fit, HS.V.H/(full - 1));
+  HS.ts = ts; HS.camY = Math.max(0, Math.round(full*ts - HS.V.H)); HS.head = 0; HS.layerKey = "";
 }
 function homeLayer(tod){
-  const pixel = state.mode === "2d", key = [HS.ts, pixel, tod, HS.W, JSON.stringify(homeData().items.filter(p => { const it = unlockOf("furn", p.id); return it && isFloorItem(it); }))].join("|");
+  const pixel = state.mode === "2d", head = HS.head || 0, key = [HS.ts, head, pixel, tod, HS.W, JSON.stringify(homeData().items.filter(p => { const it = unlockOf("furn", p.id); return it && isFloorItem(it); }))].join("|");
   if (HS.layerKey === key) return HS.layer;
-  const c = mkCanvas(Math.ceil(HS.W*HS.ts) + 2, Math.ceil((HM.WALL + HM.D*HM.SQ)*HS.ts) + 2), x = c.getContext("2d"); x.imageSmoothingEnabled = !pixel;
-  for (const r of HS.rooms) paintRoom(x, r, HS.ts, pixel, tod);
-  // posts between rooms
-  for (const r of HS.rooms.slice(1)) { const X = r.x0*HS.ts; x.fillStyle = "#e7dccb"; x.fillRect(Math.round(X - HS.ts*.12), 0, Math.round(HS.ts*.24), Math.round(HM.WALL*HS.ts)); x.fillStyle = "rgba(0,0,0,.18)"; x.fillRect(Math.round(X + HS.ts*.12), 0, Math.max(1, Math.round(HS.ts*.05)), Math.round(HM.WALL*HS.ts)); }
+  const c = mkCanvas(Math.ceil(HS.W*HS.ts) + 2, Math.ceil((HM.WALL + HM.D*HM.SQ)*HS.ts) + 2 + head), x = c.getContext("2d"); x.imageSmoothingEnabled = !pixel;
+  x.translate(0, head);
+  for (const r of HS.rooms) paintRoom(x, r, HS.ts, pixel, tod, undefined, head);
+  for (const d of dividers()) paintDivider(x, d, HS.ts, pixel, head);
   // rugs live on the floor layer
   for (const p of placedItems()) if (isFloorItem(p.it)) { const s = furnSprite(p.it, HS.ts, pixel, !!p.f); x.drawImage(s.c, Math.round(p.x*HS.ts - s.pad), Math.round(HM.WALL*HS.ts + p.y*HS.ts*HM.SQ - s.pad - s.h*HS.ts)); }
+  x.setTransform(1, 0, 0, 1, 0, 0);
   HS.layer = c; HS.layerKey = key; return c;
 }
 const scrX = x => (x - HS.cam)*HS.ts, scrY = y => HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY;
@@ -5292,15 +5415,16 @@ function homeFrame(now){
     const wy = Math.round(scrY(0)); c.fillStyle = "#3a2f2a"; c.fillRect(0, 0, V.W, wy); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, V.H - wy);
     c.fillStyle = "rgba(0,0,0,.25)"; for (let i = 0; i < 8; i++) c.fillRect(0, wy + Math.round(i*ts*HM.SQ), V.W, 1);
   }
-  c.drawImage(homeLayer(tod), Math.round(-HS.cam*ts), -HS.camY);
+  c.drawImage(homeLayer(tod), Math.round(-HS.cam*ts), -HS.camY - (HS.head || 0));
   if (HS.cam < 0) { const g = c.createLinearGradient(scrX(0) - ts*.5, 0, scrX(0), 0); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); c.fillStyle = g; c.fillRect(scrX(0) - ts*.5, 0, ts*.5, V.H); }
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
   for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
     if (!pixel) { c.fillStyle = "rgba(0,0,0,.16)"; c.beginPath(); c.ellipse(scrX(p.x + p.it.w/2), scrY(p.y + p.it.d) - ts*.04, p.it.w*ts*.55, ts*.16, 0, 0, 7); c.fill(); }
-    c.drawImage(s.c, Math.round(X), Math.round(Y)); homeItemFx(c, p, now, pixel);
+    c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel);
     if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
+  for (const d of dividers()) for (const y of DOOR) list.push({y, draw:() => drawDivPost(c, d, y, pixel)});
   for (const m of HS.mons) list.push({y:m.y, draw:() => drawHomeMon(c, m, now, pixel)});
   list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
   list.sort((a, b) => a.y - b.y).forEach(d => d.draw());
@@ -5374,11 +5498,12 @@ function homeUpdate(dt, now){
     if (m.st === "idle" && m.t <= 0) {
       const near = Math.random() < .3 && friendOf(m.n) >= 40 ? me : null, swimTrip = m.water && HS.rooms.some(r => r.pond) && Math.random() < .5;
       const t = swimTrip ? randomSpot("only") : randomSpot(m.fl || m.swim, near);
-      if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; } else m.t = 1500;
+      if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null; } else m.t = 1500;
       if (Math.random() < .12) m.emote = {k:clockTod() === "night" && Math.random() < .6 ? "zz" : "note", t0:now, dur:1600};
     } else if (m.st === "walk") {
-      const dx = m.tx - m.x, dy = m.ty - m.y, d = Math.hypot(dx, dy), sp = m.spd*dt;
-      if (d <= sp) { m.st = "idle"; m.t = 1500 + Math.random()*4000; }
+      const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), sp = m.spd*dt;   // through the doorway when it needs another room
+      if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
+      else if (d <= sp) { m.st = "idle"; m.t = 1500 + Math.random()*4000; }
       else { const nx = m.x + dx/d*sp, ny = m.y + dy/d*sp*.8, canSwim = m.fl || (m.water && m.swimTrip) || m.swim;
         if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; } else { m.x = nx; m.y = ny; if (Math.abs(dx) > .02) m.dir = Math.sign(dx); } }
     }
@@ -5443,6 +5568,7 @@ function homeEditAct(a){
 }
 function fits(it, x, y, ignore){
   if (x < 0 || y < 0 || x + it.w > HS.W || y + it.d > HM.D) return false;
+  for (const d of dividers()) if (x < d.x + .5 && x + it.w > d.x - .5) return false;   // keep walls and doorways clear
   for (const r of HS.rooms) if (r.pond) for (let dx = 0; dx <= it.w; dx += .5) for (let dy = 0; dy <= it.d; dy += .5) if (inPond(r, x + dx, y + dy)) return false;
   const floor = isFloorItem(it);
   for (const p of placedItems()) { if (p === ignore || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
@@ -5686,7 +5812,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated sprites from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via PokéAPI. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Item sprites via PokéAPI.</dd><dt>Pokémon data</dt><dd>Stats, moves, abilities, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (MIT).</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Smooth 3D sprites use the xBR scaling algorithm by Hyllian, adapted from <a href="https://github.com/joseprio/xBRjs" target="_blank" rel="noopener">xBRjs</a> (Josep del Rio, MIT).</dd><dt>Made for this app</dt><dd>Music and sound effects, battle and Hall of Fame scenes, backgrounds and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated sprites from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via PokéAPI. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Item sprites via PokéAPI.</dd><dt>Pokémon data</dt><dd>Stats, moves, abilities, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (MIT).</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Smooth 3D sprites use the xBR scaling algorithm by Hyllian, adapted from <a href="https://github.com/joseprio/xBRjs" target="_blank" rel="noopener">xBRjs</a> (Josep del Rio, MIT).</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {
