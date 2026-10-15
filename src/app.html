@@ -1082,6 +1082,15 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .bt-swb{display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto auto; column-gap:6px; align-items:center; padding:6px 8px; cursor:pointer; text-align:left; background:var(--raised); color:var(--fg); border:2px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-d)}
 .bt-swb .ball-ic{grid-row:1/3} .bt-swb .bt-bar{grid-column:1/3; margin:2px 0} .bt-swb small{grid-column:1/3; color:var(--muted); font-size:var(--fs-xs)}
 .bt-swb:disabled{opacity:.4; cursor:not-allowed}
+.bt-swb .bt-swmv{grid-column:1/3; display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-top:4px}
+.bt-swm{display:flex; align-items:center; justify-content:space-between; gap:4px; min-width:0; padding:2px 5px; border-radius:6px; background:var(--tc); color:var(--tt); font-size:var(--fs-xs); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.bt-swm i{font-style:normal; font-weight:700; flex:none} .bt-swm i:empty{display:none}
+.bt-swm i[data-e="2"], .bt-swm i[data-e="4"]{padding:0 4px; border-radius:4px; background:#1f9d4c; color:#fff}
+.bt-swm i[data-e="h"]{padding:0 4px; border-radius:4px; background:rgba(0,0,0,.45); color:#fff}
+.bt-swm i[data-e="0"]{padding:0 4px; border-radius:4px; background:#b3261e; color:#fff}
+.bt-swb.good{border-color:#1f9d4c; box-shadow:0 0 0 1px #1f9d4c inset}
+.bt-weak{color:#d9480f; font-weight:700}
+:root[data-mode="2d"] .bt-swm, :root[data-mode="2d"] .bt-swm i{border-radius:0}
 .bt-bar.sm{height:5px}
 .bt-curtain{display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center}
 .bt-curtain p{margin:0}
@@ -2255,7 +2264,7 @@ function openModal(html, {wide=false, onClose=null}={}){
   hideTip();
   if (onModalClose) { const f = onModalClose; onModalClose = null; f(); }
   const m = $("modal");
-  m.className = "modal" + (wide ? " wide" : "");
+  m.className = "modal" + (wide ? " wide" : ""); m.onclick = null;   // #modal is reused: drop the last modal's click handler
   m.innerHTML = `<button class="btn sm close" type="button" data-close aria-label="Close">✕</button>` + html;
   $("modalWrap").hidden = false;
   lastFocus = document.activeElement;
@@ -5587,10 +5596,10 @@ function pickHomeMons(){
     <p class="note">Choose up to <b>${cap}</b> of your favorites. ${cap < 20 ? "Open more rooms in the Shop to fit more." : ""}</p>
     ${favs.length ? `<div class="hm-pick" id="hmPickGrid">${favs.map(n => `<button type="button" class="hm-pk" data-hpk="${n}" aria-pressed="${sel.has(n)}">${spr(n)}<span>${esc(monName(n))}</span></button>`).join("")}</div>` : `<p>You haven’t favorited any Pokémon yet. Tap the ♡ on any Pokémon in the Team Builder, then come back.</p>`}
     <div class="actions"><button class="btn primary" type="button" id="hmPickOk">${favs.length ? "Done" : "Open the Team Builder"}</button><span class="meta" id="hmPickN">${sel.size} / ${cap}</span></div>`, {wide:true});
-  md.addEventListener("click", e => {
+  md.onclick = e => {
     const b = e.target.closest("[data-hpk]"); if (b) { const n = +b.dataset.hpk; if (sel.has(n)) sel.delete(n); else { if (sel.size >= cap) { toast(`Your Home fits ${cap} Pokémon. Open more rooms in the Shop.`); return; } sel.add(n); } b.setAttribute("aria-pressed", sel.has(n)); md.querySelector("#hmPickN").textContent = `${sel.size} / ${cap}`; Sound.play("select"); return; }
     if (e.target.closest("#hmPickOk")) { if (!favs.length) { closeModal(); enterApp(state.mode); return; } D.mons = favs.filter(n => sel.has(n)); save(); closeModal(); homeSyncMons(); renderResidents(); const pb = $("hmPick"); if (pb) pb.textContent = `Pokémon · ${homeMons().length}/${cap}`; checkAch(); }
-  });
+  };
 }
 // ---- decorating ----
 function renderDecoBar(){
@@ -6247,11 +6256,11 @@ function pickForBattle(teamId, size, title, go){
     <div class="actions"><button class="btn primary" type="button" id="gpkGo">Start battle</button><span class="meta" id="gpkN"></span></div>`, {wide:true});
   const upd = () => { $("gpkN").textContent = `${sel.size} / ${size} chosen`; $("gpkGo").disabled = sel.size !== size; };
   paintAll(md); upd();
-  md.addEventListener("click", e => {
+  md.onclick = e => {
     const b = e.target.closest("[data-gpk]");
     if (b) { const n = +b.dataset.gpk; if (sel.has(n)) sel.delete(n); else { if (sel.size >= size) { toast(`Only ${size} can battle here. Tap one to take it out first.`); return; } sel.add(n); } b.setAttribute("aria-pressed", sel.has(n)); Sound.play("select"); upd(); return; }
     if (e.target.closest("#gpkGo") && sel.size === size) { const pick = team.filter(n => sel.has(n)); gymPicks[key] = pick; closeModal(); go(pick); }
-  });
+  };
 }
 // a Pokémon moved to a new level keeps its share of HP, its status and any item it has left
 function relevel(m, level, teamId){
@@ -6298,13 +6307,13 @@ function e4Prep(){
     paintAll($("prepList"));
   };
   draw();
-  md.addEventListener("click", e => {
+  md.onclick = e => {
     const rv = e.target.closest("[data-prv]");
     if (rv && !revived) { const m = P[+rv.dataset.prv]; m.hp = Math.max(1, Math.floor(m.max/2)); m.status = null; m.sleep = 0; m.toxN = 0; revived = true; e4run.rv = e4run.step; Sound.play("heal"); toast(`${m.name} was revived!`); draw(); return; }
     const mv = e.target.closest("[data-pmv]");
     if (mv) { const k = +mv.dataset.pmv, j = k + +mv.dataset.d; if (j >= 0 && j < P.length) { [P[k], P[j]] = [P[j], P[k]]; Sound.play("select"); draw(); } return; }
     if (e.target.closest("#prepGo")) { closeModal(); e4Battle(); }
-  });
+  };
 }
 function e4Battle(){
   const {g, step} = e4run, L = LEAGUES[g - 1], champ = step === 4;
@@ -6503,11 +6512,27 @@ function renderMoves(i){
     <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${canSwitch ? "" : "disabled"}>Switch</button>${F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
   toSide(c);
 }
+// one switch choice: HP, types, and each move with how well it would hit the Pokémon you're facing
+function swButton(B, i, m, k, off){
+  const foe = B.get(1 - i), vs = foe && foe.hp > 0;
+  const tag = e => e === 0 ? ["0", "No effect"] : e >= 4 ? ["4", "Super effective ×4"] : e >= 2 ? ["2", "Super effective"] : e < 1 ? ["h", "Not very effective"] : ["1", "Normal damage"];
+  let best = -1;
+  const mv = m.moves.map(mv => { const dmg = isDmg(mv), t = mv[1] === "???" ? "Normal" : mv[1];
+    const e = vs && dmg && !FIXED_DMG.has(mv[0]) ? effOf(B.moveType(m, mv), foe.types) : null;
+    if (e !== null) best = Math.max(best, e);
+    const [c, word] = e === null ? ["s", dmg ? "Fixed damage" : "Status move"] : tag(e);
+    return `<span class="bt-swm" style="${tStyle(t)}" title="${esc(mv[0])}: ${word}${vs ? ` vs ${esc(foe.name)}` : ""}">${esc(mv[0])}<i data-e="${c}">${({0:"✕", 4:"×4", 2:"×2", h:"½", 1:"", s:""})[c]}</i></span>`; }).join("");
+  const weak = vs && Math.max(...foe.types.map(t => effOf(t, m.types))) >= 2;
+  return `<button class="bt-swb${!off && best >= 2 ? " good" : ""}" type="button" data-sw="${k}" ${off ? "disabled" : ""}>${ballImg(m.ball)}<b>${esc(m.name)}${m.status && m.hp > 0 ? ` <span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}</b>
+    <span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span>
+    <small>${m.hp > 0 ? `${m.hp}/${m.max}` : "Fainted"} · ${m.types.join("/")}${weak && m.hp > 0 ? ` · <span class="bt-weak">weak to ${esc(foe.name)}’s type</span>` : ""}</small>
+    ${m.hp > 0 ? `<span class="bt-swmv">${mv}</span>` : ""}</button>`;
+}
 function askSwitch(i, forced){
   return ask(() => {
     const B = F.b, S = B.s[i], c = $("btCmd");
     c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${forced ? "Choose your next Pokémon." : "Switch to which Pokémon?"}</p>
-      <div class="bt-sw">${S.party.map((m, k) => `<button class="bt-swb" type="button" data-sw="${k}" ${m.hp <= 0 || (k === S.act && !forced) || (forced && k === S.act) ? "disabled" : ""}>${ballImg(m.ball)}<b>${esc(m.name)}${m.status && m.hp > 0 ? ` <span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}</b><span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span><small>${m.hp > 0 ? `${m.hp}/${m.max}` : "Fainted"}</small></button>`).join("")}</div>
+      <div class="bt-sw">${S.party.map((m, k) => swButton(B, i, m, k, m.hp <= 0 || k === S.act)).join("")}</div>
       <div class="bt-acts">${forced ? (F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
     toSide(c);
   });
