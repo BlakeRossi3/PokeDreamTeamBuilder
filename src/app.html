@@ -1931,8 +1931,25 @@ function paintAll(root = document){
     paintImg(img);
   });
 }
+// profile icons: sprites sit anywhere in their frame, so centre and size each badge on the Pokémon's own pixels
+const iconBox = new Map();   // image URL -> visible bounding box
+function fitIcon(img){
+  let bb = iconBox.get(img.src);
+  if (!bb) {
+    try {
+      const W = img.naturalWidth, H = img.naturalHeight, c = mkCanvas(W, H), x = c.getContext("2d", {willReadFrequently:true}); x.drawImage(img, 0, 0);
+      const d = x.getImageData(0, 0, W, H).data; let x0 = W, y0 = H, x1 = -1, y1 = -1;
+      for (let y = 0; y < H; y++) for (let i = 0; i < W; i++) if (d[(y*W + i)*4 + 3] > 24) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return;
+      bb = {W, H, cx:(x0 + x1 + 1)/2, cy:(y0 + y1 + 1)/2, m:Math.max(x1 - x0 + 1, y1 - y0 + 1)}; iconBox.set(img.src, bb);
+    } catch(e){ return; }
+  }
+  const k = 88/bb.m;   // the Pokémon fills 88% of the badge; percentages keep it right at every badge size
+  Object.assign(img.style, {position:"absolute", maxWidth:"none", margin:"0", width:bb.W*k + "%", height:bb.H*k + "%", left:50 - bb.cx*k + "%", top:50 - bb.cy*k + "%"});
+}
 document.addEventListener("load", e => {
   const img = e.target;
+  if (img instanceof HTMLImageElement && img.closest(".picon")) { fitIcon(img); return; }
   if (!(img instanceof HTMLImageElement) || !img.dataset.zoom) return;
   const slot = img.closest(".bt-mon");
   if (slot && imgMode(img) === "2d") { const k = Math.max(1, Math.min(2, Math.floor(Math.min(slot.clientWidth/img.naturalWidth, slot.clientHeight/img.naturalHeight)*2)/2)); img.style.width = Math.round(img.naturalWidth*k) + "px"; return; }
