@@ -6178,29 +6178,30 @@ async function startRival(i){
   startBattle({back:"rival", foe:{name:r.tr, title:r.title, bg:r.bg}, sides:[playerSide(rivalTeam), foe], humans:[true, false],
     onEnd:win => { if (win) { const first = !state.games.wins[r.tr]; state.games.wins[r.tr] = (state.games.wins[r.tr] || 0) + 1; save(); earn(first ? 150 : 40, `Beat ${r.tr}${first ? " for the first time" : ""}`); } return {text: win ? `You defeated <b>${esc(r.tr)}</b>!` : `You lost to <b>${esc(r.tr)}</b>. Tweak your team and try again!`, buttons:[["Rematch", () => startRival(i), true], ["Choose another rival", () => openScreen("battle", "rival")]]}; }});
 }
-function gymTeamFor(g){ const ts = nonEmptyTeams(); const want = "g" + g; return ts.some(t => t.id === want) ? want : ts.some(t => t.id === "all") ? "all" : ts[0].id; }
+const gymTeamFor = g => "g" + g;   // each region's challenge is taken on with that region's team only
 let gymTeam = {};
 function renderGym(){
   if (needTeam()) return;
   const g = gymRegion, L = LEAGUES[g - 1], R = GENS[g - 1].region, nb = badgeCount(g), next = [...Array(8).keys()].find(k => !hasBadge(g, k));
-  if (!gymTeam[g] || !teamOf(gymTeam[g]).length) gymTeam[g] = gymTeamFor(g);
-  const lbl = L.label || "Gym challenge", e4l = L.e4label || "Elite Four";
+  gymTeam[g] = gymTeamFor(g);
+  const lbl = L.label || "Gym challenge", e4l = L.e4label || "Elite Four", ok = teamOf(gymTeam[g]).length > 0;
   $("scBody").innerHTML = `<div class="sc-narrow wide">
     <div class="segrow gym-tabs" role="tablist">${GENS.map(x => `<button type="button" role="tab" data-greg="${x.g}" aria-pressed="${x.g === g}" title="${x.region}">${ROMAN[x.g]} <span>${x.region}</span>${state.games.leagues[x.g] ? " ★" : ""}</button>`).join("")}</div>
     <div class="gym-head"><h3>${R} ${lbl}</h3><span class="meta">${nb} / 8 ${L.badge === "stamp" ? "stamps" : "badges"}${state.games.leagues[g] ? " · League cleared ★" : ""}</span></div>
-    ${teamSelect("gymTeam", gymTeam[g])}
+    <div class="actions"><span class="note" style="margin:0">${ok ? `Only your <b>${R} team</b> (${teamOf(gymTeam[g]).length} Pokémon) can take on the ${R} ${esc(lbl)}.` : `Build your <b>${R} team</b> first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span><button class="btn sm${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? "Edit team" : `Build the ${R} team`}</button></div>
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small></div>
         <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
-        <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}">${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
+        <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
     <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l}</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row, no healing in between. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
-      <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
+      <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
   paintAll($("scBody"));
-  nav.onChange = e => { if (e.target.id === "gymTeam") gymTeam[g] = e.target.value; };
+  nav.onChange = null;
   nav.onClick = e => {
     const t = e.target.closest("[data-greg]"); if (t) { gymRegion = +t.dataset.greg; Sound.play("select"); renderGym(); return; }
     const b = e.target.closest("[data-gym]"); if (b) { const k = +b.dataset.gym; if (k > 0 && !hasBadge(g, k - 1) && !hasBadge(g, k)) { toast(`Beat ${L.gyms[k - 1][0]} first.`); return; } startGym(g, k); return; }
+    if (e.target.closest("#gEdit")) { enterApp(null, gymTeamFor(g)); return; }
     if (e.target.closest("#e4Go")) startE4(g);
   };
 }
