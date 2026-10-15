@@ -1050,6 +1050,13 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 :root[data-mode="2d"] .bt-move{border-radius:0; border:2px solid var(--ink)}
 .bt-acts{display:flex; gap:6px; flex-wrap:wrap}
 .bt-head .bt-skip{margin-left:auto; flex:none}
+.prep-list{display:flex; flex-direction:column; gap:6px; margin:10px 0; max-height:min(56vh, 520px); overflow:auto}
+.prep-row{display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
+.prep-row .stage{width:48px; height:48px; flex:none} .prep-row .stage::before{display:none}
+.prep-row.out .stage{filter:grayscale(1); opacity:.6}
+.prep-t{display:flex; flex-direction:column; flex:1 1 auto; min-width:0} .prep-t b{font-family:var(--font-d)}
+.prep-lead{font-size:var(--fs-xs); padding:1px 6px; border-radius:99px; background:var(--accent); color:var(--on-accent)}
+:root[data-mode="2d"] .prep-lead{border-radius:0}
 .gym-team{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px; margin:6px 0; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
 .gym-team .gt-mons{display:flex; flex-wrap:wrap; gap:2px; flex:1 1 auto; min-width:0}
 .gym-team .gt-mons .stage{width:42px; height:42px}
@@ -6258,17 +6265,30 @@ async function startE4(g){
   e4run = {g, step:0, team:tid, party:playerSide(tid).party};
   e4Battle();
 }
-// one Revive after each Elite Four win: a fainted Pokémon comes back with half its HP
-function e4Revive(){
-  const P = e4run.party, down = P.map((m, k) => [m, k]).filter(([m]) => m.hp <= 0);
-  const md = openModal(`<h3 class="mt" id="modalTitle">Revive one Pokémon</h3><p class="note">It comes back with half its HP for the next battle.</p>
-    <div class="hm-pick">${down.map(([m, k]) => `<button type="button" class="hm-pk" data-rv="${k}">${spr(m.n, {sh:m.sh})}<span>${esc(m.name)}</span></button>`).join("")}</div>
-    <div class="actions"><button class="btn" type="button" id="rvSkip">Don’t revive</button></div>`, {wide:true});
-  paintAll(md);
+// between Elite Four battles: revive one fainted Pokémon (half HP) and put the team in any order (the first one able to fight leads)
+function e4Prep(){
+  const P = e4run.party, L = LEAGUES[e4run.g - 1], who = e4run.step === 4 ? `Champion ${L.champ[0]}` : L.e4[e4run.step][0];
+  let revived = e4run.rv === e4run.step || !P.some(m => m.hp <= 0);   // one Revive per break, even if this screen is closed and reopened
+  const md = openModal(`<h3 class="mt" id="modalTitle">Get ready for ${esc(who)}</h3>
+    <p class="note" id="prepNote"></p><div class="prep-list" id="prepList"></div>
+    <div class="actions"><button class="btn primary" type="button" id="prepGo">Battle ${esc(who)}</button></div>`, {wide:true});
+  const draw = () => {
+    const lead = P.findIndex(m => m.hp > 0);
+    $("prepNote").textContent = revived ? "Use the arrows to change the order. The first Pokémon that can fight leads." : "Revive one fainted Pokémon (it comes back with half its HP), and use the arrows to change the order.";
+    $("prepList").innerHTML = P.map((m, k) => `<div class="prep-row${m.hp <= 0 ? " out" : ""}">${spr(m.n, {sh:m.sh})}
+      <div class="prep-t"><b>${esc(m.name)}${k === lead ? ` <span class="prep-lead">Leads</span>` : ""}</b><span class="meta">${m.hp <= 0 ? "Fainted" : `${m.hp} / ${m.max} HP`}</span></div>
+      ${m.hp <= 0 && !revived ? `<button class="btn sm primary" type="button" data-prv="${k}">Revive</button>` : ""}
+      <button class="btn sm" type="button" data-pmv="${k}" data-d="-1" ${k === 0 ? "disabled" : ""} aria-label="Move ${esc(m.name)} up">▲</button>
+      <button class="btn sm" type="button" data-pmv="${k}" data-d="1" ${k === P.length - 1 ? "disabled" : ""} aria-label="Move ${esc(m.name)} down">▼</button></div>`).join("");
+    paintAll($("prepList"));
+  };
+  draw();
   md.addEventListener("click", e => {
-    const b = e.target.closest("[data-rv]");
-    if (b) { const m = P[+b.dataset.rv]; m.hp = Math.max(1, Math.floor(m.max/2)); m.status = null; m.sleep = 0; m.toxN = 0; Sound.play("heal"); closeModal(); toast(`${m.name} was revived!`); e4Battle(); return; }
-    if (e.target.closest("#rvSkip")) { closeModal(); e4Battle(); }
+    const rv = e.target.closest("[data-prv]");
+    if (rv && !revived) { const m = P[+rv.dataset.prv]; m.hp = Math.max(1, Math.floor(m.max/2)); m.status = null; m.sleep = 0; m.toxN = 0; revived = true; e4run.rv = e4run.step; Sound.play("heal"); toast(`${m.name} was revived!`); draw(); return; }
+    const mv = e.target.closest("[data-pmv]");
+    if (mv) { const k = +mv.dataset.pmv, j = k + +mv.dataset.d; if (j >= 0 && j < P.length) { [P[k], P[j]] = [P[j], P[k]]; Sound.play("select"); draw(); } return; }
+    if (e.target.closest("#prepGo")) { closeModal(); e4Battle(); }
   });
 }
 function e4Battle(){
@@ -6286,8 +6306,8 @@ function e4Battle(){
       if (!champ) { e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
         // after every win: one Revive for a fainted Pokémon, otherwise no healing
         const down = e4run.party.filter(m => m.hp <= 0).length, who = e4run.step === 4 ? `Champion ${nx}` : nx;
-        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight.${down ? " You may revive one fainted Pokémon before the next battle." : ""}`,
-          buttons:down ? [[`Revive a Pokémon, then face ${who}`, e4Revive, true], [`Face ${who} as you are`, e4Battle]] : [[`Next: ${who}`, e4Battle, true]]}; }
+        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight.${down ? " You may revive one fainted Pokémon before the next battle." : ""} You can also change who leads.`,
+          buttons:[[`Get ready for ${who}`, e4Prep, true]]}; }
       const firstClear = !state.games.leagues[g];
       state.games.leagues[g] = true; save(); e4run = null; setTimeout(() => Sound.play("badge"), 900);
       if (firstClear) { const got = champRewards(g); earn(1000, "League champion", true); setTimeout(() => showRewards(`${L.champ[0]} crowned you Champion!`, got, 1000), 1700); } else earn(250, "League cleared again");
