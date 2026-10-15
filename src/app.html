@@ -1039,16 +1039,16 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 /* battlefield on the left, the move (or switch) list on the right, sized so the whole battle fits on screen */
 .bt2{max-width:min(1280px, calc((100vh - 350px)*1.78 + 310px))}
 .bt-main{display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:10px; margin-top:8px}
+.bt-main.sw{grid-template-columns:minmax(0, 1fr) minmax(300px, 46%)}
 .bt2 .bt-main .bt-field{margin-top:0}
 .bt-side{contain:size; overflow:auto; display:flex; flex-direction:column; gap:6px; padding:10px; background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
 :root[data-mode="2d"] .bt-side{background:var(--paper); border:3px solid var(--ink); border-radius:0}
 .bt-side .bt-moves{grid-template-columns:1fr; grid-auto-rows:1fr; flex:1 1 auto}
-.bt-side .bt-sw{grid-template-columns:minmax(0, 1fr)}
 .bt-idle{margin:auto; color:var(--muted); font-size:var(--fs-sm); text-align:center}
 .bt-bottom .bt-cmd{min-height:0}
 @media (max-width:860px){
-  .bt-main{grid-template-columns:1fr} .bt-side{contain:none; overflow:visible} .bt-side.idle{display:none}
-  .bt-side .bt-moves{grid-template-columns:1fr 1fr; grid-auto-rows:auto} .bt-side .bt-sw{grid-template-columns:repeat(auto-fill, minmax(min(100%, 240px), 1fr))}
+  .bt-main, .bt-main.sw{grid-template-columns:1fr} .bt-side{contain:none; overflow:visible} .bt-side.idle{display:none}
+  .bt-side .bt-moves{grid-template-columns:1fr 1fr; grid-auto-rows:auto}
 }
 @media (max-width:760px){ .bt-bottom{grid-template-columns:1fr} }
 .bt2 .bt-log{margin-top:0; min-height:84px; display:flex; flex-direction:column; justify-content:flex-end; gap:2px}
@@ -1078,33 +1078,34 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .gym-team .gt-mons .stage::before{display:none}
 .gym-team b{display:block; font-family:var(--font-d)}
 .bt-acts.end .btn{flex:1 1 160px}
-.bt-sw{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap:6px; min-width:0}
-.bt-swb{display:flex; flex-direction:column; gap:4px; width:100%; min-width:0; overflow:hidden; padding:7px 9px; cursor:pointer; text-align:left; background:var(--raised); color:var(--fg); border:2px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-d)}
-.bt-swb:hover:not(:disabled){border-color:var(--accent)}
-.bt-swb:disabled{opacity:.5; cursor:not-allowed}
-.bt-swb.good{border-color:#1f9d4c}
+.bt-sw{display:flex; flex-direction:column; gap:6px; min-width:0}
+.bt-swb{display:grid; grid-template-columns:minmax(0, 11em) minmax(0, 1fr); align-items:center; gap:4px 12px; width:100%; min-width:0; padding:8px 10px; cursor:pointer; text-align:left; background:var(--raised); color:var(--fg); border:2px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-d)}
+.bt-swb:hover:not(:disabled){border-color:var(--accent); transform:translateY(-1px)}
+.bt-swb:disabled{cursor:not-allowed} .bt-swb.out{opacity:.45; grid-template-columns:1fr; padding:5px 10px} .bt-swb.cur{opacity:.6}
+.bt-swb.good{border-color:#1f9d4c; box-shadow:inset 4px 0 0 #1f9d4c}
 :root[data-mode="2d"] .bt-swb{border-radius:0; border-color:var(--ink)} :root[data-mode="2d"] .bt-swb.good{border-color:#1f9d4c}
+.sw-id{display:flex; flex-direction:column; gap:3px; min-width:0}
 .sw-top{display:flex; align-items:center; gap:6px; min-width:0}
 .sw-top .ball-ic{flex:none}
-.sw-n{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sw-n{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--fs)}
 .sw-hp{flex:none; font-size:var(--fs-xs); color:var(--muted); font-variant-numeric:tabular-nums}
-.bt-swb .bt-bar{margin:0}
-.sw-tags{display:flex; flex-wrap:wrap; align-items:center; gap:4px; min-width:0}
+.bt-swb .bt-bar{margin:0; width:100%}
+.sw-tags{display:flex; flex-wrap:wrap; align-items:center; gap:3px; min-width:0}
 .sw-tags .tb{font-size:10px; padding:0 6px}
-.sw-warn{font-size:var(--fs-xs); font-weight:700; color:#fff; background:#d9480f; padding:0 6px; border-radius:var(--pill)}
-.sw-good{font-size:var(--fs-xs); font-weight:700; color:#fff; background:#1f9d4c; padding:0 6px; border-radius:var(--pill)}
-:root[data-mode="2d"] .sw-warn, :root[data-mode="2d"] .sw-good{border-radius:0}
-.sw-mv{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:3px}
-.sw-m{display:flex; align-items:center; gap:4px; min-width:0; padding:2px 4px 2px 0; border-left:4px solid var(--tc); background:var(--panel); font-size:var(--fs-xs); line-height:1.3}
-.sw-m span{flex:1 1 auto; min-width:0; padding-left:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.sw-m i{flex:none; font-style:normal; font-weight:700; padding:0 4px; border-radius:3px}
+.sw-flag{font-size:10px; font-weight:700; color:#fff; padding:0 6px; border-radius:var(--pill); white-space:nowrap}
+.sw-flag.warn{background:#d9480f} .sw-flag.cur{background:var(--muted)}
+:root[data-mode="2d"] .sw-flag{border-radius:0}
+.sw-mv{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px}
+.sw-m{display:flex; align-items:center; gap:6px; min-width:0; padding:4px 6px; border-radius:6px; background:var(--tc); color:var(--tt); font-size:var(--fs-sm); line-height:1.2}
+.sw-m span{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sw-m i{flex:none; font-style:normal; font-weight:700; font-size:var(--fs-xs); padding:1px 5px; border-radius:4px; background:rgba(0,0,0,.35); color:#fff}
 .sw-m i:empty{display:none}
-.sw-m i[data-e="2"], .sw-m i[data-e="4"]{background:#1f9d4c; color:#fff}
-.sw-m i[data-e="h"]{background:#868e96; color:#fff}
-.sw-m i[data-e="0"]{background:#b3261e; color:#fff}
-:root[data-mode="2d"] .sw-m{background:var(--raised)} :root[data-mode="2d"] .sw-m i{border-radius:0}
-.sw-key{grid-column:1/-1; margin:0; font-size:var(--fs-xs); color:var(--muted)}
-.sw-key i{font-style:normal; font-weight:700; padding:0 4px; color:#fff} .sw-key i:nth-of-type(1){background:#1f9d4c} .sw-key i:nth-of-type(2){background:#868e96} .sw-key i:nth-of-type(3){background:#b3261e}
+.sw-m i[data-e="2"], .sw-m i[data-e="4"]{background:#fff; color:#1f7a3d} .sw-m i[data-e="0"]{background:#b3261e}
+.sw-m.dim{opacity:.55}
+:root[data-mode="2d"] .sw-m, :root[data-mode="2d"] .sw-m i{border-radius:0} :root[data-mode="2d"] .sw-m{border:2px solid var(--ink)}
+.sw-key{margin:0 0 2px; font-size:var(--fs-xs); color:var(--muted)}
+.sw-key b{color:var(--fg)}
+@media (max-width:560px){ .bt-swb{grid-template-columns:minmax(0, 1fr)} }
 .bt-bar.sm{height:5px}
 .bt-curtain{display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center}
 .bt-curtain p{margin:0}
@@ -6303,27 +6304,33 @@ async function startE4(g){
   e4run = {g, step:0, team:tid, party:playerSide(tid).party};
   e4Battle();
 }
-// between Elite Four battles: revive one fainted Pokémon (full HP) and put the team in any order (the first one able to fight leads)
+// between Elite Four battles: one Max Revive and one Max Potion (both restore full HP and cure status),
+// and the team can be put in any order (the first one able to fight leads)
 function e4Prep(){
   const P = e4run.party, L = LEAGUES[e4run.g - 1], who = e4run.step === 4 ? `Champion ${L.champ[0]}` : L.e4[e4run.step][0];
-  let revived = e4run.rv === e4run.step || !P.some(m => m.hp <= 0);   // one Revive per break, even if this screen is closed and reopened
+  // one of each per break, even if this screen is closed and reopened
+  let rev = e4run.rv === e4run.step, pot = e4run.pt === e4run.step;
   const md = openModal(`<h3 class="mt" id="modalTitle">Get ready for ${esc(who)}</h3>
     <p class="note" id="prepNote"></p><div class="prep-list" id="prepList"></div>
     <div class="actions"><button class="btn primary" type="button" id="prepGo">Battle ${esc(who)}</button></div>`, {wide:true});
   const draw = () => {
     const lead = P.findIndex(m => m.hp > 0);
-    $("prepNote").textContent = revived ? "Use the arrows to change the order. The first Pokémon that can fight leads." : "Revive one fainted Pokémon (it comes back at full HP), and use the arrows to change the order.";
+    $("prepNote").innerHTML = `<b>Max Revive:</b> ${rev ? "used" : "1 left"} · <b>Max Potion:</b> ${pot ? "used" : "1 left"}. Both restore full HP and cure status. Use the arrows to change the order; the first Pokémon that can fight leads.`;
     $("prepList").innerHTML = P.map((m, k) => `<div class="prep-row${m.hp <= 0 ? " out" : ""}">${spr(m.n, {sh:m.sh})}
-      <div class="prep-t"><b>${esc(m.name)}${k === lead ? ` <span class="prep-lead">Leads</span>` : ""}</b><span class="meta">${m.hp <= 0 ? "Fainted" : `${m.hp} / ${m.max} HP`}</span></div>
-      ${m.hp <= 0 && !revived ? `<button class="btn sm primary" type="button" data-prv="${k}">Revive</button>` : ""}
+      <div class="prep-t"><b>${esc(m.name)}${k === lead ? ` <span class="prep-lead">Leads</span>` : ""}</b><span class="meta">${m.hp <= 0 ? "Fainted" : `${m.hp} / ${m.max} HP${m.status ? ` · ${ST_TAG[m.status]}` : ""}`}</span></div>
+      ${m.hp <= 0 && !rev ? `<button class="btn sm primary" type="button" data-prv="${k}">Max Revive</button>` : ""}
+      ${m.hp > 0 && (m.hp < m.max || m.status) && !pot ? `<button class="btn sm primary" type="button" data-ppt="${k}">Max Potion</button>` : ""}
       <button class="btn sm" type="button" data-pmv="${k}" data-d="-1" ${k === 0 ? "disabled" : ""} aria-label="Move ${esc(m.name)} up">▲</button>
       <button class="btn sm" type="button" data-pmv="${k}" data-d="1" ${k === P.length - 1 ? "disabled" : ""} aria-label="Move ${esc(m.name)} down">▼</button></div>`).join("");
     paintAll($("prepList"));
   };
+  const full = m => { m.hp = m.max; m.status = null; m.sleep = 0; m.toxN = 0; };
   draw();
   md.onclick = e => {
     const rv = e.target.closest("[data-prv]");
-    if (rv && !revived) { const m = P[+rv.dataset.prv]; m.hp = m.max; m.status = null; m.sleep = 0; m.toxN = 0; revived = true; e4run.rv = e4run.step; Sound.play("heal"); toast(`${m.name} was revived!`); draw(); return; }
+    if (rv && !rev) { const m = P[+rv.dataset.prv]; full(m); rev = true; e4run.rv = e4run.step; Sound.play("heal"); toast(`${m.name} was revived to full HP!`); draw(); return; }
+    const pt = e.target.closest("[data-ppt]");
+    if (pt && !pot) { const m = P[+pt.dataset.ppt]; full(m); pot = true; e4run.pt = e4run.step; Sound.play("heal"); toast(`${m.name} is back to full HP!`); draw(); return; }
     const mv = e.target.closest("[data-pmv]");
     if (mv) { const k = +mv.dataset.pmv, j = k + +mv.dataset.d; if (j >= 0 && j < P.length) { [P[k], P[j]] = [P[j], P[k]]; Sound.play("select"); draw(); } return; }
     if (e.target.closest("#prepGo")) { closeModal(); e4Battle(); }
@@ -6342,9 +6349,9 @@ function e4Battle(){
     onEnd:win => {
       if (!win) { e4run = null; return {text:`Your run ends here. ${esc(nm)} was too strong this time. The ${esc(L.e4label || "Elite Four")} will be waiting.`, buttons:[["Back to the badge case", () => openScreen("battle", "gym"), true]]}; }
       if (!champ) { e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
-        // after every win: one Revive for a fainted Pokémon, otherwise no healing
-        const down = e4run.party.filter(m => m.hp <= 0).length, who = e4run.step === 4 ? `Champion ${nx}` : nx;
-        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight.${down ? " You may revive one fainted Pokémon before the next battle." : ""} You can also change who leads.`,
+        // after every win: one Max Revive and one Max Potion, otherwise no healing
+        const who = e4run.step === 4 ? `Champion ${nx}` : nx;
+        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight. Before the next battle you get one Max Revive and one Max Potion, and you can change who leads.`,
           buttons:[[`Get ready for ${who}`, e4Prep, true]]}; }
       const firstClear = !state.games.leagues[g];
       state.games.leagues[g] = true; save(); e4run = null; setTimeout(() => Sound.play("badge"), 900);
@@ -6501,6 +6508,7 @@ function toSide(c){
   const side = $("btSide"); if (!side || !c) return;
   const items = [...c.querySelectorAll(":scope > .bt-q, :scope > .bt-moves, :scope > .bt-sw")];
   side.replaceChildren(...items); side.classList.toggle("idle", !items.length);
+  side.parentElement.classList.toggle("sw", items.some(n => n.classList.contains("bt-sw")));   // the switch list gets a wider panel
   if (!items.length) side.innerHTML = `<p class="bt-idle">Your moves appear here on your turn.</p>`;
 }
 function renderWait(){
@@ -6526,30 +6534,29 @@ function renderMoves(i){
     <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${canSwitch ? "" : "disabled"}>Switch</button>${F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
   toSide(c);
 }
-// one switch choice: HP, types, and each move with how well it would hit the Pokémon you're facing
+// one switch choice, one row: who (name, HP, types) on the left, their moves rated against the foe on the right
 function swButton(B, i, m, k, active){
-  const foe = B.get(1 - i), vs = !!foe && foe.hp > 0, out = m.hp <= 0, off = out || active;
-  const top = `<span class="sw-top">${ballImg(m.ball)}<b class="sw-n">${esc(m.name)}${m.status && !out ? ` <span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}</b>
-    <span class="sw-hp">${out ? "Fainted" : active ? "In battle" : `${m.hp}/${m.max} HP`}</span></span>`;
-  if (out) return `<button class="bt-swb" type="button" data-sw="${k}" disabled>${top}</button>`;
+  const foe = B.get(1 - i), vs = !!foe && foe.hp > 0, out = m.hp <= 0;
+  const top = `<span class="sw-top">${ballImg(m.ball)}<b class="sw-n" title="${esc(m.name)}">${esc(m.name)}</b>${m.status && !out ? `<span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}<span class="sw-hp">${out ? "Fainted" : `${m.hp}/${m.max}`}</span></span>`;
+  if (out) return `<button class="bt-swb out" type="button" data-sw="${k}" disabled>${top}</button>`;
   let best = -1;
   const mv = m.moves.map(mv => { const dmg = isDmg(mv), t = mv[1] === "???" ? "Normal" : mv[1];
     const e = vs && dmg && !FIXED_DMG.has(mv[0]) ? effOf(B.moveType(m, mv), foe.types) : null;
     if (e !== null) best = Math.max(best, e);
     const c = e === null ? "s" : e === 0 ? "0" : e >= 4 ? "4" : e >= 2 ? "2" : e < 1 ? "h" : "1";
     const word = {s: dmg ? "fixed damage" : "status move", 0:"no effect", 4:"super effective (×4)", 2:"super effective", h:"not very effective", 1:"normal damage"}[c];
-    return `<span class="sw-m" style="${tStyle(t)}" title="${esc(mv[0])} (${t}): ${word}${vs && e !== null ? ` on ${esc(foe.name)}` : ""}"><span>${esc(mv[0])}</span><i data-e="${c}">${{0:"✕", 4:"×4", 2:"×2", h:"½", 1:"", s:""}[c]}</i></span>`; }).join("");
+    return `<span class="sw-m${c === "h" || c === "0" ? " dim" : ""}" style="${tStyle(t)}" title="${esc(mv[0])} · ${t} · ${word}${vs && e !== null ? ` on ${esc(foe.name)}` : ""}"><span>${esc(mv[0])}</span><i data-e="${c}">${{0:"✕", 4:"×4", 2:"×2", h:"½", 1:"", s:""}[c]}</i></span>`; }).join("");
   const weak = vs && foe.types.some(t => effOf(t, m.types) >= 2);
-  return `<button class="bt-swb${!off && best >= 2 ? " good" : ""}" type="button" data-sw="${k}" ${off ? "disabled" : ""}>${top}
-    <span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span>
-    <span class="sw-tags">${m.types.map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}${!off && best >= 2 ? `<span class="sw-good">Super-effective move</span>` : ""}${!off && weak ? `<span class="sw-warn">Weak to its type</span>` : ""}</span>
+  return `<button class="bt-swb${active ? " cur" : best >= 2 ? " good" : ""}" type="button" data-sw="${k}" ${active ? "disabled" : ""}>
+    <span class="sw-id">${top}<span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span>
+      <span class="sw-tags">${m.types.map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}${active ? `<span class="sw-flag cur">In battle</span>` : weak ? `<span class="sw-flag warn">Weak to foe</span>` : ""}</span></span>
     <span class="sw-mv">${mv}</span></button>`;
 }
 function askSwitch(i, forced){
   return ask(() => {
     const B = F.b, S = B.s[i], c = $("btCmd");
     c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${forced ? "Choose your next Pokémon." : "Switch to which Pokémon?"}</p>
-      <div class="bt-sw">${(() => { const foe = B.get(1 - i); return foe && foe.hp > 0 ? `<p class="sw-key">Moves vs ${esc(foe.name)}: <i>×2</i> super effective · <i>½</i> weak · <i>✕</i> no effect</p>` : ""; })()}${S.party.map((m, k) => swButton(B, i, m, k, k === S.act)).join("")}</div>
+      <div class="bt-sw">${(() => { const foe = B.get(1 - i); return foe && foe.hp > 0 ? `<p class="sw-key">Moves rated against <b>${esc(foe.name)}</b>: ×2 super effective · ½ not very effective · ✕ no effect. Green edge = has a super-effective move.</p>` : ""; })()}${S.party.map((m, k) => swButton(B, i, m, k, k === S.act)).join("")}</div>
       <div class="bt-acts">${forced ? (F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
     toSide(c);
   });
