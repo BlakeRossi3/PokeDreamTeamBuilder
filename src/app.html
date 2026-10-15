@@ -1049,6 +1049,12 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .bt-move:disabled{opacity:.35; cursor:not-allowed}
 :root[data-mode="2d"] .bt-move{border-radius:0; border:2px solid var(--ink)}
 .bt-acts{display:flex; gap:6px; flex-wrap:wrap}
+.bt-head .bt-skip{margin-left:auto; flex:none}
+.gym-team{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px; margin:6px 0; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
+.gym-team .gt-mons{display:flex; flex-wrap:wrap; gap:2px; flex:1 1 auto; min-width:0}
+.gym-team .gt-mons .stage{width:42px; height:42px}
+.gym-team .gt-mons .stage::before{display:none}
+.gym-team b{display:block; font-family:var(--font-d)}
 .bt-acts.end .btn{flex:1 1 160px}
 .bt-sw{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px}
 .bt-swb{display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto auto; column-gap:6px; align-items:center; padding:6px 8px; cursor:pointer; text-align:left; background:var(--raised); color:var(--fg); border:2px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-d)}
@@ -6188,7 +6194,9 @@ function renderGym(){
   $("scBody").innerHTML = `<div class="sc-narrow wide">
     <div class="segrow gym-tabs" role="tablist">${GENS.map(x => `<button type="button" role="tab" data-greg="${x.g}" aria-pressed="${x.g === g}" title="${x.region}">${ROMAN[x.g]} <span>${x.region}</span>${state.games.leagues[x.g] ? " ★" : ""}</button>`).join("")}</div>
     <div class="gym-head"><h3>${R} ${lbl}</h3><span class="meta">${nb} / 8 ${L.badge === "stamp" ? "stamps" : "badges"}${state.games.leagues[g] ? " · League cleared ★" : ""}</span></div>
-    <div class="actions"><span class="note" style="margin:0">${ok ? `Only your <b>${R} team</b> (${teamOf(gymTeam[g]).length} Pokémon) can take on the ${R} ${esc(lbl)}.` : `Build your <b>${R} team</b> first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span><button class="btn sm${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? "Edit team" : `Build the ${R} team`}</button></div>
+    <div class="gym-team"><div><b>Your ${R} team</b><span class="note" style="margin:0">${ok ? `Only ${R} Pokémon can take on the ${R} ${esc(lbl)}.` : `Build it first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span></div>
+      ${ok ? `<div class="gt-mons">${teamOf(gymTeam[g]).map(n => spr(n)).join("")}</div>` : ""}
+      <button class="btn${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? `✎ Edit ${R} team` : `Build the ${R} team`}</button></div>
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small></div>
@@ -6327,7 +6335,8 @@ function renderFight(){
   const party = (side, P) => `<div class="bt-party ${side}">${P.map((m, k) => `<span data-pk="${k}">${ballImg(m.ball)}</span>`).join("")}</div>`;
   const trHtml = f.trIdx !== undefined && f.trIdx !== null ? `<div class="stage medal"><img class="tr" data-tr="${f.trIdx}" alt="" draggable="false"></div>` : trOrEmblem(f.name, f.type);
   $("scBody").innerHTML = `<div class="bt2">
-    <div class="bt-head">${trHtml}<div><span class="meta">${esc(f.title || "")}</span><h3>vs ${esc(f.name)}</h3></div></div>
+    <div class="bt-head">${trHtml}<div><span class="meta">${esc(f.title || "")}</span><h3>vs ${esc(f.name)}</h3></div>
+      ${cfg.hotseat ? "" : `<button class="btn sm bt-skip" type="button" data-bt="fast" title="The rest of the battle plays itself out instantly and jumps straight to the result">⏭ Skip to the result</button>`}</div>
     <div class="bt-field"><canvas class="bt-bg" aria-hidden="true"></canvas><span class="bt-weather" id="btWeather" hidden></span>${hp("foe")}${mon("foe")}${mon("you")}${hp("you")}${party("foe", cfg.sides[1].party)}${party("you", cfg.sides[0].party)}</div>
     <div class="bt-bottom"><div class="bt-log" id="btLog" role="log" aria-live="polite"></div><div class="bt-cmd" id="btCmd"></div></div></div>`;
   const cv = $("scBody").querySelector(".bt-bg"), V = two ? {W:320, H:180} : {W:960, H:540}; cv.width = V.W; cv.height = V.H;
@@ -6415,7 +6424,7 @@ async function runBattle(tok){
 }
 function renderWait(){
   const c = $("btCmd"); if (!c) return;
-  c.innerHTML = `<div class="bt-acts"><button class="btn sm" type="button" data-bt="fast">${F.fast ? "Skipping…" : "Skip ▸▸"}</button>${F.cfg.humans.some(Boolean) ? `<button class="btn sm" type="button" data-bt="autotog" aria-pressed="${F.auto}">${F.auto ? "Auto: on" : "Auto: off"}</button>` : ""}</div>`;
+  c.innerHTML = `<div class="bt-acts">${F.cfg.humans.some(Boolean) ? `<button class="btn sm" type="button" data-bt="autotog" aria-pressed="${F.auto}">${F.auto ? "Auto: on" : "Auto: off"}</button>` : ""}</div>`;
 }
 function renderCurtain(i){
   const c = $("btCmd"), S = F.b.s[i];
@@ -6458,12 +6467,13 @@ function onFightClick(e){
   else if (a === "auto") { F.auto = true; resolveAsk({auto:true}); }
   else if (a === "autosw") { F.auto = true; resolveAsk(null); }
   else if (a === "autotog") { F.auto = !F.auto; renderWait(); }
-  else if (a === "fast") { F.fast = true; F.auto = true; clearTimeout(F.timer); if (F.wake) F.wake(); renderWait(); }
+  else if (a === "fast") { F.fast = true; F.auto = true; b.disabled = true; b.textContent = "⏭ Skipping to the result…"; clearTimeout(F.timer); if (F.wake) F.wake(); const cmd = $("btCmd"); if (F.resolve && cmd.querySelector(".bt-moves")) resolveAsk({auto:true}); else if (F.resolve && cmd.querySelector(".bt-sw")) resolveAsk(null); else renderWait(); }
   else if (a === "run") askConfirm("Forfeit this battle?", "It counts as a loss.", "Forfeit").then(ok => { if (ok) resolveAsk({forfeit:true}); });
 }
 function finishBattle(){
   const B = F.b, win = B.winner === 0, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
   F.fast = false; setMusic(null);
+  const sk = $("scBody").querySelector(".bt-skip"); if (sk) sk.hidden = true;
   setTimeout(() => Sound.play(win || F.cfg.hotseat ? "victory" : "lose"), 150);
   const log = $("btLog"); if (log) { log.classList.toggle("win", win); log.classList.toggle("loss", !win && !F.cfg.hotseat); logLine(res.text); }
   F.result = res.buttons.map(x => x[1]);
