@@ -1,0 +1,78 @@
+# Dream Team Dex — notes for Claude Code
+
+A free, non-profit Pokémon fan web app: pick dream teams for every region, personalize them, stage animated
+Hall of Fame scenes, battle rivals / Gym Leaders / Elite Four, play quizzes, earn PokéPoints, unlock items in a
+Shop and decorate a walk-around Pokémon Home. Everything runs in the browser; saves live in localStorage.
+Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
+
+## First-time setup (only if you are starting from the downloaded zips)
+1. Unzip every `dream-team-dex-part*.zip` into the same folder. They all extract into `dream-team-dex/` and
+   don't overlap; part 1 has the code, the rest are sprite packs. Check `packs/index.json` resolves:
+   `python3 scripts/build.py` fails loudly if a pack is missing.
+2. `cd dream-team-dex && git init -b main && git add -A && git commit -m "Dream Team Dex"`
+3. Create the GitHub repo and push: `gh repo create dream-team-dex --public --source . --push`
+   (or create it on github.com and `git remote add origin … && git push -u origin main`).
+4. Turn on Pages: repository Settings → Pages → Source: **GitHub Actions**
+   (or `gh api -X POST repos/{owner}/dream-team-dex/pages -f build_type=workflow`).
+   The workflow in `.github/workflows/pages.yml` then builds and deploys on every push to `main`.
+   The site appears at `https://<github-user>.github.io/dream-team-dex/`.
+5. Delete this section once it's done.
+
+## Commands
+- `python3 scripts/build.py` — build `dist/web/` (the website). `--artifact` also writes the single-page claude.ai version.
+- `python3 -m http.server 8765 --directory dist/web` — run it locally at http://localhost:8765/
+- `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once). Must be clean.
+- `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
+  (`pip install playwright && python3 -m playwright install chromium` once). Screenshots go to `tests/out/`;
+  look at them after UI changes. Run lint + tests before every commit that touches `src/`.
+- No Python packages are needed to build; Playwright is only for tests.
+
+## Layout
+- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~6,300 lines). Source of truth.
+  Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
+  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*STATUSFX*/` are filled from `data/` and `packs/index.json`;
+  `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
+- `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
+- `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `h` = HOME stills, `-f*` = forms; 16 per pack),
+  `t/*.wasm` trainer packs (`2d`, `3d`, `3f`, `l` = Gym Leader portraits). `index.json` maps each sprite to
+  `[id, offset, length, kind]` — kind 0 png, 1 gif, 2 webp, 3 = shiny stored as a palette patch of the normal sprite.
+  `.wasm` is only a container name so hosts serve them compressed; they are not WebAssembly. Packs are large
+  binaries: don't rewrite them unless asked.
+- `site/` — icons, share image, service worker template, notes for other hosts.
+- `scripts/` — build and lint. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
+
+## Map of src/app.html (search for these banners)
+CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overrides), then markup, then JS sections:
+`ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SMOOTH 3D SPRITES`
+(`getSprite`, `spKey`, `hqFrame` xBR upscale, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
+`paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
+`PERSONALIZE` · `BATTLE ENGINE` · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
+`POKÉMON HOME` · `HALL OF FAME GALLERY` · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
+Boot code is at the very end of the script.
+
+## Things that are easy to get wrong
+- **Saves.** `persisted()` is what gets stored; `applySaved` + `cleanGames`/`cleanMember`/`cleanUI` validate everything
+  loaded. Any new field in `state.games` needs a default in `freshGames()` *and* validation in `cleanGames()`, or it is
+  lost on reload. Never break old saves: players can't recover them.
+- **Two styles.** Everything must look right in both 2D (pixel art, square corners, VT323/Pixelify fonts) and 3D, on
+  desktop and a 390px-wide phone, with no sideways scrolling (the audit test checks this).
+- **Hall of Fame scenes are per style:** `state.scenes[id]` is 3D, `state.scenes[id + "~2d"]` is 2D. Use
+  `sceneOf(id, mode)`; copying/deleting a team must handle both keys.
+- **Economy.** Unlockables are in `ITEMS_ALL`; look up with `unlockOf(cat, id)`; use `owns`/`grant`/`buy`/`earn`.
+  Gym Leader and Champion rewards (`GYM_REWARD`) are exclusive: never sell them in the Shop. A team's default
+  Hall of Fame background is always usable (`bgUsable`). `ecoMigrate()` runs once per save for players from before
+  the economy existed. Point values are listed in README.md.
+- **Screens** render into `#scBody` and wire events through `nav.onClick` etc.; anything with timers, rAF or observers
+  must undo it in `nav.cleanup` (see `renderHome`).
+- **Modals:** `openModal(html, {wide, onClose})` / `closeModal()`; the modal layer sits above the overlays.
+- **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
+  (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
+- **Size:** the site is ~255 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
+- **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
+  outside asset. Original drawings (Home furniture, backgrounds) are made with canvas code, not image files.
+
+## Blake's preferences
+- Keep it free and non-profit. Polished, "production-ready" feel; he likes bold improvements when asked to clean up.
+- He prefers the animated idle 3D sprites over HD stills (an HD-sprite swap was tried and reverted).
+- Plain-language summaries of what changed; show screenshots of UI changes when possible.

@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""Build the site, serve dist/web on localhost:8765 and run every Playwright test.
+
+    pip install playwright && python3 -m playwright install chromium   # once
+    python3 tests/run_all.py            # all tests
+    python3 tests/run_all.py audit      # only tests whose file name contains "audit"
+
+Screenshots land in tests/out/. A test fails if it raises or prints page errors.
+"""
+import os, subprocess, sys, time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+TESTS = [  # (file, args)
+    ("audit.py", []),                                   # every screen, 2D/3D, desktop/phone, sideways-scroll check
+    ("test_shop_home.py", ["1366", "860", "3d"]),       # Shop, Pokémon Home, Hall of Fame menu, unlocks, gym rewards
+    ("test_shop_home.py", ["390", "844", "2d"]),
+    ("test_save_migration.py", []),                     # old saves get PokéPoints + rewards, locked Poké Balls
+    ("test_battles_and_exports.py", []),                # gyms, Versus, trainer card + GIF export, settings
+    ("test_custom_teams.py", []),
+    ("test_battle_engine.py", []),
+]
+
+def main():
+    only = sys.argv[1] if len(sys.argv) > 1 else ""
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "build.py")], check=True)
+    srv = subprocess.Popen([sys.executable, "-m", "http.server", "8765"], cwd=ROOT / "dist" / "web", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1)
+    failed = []
+    try:
+        for f, args in TESTS:
+            if only and only not in f: continue
+            print(f"\n=== {f} {' '.join(args)}", flush=True)
+            r = subprocess.run([sys.executable, str(ROOT / "tests" / f), *args], capture_output=True, text=True, timeout=900)
+            out = "\n".join(l for l in (r.stdout + r.stderr).splitlines() if "ERR_TUNNEL" not in l and "fonts.g" not in l)
+            print(out[-4000:])
+            bad = r.returncode != 0 or "PAGEERR" in out or any(l.startswith(("errors:", "ERRS")) and l.strip() not in ("errors: []", "ERRS []") and "Failed to load resource" not in l for l in out.splitlines())
+            if bad: failed.append(f)
+    finally:
+        srv.terminate()
+    print("\nFAILED: " + ", ".join(failed) if failed else "\nAll tests passed.")
+    sys.exit(1 if failed else 0)
+
+if __name__ == "__main__":
+    main()

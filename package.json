@@ -1,0 +1,14 @@
+{
+  "name": "dream-team-dex",
+  "private": true,
+  "description": "Dream Team Dex — a free Pokémon dream-team fan app",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "lint": "python3 scripts/lint.py",
+    "test": "python3 tests/run_all.py",
+    "serve": "python3 scripts/build.py && python3 -m http.server 8765 --directory dist/web"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
