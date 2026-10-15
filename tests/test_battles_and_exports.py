@@ -21,7 +21,10 @@ async def main():
         await pg.click('#playBtn'); await pg.wait_for_timeout(600)
         # gym
         await pg.click('[data-go="battle"]'); await pg.click('[data-bsub="gym"]'); await pg.wait_for_timeout(600)
-        await pg.click('.gym-card .btn >> nth=0'); await pg.wait_for_timeout(1500)
+        await pg.click('.gym-card .btn >> nth=0'); await pg.wait_for_timeout(800)
+        if await pg.locator('#gpkGo').count():   # Gyms are N on N: pick who to bring
+            await pg.screenshot(path=OUT+'f_gym_pick.png'); await pg.click('#gpkGo'); await pg.wait_for_timeout(1500)
+        print('gym sides', await pg.evaluate('JSON.stringify(F.b.s.map(s => s.party.map(m => m.level)))'))
         for i in range(60):
             if await pg.locator('[data-res]').count(): break
             await pg.evaluate("(()=>{const b=document.querySelector('[data-bt=fast]'); if(b) b.click();})()")

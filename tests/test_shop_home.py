@@ -88,7 +88,8 @@ async def main():
         await pg.screenshot(path=O + "_card.png", full_page=True)
         # gym win -> rewards
         await pg.evaluate('state.ui.bmode="auto"; state.ui.bspeed="fast"; save(); openScreen("battle","gym")'); await pg.wait_for_timeout(700)
-        await pg.evaluate('startGym(1,0)'); await pg.wait_for_timeout(1500)
+        await pg.evaluate('startGym(1,0)'); await pg.wait_for_timeout(800)
+        if await pg.locator('#gpkGo').count(): await pg.click('#gpkGo'); await pg.wait_for_timeout(1500)
         for i in range(80):
             if await pg.locator('[data-res]').count(): break
             await pg.evaluate("(()=>{const b=document.querySelector('[data-bt=fast]'); if(b) b.click();})()")
