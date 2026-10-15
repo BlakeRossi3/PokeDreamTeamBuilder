@@ -6202,7 +6202,7 @@ function renderGym(){
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small></div>
         <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
         <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
-    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l}</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row, no healing in between. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
+    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing, except one Revive before the Champion. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
   paintAll($("scBody"));
   nav.onChange = null;
@@ -6258,6 +6258,19 @@ async function startE4(g){
   e4run = {g, step:0, team:tid, party:playerSide(tid).party};
   e4Battle();
 }
+// one Revive between the Elite Four and the Champion: a fainted Pokémon comes back with half its HP
+function e4Revive(){
+  const P = e4run.party, down = P.map((m, k) => [m, k]).filter(([m]) => m.hp <= 0);
+  const md = openModal(`<h3 class="mt" id="modalTitle">Revive one Pokémon</h3><p class="note">It comes back with half its HP for the Champion battle.</p>
+    <div class="hm-pick">${down.map(([m, k]) => `<button type="button" class="hm-pk" data-rv="${k}">${spr(m.n, {sh:m.sh})}<span>${esc(m.name)}</span></button>`).join("")}</div>
+    <div class="actions"><button class="btn" type="button" id="rvSkip">Don’t revive</button></div>`, {wide:true});
+  paintAll(md);
+  md.addEventListener("click", e => {
+    const b = e.target.closest("[data-rv]");
+    if (b) { const m = P[+b.dataset.rv]; m.hp = Math.max(1, Math.floor(m.max/2)); m.status = null; m.sleep = 0; m.toxN = 0; Sound.play("heal"); closeModal(); toast(`${m.name} was revived!`); e4Battle(); return; }
+    if (e.target.closest("#rvSkip")) { closeModal(); e4Battle(); }
+  });
+}
 function e4Battle(){
   const {g, step} = e4run, L = LEAGUES[g - 1], champ = step === 4;
   const [nm, ty, ace] = champ ? [L.champ[0], "", 0] : L.e4[step];
@@ -6271,7 +6284,12 @@ function e4Battle(){
     onEnd:win => {
       if (!win) { e4run = null; return {text:`Your run ends here. ${esc(nm)} was too strong this time. The ${esc(L.e4label || "Elite Four")} will be waiting.`, buttons:[["Back to the badge case", () => openScreen("battle", "gym"), true]]}; }
       if (!champ) { e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
-        return {text:`You defeated <b>${esc(nm)}</b>! ${left} of ${e4run.party.length} Pokémon can still fight, and there’s no healing before the next battle.`, buttons:[[`Next: ${nx}${e4run.step === 4 ? " (Champion)" : ""}`, e4Battle, true]]}; }
+        if (e4run.step === 4) {   // before the Champion: one Revive for a fainted Pokémon
+          const down = e4run.party.filter(m => m.hp <= 0).length;
+          return {text:`You defeated <b>${esc(nm)}</b>! Only Champion <b>${esc(nx)}</b> is left. ${left} of ${e4run.party.length} Pokémon can still fight.${down ? " You may revive one fainted Pokémon before the final battle." : ""}`,
+            buttons:down ? [["Revive a Pokémon, then face the Champion", e4Revive, true], [`Face ${nx} as you are`, e4Battle]] : [[`Next: ${nx} (Champion)`, e4Battle, true]]};
+        }
+        return {text:`You defeated <b>${esc(nm)}</b>! ${left} of ${e4run.party.length} Pokémon can still fight, and there’s no healing before the next battle.`, buttons:[[`Next: ${nx}`, e4Battle, true]]}; }
       const firstClear = !state.games.leagues[g];
       state.games.leagues[g] = true; save(); e4run = null; setTimeout(() => Sound.play("badge"), 900);
       if (firstClear) { const got = champRewards(g); earn(1000, "League champion", true); setTimeout(() => showRewards(`${L.champ[0]} crowned you Champion!`, got, 1000), 1700); } else earn(250, "League cleared again");
