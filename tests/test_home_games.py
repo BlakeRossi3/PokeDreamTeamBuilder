@@ -26,7 +26,7 @@ async def main():
         sp = await pg.evaluate('JSON.stringify(homeSpots().filter(s => s.kind === "hammock").map(s => s.act))'); print('hammock spots', sp); assert sp == '["nap"]'
         await pg.locator('#hmStage').screenshot(path=OUT + f'homegames_{MODE}_room.png')
         # Berry Catch: a 3-second round, walking right then left
-        await pg.click('#hmPlay'); await pg.click('[data-hg="catch"]'); await pg.click('#bcGo')
+        await pg.click('#hmGames'); await pg.click('[data-hg="catch"]'); await pg.click('#bcGo')
         await pg.keyboard.down('ArrowRight'); await pg.wait_for_timeout(900); await pg.keyboard.up('ArrowRight')
         await pg.locator('.bc-wrap').screenshot(path=OUT + f'homegames_{MODE}_catch.png')
         await pg.keyboard.down('ArrowLeft'); await pg.wait_for_timeout(900); await pg.keyboard.up('ArrowLeft'); await pg.wait_for_timeout(1800)

@@ -6779,7 +6779,7 @@ function renderHome(){
       <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture" aria-label="${HS.edit ? "Done decorating" : "Decorate"}">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
       <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms" aria-label="Shop">${ic("shop")}<span>Shop</span></button>
       <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode" aria-label="Photo mode">${ic("camera")}<span>Photo</span></button>
-      ${VISIT || HS.edit ? "" : `<button class="btn sm hm-tb" type="button" id="hmPlay" title="Berry Catch and Hide-and-seek" aria-label="${HS.hide && !HS.hide.found ? "Stop Hide-and-seek" : "Games"}">${ic("quiz")}<span>${HS.hide && !HS.hide.found ? "Stop" : "Games"}</span></button>`}
+      ${VISIT || HS.edit ? "" : `<button class="btn sm hm-tb" type="button" id="hmGames" title="Berry Catch and Hide-and-seek" aria-label="${HS.hide && !HS.hide.found ? "Stop Hide-and-seek" : "Games"}">${ic("quiz")}<span>${HS.hide && !HS.hide.found ? "Stop" : "Games"}</span></button>`}
       <span class="home-pp" title="Your PokéPoints">${fmtPP(state.games.pp)}</span>
     </div>
     ${HS.edit ? "" : `<div class="hm-bag" id="hmBag"></div>`}
@@ -6810,7 +6810,7 @@ function renderHome(){
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
     if (e.target.closest("#hmDeco")) { HS.edit = !HS.edit; HS.place = null; HS.sel = null; Sound.play("select"); renderHome(); return; }
     if (e.target.closest("#hmShop")) { shopCat = "furn"; openScreen("shop"); return; }
-    if (e.target.closest("#hmPlay")) { if (HS.hide && !HS.hide.found) seekStop(); else homeGames(); return; }
+    if (e.target.closest("#hmGames")) { if (HS.hide && !HS.hide.found) seekStop(); else homeGames(); return; }
     if (e.target.closest("#hmCam")) { HS.photo = true; HS.pcam = HS.cam; HS.edit = false; Sound.play("select"); renderHome(); return; }
     const ph = e.target.closest("[data-ph]"); if (ph) { if (ph.dataset.ph === "exit") { HS.photo = false; renderHome(); } else homePhoto(ph.dataset.ph); return; }
     const hb = e.target.closest("[data-hold]"); if (hb) { HS.hold = HS.hold === hb.dataset.hold ? null : hb.dataset.hold; Sound.play("select"); renderHomeBag(); return; }
