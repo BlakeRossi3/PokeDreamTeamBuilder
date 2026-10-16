@@ -817,7 +817,7 @@ class Battle {
     v.echo = this.lastEcho === this.turnNo - 1 && nm === "Echoed Voice" ? (v.echo || 0) + 1 : 0;
     v.lastName = nm; if (j >= 0) v.lastJ = j; this.lastMove = mv;
     if (me.ability === "Protean" || me.ability === "Libero") { const t = this.moveType(me, mv); if (t !== "???" && !v.protean && (me.types.length !== 1 || me.types[0] !== t)) { me.types = [t]; v.protean = true; this.msg(ev, `${this.who(i)} transformed into the ${t} type!`); } }
-    ev.push({k:"move", side:i, t:`${this.who(i)} used ${nm}!`, type:this.moveType(me, mv)});
+    ev.push({k:"move", side:i, mv:nm, t:`${this.who(i)} used ${nm}!`, type:this.moveType(me, mv)});
     // two-turn moves
     if (fl(mv, "2") && !v.charging) {
       const w = this.wx(), skip = ((nm === "Solar Beam" || nm === "Solar Blade") && w === "sun" && !this.umbrella(me)) || (nm === "Electro Shot" && w === "rain" && !this.umbrella(me));
@@ -1106,7 +1106,7 @@ class Battle {
       if (me.status !== "slp" && me.ability !== "Comatose") return fail();
       const pool = me.moves.filter(x => x[0] !== "Sleep Talk" && !fl(x, "2") && !["Bide", "Uproar", "Assist", "Copycat", "Me First", "Metronome", "Mirror Move", "Sketch", "Mimic"].includes(x[0]));
       if (!pool.length) return fail(); const pick = pool[this.r(pool.length)];
-      ev.push({k:"move", side:i, t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
+      ev.push({k:"move", side:i, mv:pick[0], t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
       return isDmg(pick) ? this.attack(i, -1, pick, ev) : this.statusMove(i, pick, ev);
     }
     if (nm === "Metronome" || nm === "Copycat" || nm === "Mirror Move" || nm === "Nature Power") {
@@ -1117,7 +1117,7 @@ class Battle {
       else pick = MOVE_BY.get({electric:"Thunderbolt", grassy:"Energy Ball", misty:"Moonblast", psychic:"Psychic"}[this.terrain] || "Tri Attack");
       if (!pick) return fail();
       if (nm !== "Nature Power") this.msg(ev, `${nm === "Metronome" ? "Waggling a finger let it use" : "It copied"} ${pick[0]}!`); else this.msg(ev, `Nature Power turned into ${pick[0]}!`);
-      ev.push({k:"move", side:i, t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
+      ev.push({k:"move", side:i, mv:pick[0], t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
       return isDmg(pick) ? this.attack(i, -1, pick, ev) : this.statusMove(i, pick, ev);
     }
     if (nm === "Magic Coat") { me.v.magicCoat = true; this.msg(ev, `${this.who(i)} shrouded itself with Magic Coat!`); return true; }
