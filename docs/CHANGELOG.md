@@ -1,5 +1,43 @@
 # What's new in Dream Team Dex
 
+## 💥 Every move has an animation
+- **All 851 moves animate** in 3D and 2D: flames, waves, sparks, quakes, slashes, beams, stat-up glows, screens and
+  hazards, plus hand-made effects for signature moves. Contact moves lunge; everything else casts.
+- **Wide-winged Pokémon at a fair size:** Charizard, Yveltal and friends were drawn small because their wings filled the
+  box. Sprites are now sized by their body, so they stand as tall as everyone else.
+
+## ▶ Battle replays
+- **Rewatch your last battles** from Battle → Replays (or "▶ Replay" when a battle ends). A replay re-runs the battle
+  from its saved choices, so it plays out exactly as it happened.
+- **Share a replay as a link**, and pin one as your **Battle of the Week** on your trainer card for friends to watch.
+
+## 📋 Showdown import and export
+- Team options → **Export to Showdown** gives your team in Pokémon Showdown's format; **Import from Showdown** reads a
+  Showdown team (forms, nicknames, items, abilities, moves, natures, EVs, IVs, level, shiny) into a new team or the
+  current one, and lists anything it couldn't use.
+
+## 🗼 The Battle Tower
+- **How long can you last?** Battles in a row with one team, 3 on 3 or 6 on 6 at level 50, healed between battles.
+  Trainers get tougher every 7 wins, and every 7th battle is **Tower Tycoon Palmer**.
+- Wins pay more as your streak grows. Streaks of **21 and 49** earn Tower-only rewards: two profile icons, a Battle Tower
+  background and a steel trophy for your Home. They're never sold.
+
+## 🏠 More Home
+- **Games:** **Berry Catch** (catch falling berries with one of your Pokémon and keep some) and **Hide-and-seek** (find
+  the Pokémon hiding behind your furniture; hints if you're stuck). Both grow friendship.
+- **New furniture:** a striped **Hammock** to nap in, and **Holiday gifts** for the winter holidays.
+- **Sleepier sleepers:** sleeping sprites are sized closer to the awake Pokémon, and species without one curl up and
+  breathe slowly.
+
+## ⚡ Faster, and works offline
+- The first visit downloads far less (the 2D art now loads just after the first screen), repeat visits open about
+  twice as fast, and the app starts with no connection. Updates only re-download sprite packs that changed.
+
+## 📅 Daily missions and a login streak
+- **Three missions a day** that fit how you play (win with a Water type, feed 3 berries, play the Daily 10…), each worth
+  PokéPoints, with a bonus for all three.
+- **Visit every day** for a streak: a little each day, more every 7th day and on day 30. Miss a day and you keep half.
+
 ## ⚔️ Battle your friends, live
 - **Challenge a friend who's online** from your friends list or their profile: pick 1 vs 1, 3 vs 3 or 6 vs 6, and
   whether to bring the Bag. They get a challenge card with Accept / Not now.
