@@ -934,6 +934,23 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 .bc-wrap{position:relative; margin:4px auto 0; width:100%; max-width:640px}
 .bc-cv{display:block; width:100%; aspect-ratio:4/3; image-rendering:pixelated; border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); background:#9fd8ff; touch-action:none}
 .bc-hud{position:absolute; top:8px; left:10px; right:10px; display:flex; justify-content:space-between; pointer-events:none; color:#14202e; font-weight:700; text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.hub-today{display:flex; align-items:center; gap:12px; width:100%; margin:10px 0 0; padding:9px 14px; color:var(--fg); background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--r-sm); font:inherit; cursor:pointer; text-align:left}
+.hub-today:hover{border-color:var(--accent)}
+.ht-streak{flex:none; white-space:nowrap} .ht-m{flex:none; white-space:nowrap}
+.ht-bar, .ms-bar{flex:1; min-width:40px; height:8px; border-radius:99px; background:var(--raised); overflow:hidden; border:1px solid var(--line)}
+.ht-bar i, .ms-bar i{display:block; height:100%; background:var(--accent)}
+.ht-go{flex:none; color:var(--muted)}
+.ms-streak{display:flex; gap:12px; align-items:center; padding:12px 14px; background:var(--raised); border:var(--bw) solid var(--line-2); border-radius:var(--r-sm)}
+.ms-streak > div{display:flex; flex-direction:column; gap:2px} .ms-streak span:not(.ms-fire){color:var(--muted)}
+.ms-fire{font-size:30px; line-height:1}
+.ms-list{display:grid; gap:8px}
+.ms-row{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:10px 12px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
+.ms-row > div{display:flex; flex-direction:column; gap:4px; min-width:0} .ms-row small{color:var(--muted)} .ms-row .ms-bar{flex:none; width:100%}
+.ms-ck{display:grid; place-items:center; width:24px; height:24px; border-radius:50%; border:2px solid var(--line-2); color:var(--on-accent); font-weight:700}
+.ms-row.done{border-color:var(--accent)} .ms-row.done .ms-ck{background:var(--accent); border-color:var(--accent)}
+.ms-pts{white-space:nowrap; font-weight:700}
+:root[data-mode="2d"] .hub-today, :root[data-mode="2d"] .ms-row, :root[data-mode="2d"] .ms-streak{border-radius:0} :root[data-mode="2d"] .ht-bar, :root[data-mode="2d"] .ms-bar, :root[data-mode="2d"] .ms-ck{border-radius:0}
+@media (max-width:420px){ .ht-bar{display:none} .hub-today{justify-content:space-between} }
 .code-row{display:flex; gap:8px; align-items:center}
 .sd-text{display:block; width:100%; min-height:220px; resize:vertical; padding:10px 12px; background:var(--raised); color:var(--fg); border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); font-family:ui-monospace, "SFMono-Regular", Menlo, monospace; font-size:13px; line-height:1.45; white-space:pre; overflow:auto}
 .sd-where{display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 0 0}
@@ -1695,6 +1712,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
     </div>
     <div class="hub" id="hub">
       <nav class="hub-grid" id="hubGrid" aria-label="Main menu"></nav>
+      <button class="hub-today" type="button" id="hubToday" hidden></button>
       <div class="hub-foot"><button class="linkbtn" type="button" id="hubBack">← Title screen</button><span id="hubWho"></span><button class="linkbtn" type="button" id="hubHelp">How to play</button><button class="linkbtn" type="button" data-gear>Settings</button></div>
     </div>
   </div>
@@ -2033,7 +2051,7 @@ function cleanUI(u){
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
 const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}});
-const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}});
+const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}, missions:null, login:{last:"", cur:0, best:0, days:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
   const int = v => Number.isInteger(v) && v > 0 ? v : 0;
@@ -2079,6 +2097,9 @@ function cleanGames(g){
   const tw = obj(g.tower);   // Battle Tower: current and best streak, total wins, the locked team of a streak in progress, rewards given (bits)
   o.tower = {cur:int(tw.cur), best:Math.max(int(tw.best), int(tw.cur)), won:int(tw.won), team:typeof tw.team === "string" ? tw.team.slice(0, 40) : "", size:tw.size === 6 ? 6 : 3,
     nums:Array.isArray(tw.nums) ? [...new Set(tw.nums.filter(n => NAT_BY.has(n)))].slice(0, 6) : [], rw:int(tw.rw) & 7};
+  const ms = obj(g.missions);   // today's three missions
+  if (/^\d{4}-\d\d-\d\d$/.test(ms.d) && Array.isArray(ms.list)) o.missions = {d:ms.d, bonus:ms.bonus ? 1 : 0, list:ms.list.filter(x => x && MISSIONS[x.k]).slice(0, 3).map(x => ({k:x.k, a:typeof x.a === "string" && TYPE_ORDER.includes(x.a) ? x.a : "", n:Math.min(99, int(x.n)), goal:Math.max(1, Math.min(9, int(x.goal) || 1)), done:x.done ? 1 : 0}))};
+  const lg = obj(g.login); o.login = {last:/^\d{4}-\d\d-\d\d$/.test(lg.last) ? lg.last : "", cur:int(lg.cur), best:Math.max(int(lg.best), int(lg.cur)), days:int(lg.days)};
   const so = obj(g.social);
   o.social = {vis:Array.isArray(so.vis) ? [...new Set(so.vis.filter(v => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v)))].slice(-200) : [], likes:int(so.likes), friends:int(so.friends), fbN:int(so.fbN), fbW:int(so.fbW),
     likeAt:typeof so.likeAt === "string" && !isNaN(Date.parse(so.likeAt)) ? so.likeAt : ""};
@@ -7187,7 +7208,7 @@ function homeInteract(m){
   let up = 0; if (g.n < 25) { up = Math.min(5, 25 - g.n); g.n += up; D.fr[m.n] = Math.min(100, friendOf(m.n) + up); }
   const f = friendOf(m.n), lines = f >= 100 ? ["Is your best friend!", "Won’t leave your side!"] : f >= 60 ? ["Loves playing with you!", "Is so happy to see you!"] : f >= 25 ? ["Is getting used to you.", "Seems happy."] : ["Is a little shy.", "Watches you curiously."];
   homeMsg(`${lines[Math.floor(Math.random()*lines.length)]}${up ? "" : ` <span class="meta">It’s had enough petting for today.</span>`}`, {n:m.n, f, f0:f - up});
-  if (D.pet[m.n] !== day) { D.pet[m.n] = day; earn(10, `Played with ${name}`); }
+  if (D.pet[m.n] !== day) { D.pet[m.n] = day; earn(10, `Played with ${name}`); missionBump("pet"); }
   save(); renderResidents(); checkAch();
 }
 const nickFor = n => { if (VISIT && VISIT.nicks[n]) return VISIT.nicks[n]; for (const id of Object.keys(state.members)) { const M = (state.members[id] || {})[n]; if (M && M.nick) return M.nick; } return monName(n); };
@@ -7417,7 +7438,7 @@ function berryCatch(){
     G.raf = requestAnimationFrame(frame);
   }
   function finish(){
-    stop(); const Gd = homeGamesDay(), D = homeData(), n = G.got.length, keep = Gd.catchN < GAMES_A_DAY;
+    stop(); const Gd = homeGamesDay(), D = homeData(), n = G.got.length, keep = Gd.catchN < GAMES_A_DAY; missionBump("catch");
     Gd.catchN++; const best = n > Gd.catchBest; Gd.catchBest = Math.max(Gd.catchBest, n);
     const kept = []; if (keep) for (const id of G.got) { if (kept.length >= CATCH_KEEP || bagTotal() >= 99) break; D.bag[id] = (D.bag[id] | 0) + 1; kept.push(id); }
     const up = keep && n >= 8 ? Math.min(100 - friendOf(m.n), 2 + Math.min(3, G.fav || 0)) : 0; if (up > 0) D.fr[m.n] = friendOf(m.n) + up;
@@ -7450,7 +7471,7 @@ function seekAt(q){
   const H2 = HS.hide, m = HS.mons.find(x => x.n === H2.n); if (!m) { HS.hide = null; return; }
   if (q.id === H2.p.id && q.x === H2.p.x && q.y === H2.p.y) {
     H2.found = true; m.x = Math.max(.4, Math.min(HS.W - .4, q.x + q.it.w/2)); m.y = Math.min(HM.D - .3, q.y + q.it.d + .4); m.hop = 1; m.st = "idle"; m.t = 2500; m.dir = HS.me.x < m.x ? -1 : 1;
-    const Gd = homeGamesDay(), D = homeData(), reward = Gd.seekN < GAMES_A_DAY; Gd.seekN++; Gd.found++;
+    const Gd = homeGamesDay(), D = homeData(), reward = Gd.seekN < GAMES_A_DAY; Gd.seekN++; Gd.found++; missionBump("seek");
     const up = reward ? Math.min(100 - friendOf(m.n), H2.tries === 0 ? 6 : 4) : 0; if (up > 0) D.fr[m.n] = friendOf(m.n) + up;
     m.emote = {k:"heart", t0:performance.now(), dur:2000}; burst("heart", m, 8, {sp:1, dur:1200}); Sound.play("up");
     save(); HS.hide = null; renderHome();
@@ -7612,7 +7633,7 @@ function feedMon(m, bid){
   if (fd.n >= 3) { homeMsg("Is full for today. Try again tomorrow!", {n:m.n}); return; }
   const fav = favBerry(m.n).id === bid, up = fav ? 15 : 8;
   D.bag[bid]--; if (!D.bag[bid]) { delete D.bag[bid]; HS.hold = null; }
-  fd.n++; D.fedN++; D.fr[m.n] = Math.min(100, friendOf(m.n) + up);
+  fd.n++; D.fedN++; D.fr[m.n] = Math.min(100, friendOf(m.n) + up); missionBump("feed");
   m.hop = 1; m.st = m.st === "act" ? m.st : "idle"; m.t = Math.max(m.t, 2000); m.dir = HS.me.x < m.x ? -1 : 1;
   m.emote = {k:fav ? "fav" : "heart", t0:now, dur:2200}; Sound.play(fav ? "up" : "heal");
   m.eatT = now + 1500; m.eatCol = b.col; if (fav) burst("spark", m, 9, {sp:1.1, dur:1200, col:"#ffd43b"}); else burst("heart", m, 3);
@@ -7769,7 +7790,7 @@ function homeCaption(c, W, H){
 }
 async function homePhoto(kind){
   const cv = HS.cv; if (!cv) return;
-  const fname = `pokemon-home-${todayKey()}.${kind}`, done = async blob => { if (!VISIT) { homeData().photos++; save(); checkAch(); } if (!(await saveFile(fname, blob))) homeMsg("Saving files isn’t available here. Try another browser."); };
+  const fname = `pokemon-home-${todayKey()}.${kind}`, done = async blob => { if (!VISIT) { homeData().photos++; missionBump("photo"); save(); checkAch(); } if (!(await saveFile(fname, blob))) homeMsg("Saving files isn’t available here. Try another browser."); };
   if (kind === "png") { const o = mkCanvas(cv.width, cv.height), x = o.getContext("2d"); x.drawImage(cv, 0, 0); homeCaption(x, o.width, o.height); done(await new Promise(r => o.toBlob(r, "image/png"))); return; }
   if (!window.GifKit) { homeMsg("The GIF maker didn’t load. Save a PNG instead."); return; }
   const W = Math.min(640, cv.width), H = Math.round(cv.height*W/cv.width), o = mkCanvas(W, H), x = o.getContext("2d", {willReadFrequently:true}); x.imageSmoothingEnabled = state.mode !== "2d";
@@ -7840,6 +7861,78 @@ function renderHofGallery(){
   setMusic("title");
 }
 
+// ================= DAILY MISSIONS + LOGIN STREAK =================
+// Three missions a day, picked to fit the save (no Home missions without Pokémon at home…), each worth PokéPoints,
+// plus a bonus for all three. Visiting on consecutive days builds a streak: a little each day, more every 7th day and
+// on day 30; missing days keeps half the streak.
+const MISSIONS = {
+  win:{g:"battle", goal:2, pts:60, t:() => "Win 2 battles"},
+  wintype:{g:"battle", goal:1, pts:80, t:a => `Win a battle with ${/^[AEIOU]/.test(a) ? "an" : "a"} ${a} type on your team`},
+  gym:{g:"battle", goal:1, pts:80, t:() => "Beat a Gym Leader or Elite Four member (rematches count)"},
+  tower:{g:"battle", goal:1, pts:80, t:() => "Win a Battle Tower battle"},
+  daily10:{g:"quiz", goal:1, pts:60, t:() => "Finish today’s Daily 10 quiz", ok:() => !(state.games.daily && state.games.daily.d === todayKey() && state.games.daily.i >= 10)},
+  feed:{g:"home", goal:3, pts:70, t:() => "Feed 3 berries to your Pokémon", ok:() => homeMons().length > 0 && (bagTotal() >= 3 || homeData().items.some(p => p.id === "tree"))},
+  pet:{g:"home", goal:3, pts:60, t:() => "Play with 3 Pokémon in your Home", ok:() => homeMons().length >= 3},
+  catch:{g:"home", goal:1, pts:60, t:() => "Play a round of Berry Catch", ok:() => homeMons().length > 0},
+  seek:{g:"home", goal:1, pts:70, t:() => "Find a Pokémon in Hide-and-seek", ok:() => homeMons().length > 0 && homeData().items.length >= 2},
+  photo:{g:"home", goal:1, pts:50, t:() => "Save a photo of your Home", ok:() => homeMons().length > 0},
+};
+const MISSION_BONUS = 150;
+function missionsToday(){
+  const G = state.games, day = todayKey();
+  if (G.missions && G.missions.d === day) return G.missions;
+  const R = rng([...day + (profile ? profile.name : "")].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0);
+  const can = Object.entries(MISSIONS).filter(([k, M]) => (!M.ok || M.ok()) && (M.g !== "battle" || nonEmptyTeams().length)), pick = [], used = new Set();
+  const take = list => { if (!list.length) return; const [k] = list[Math.floor(R()*list.length)]; used.add(k); used.add("g:" + MISSIONS[k].g); pick.push(k); };
+  for (const g of ["battle", "home", "quiz"]) take(can.filter(([k, M]) => M.g === g && !used.has(k)));
+  while (pick.length < 3) { const rest = can.filter(([k]) => !used.has(k)); if (!rest.length) break; take(rest); }
+  const types = [...new Set(nonEmptyTeams().flatMap(t => teamOf(t.id).flatMap(n => NAT_BY.get(n).types)))];
+  G.missions = {d:day, bonus:0, list:pick.slice(0, 3).map(k => ({k, a:k === "wintype" && types.length ? types[Math.floor(R()*types.length)] : "", n:0, goal:MISSIONS[k].goal, done:0}))};
+  for (const x of G.missions.list) if (x.k === "wintype" && !x.a) { x.k = "win"; x.goal = MISSIONS.win.goal; }
+  save(); return G.missions;
+}
+function missionBump(k, test){
+  if (VISIT || !profile) return; const T = missionsToday(); let changed = false;
+  for (const x of T.list) if (x.k === k && !x.done && (!test || test(x))) {
+    x.n++; changed = true;
+    if (x.n >= x.goal) { x.done = 1; const M = MISSIONS[x.k]; earn(M.pts, `Mission: ${M.t(x.a)}`); Sound.play("up"); }
+  }
+  if (changed && !T.bonus && T.list.length && T.list.every(x => x.done)) { T.bonus = 1; setTimeout(() => { earn(MISSION_BONUS, "All of today’s missions!"); checkAch(); }, 900); }
+  if (changed) { save(); if (document.documentElement.dataset.view === "hub") renderHubToday(); }
+}
+function missionWin(cfg, side){
+  const types = new Set(side.party.flatMap(m => (NAT_BY.get(m.n) || {types:[]}).types));
+  missionBump("win"); missionBump("wintype", x => types.has(x.a));
+  if (cfg.back === "gym") missionBump("gym"); if (cfg.back === "tower") missionBump("tower");
+}
+const dayDiff = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z"))/864e5);
+const LOGIN_PTS = cur => cur % 30 === 0 ? 1000 : cur % 7 === 0 ? 200 : 25;
+function loginTick(){
+  if (VISIT || !profile) return;
+  const L = state.games.login, day = todayKey(); if (L.last === day) return;
+  const gap = L.last ? dayDiff(L.last, day) : 1; if (gap < 0) { L.last = day; save(); return; }   // the clock went back: just note today
+  const before = L.cur; L.cur = gap === 1 ? L.cur + 1 : Math.floor(L.cur/2) + 1; L.best = Math.max(L.best, L.cur); L.days++; L.last = day;
+  const cur = L.cur, pts = LOGIN_PTS(cur); save();
+  setTimeout(() => { earn(pts, cur > 1 ? `Day ${cur} in a row` : "Daily visit"); if (gap > 1 && before > 1) toast(`You missed a day, so your ${before}-day streak is now ${cur}. Come back tomorrow to grow it!`); checkAch(); }, 1200);
+}
+function renderHubToday(){
+  const b = $("hubToday"); if (!b) return; if (!profile) { b.hidden = true; return; }
+  const T = missionsToday(), L = state.games.login, done = T.list.filter(x => x.done).length;
+  b.hidden = false;
+  b.innerHTML = `<span class="ht-streak" title="Days in a row">🔥 <b>${L.cur}</b> ${L.cur === 1 ? "day" : "days"}</span><span class="ht-m"><b>Daily missions</b> ${done}/${T.list.length}${T.bonus ? " ★" : ""}</span><span class="ht-bar" aria-hidden="true"><i style="width:${T.list.length ? done/T.list.length*100 : 0}%"></i></span><span class="ht-go" aria-hidden="true">▸</span>`;
+  b.setAttribute("aria-label", `Daily missions: ${done} of ${T.list.length} done. Streak: ${L.cur} days.`);
+}
+function openMissions(){
+  const T = missionsToday(), L = state.games.login, next = L.cur + 1;
+  const row = x => { const M = MISSIONS[x.k]; return `<div class="ms-row${x.done ? " done" : ""}"><span class="ms-ck" aria-hidden="true">${x.done ? "✓" : ""}</span><div><b>${esc(M.t(x.a))}</b><span class="ms-bar"><i style="width:${Math.min(1, x.n/x.goal)*100}%"></i></span><small>${Math.min(x.n, x.goal)} / ${x.goal}</small></div><span class="ms-pts">${fmtPP(M.pts)}</span></div>`; };
+  openModal(`<h3 class="mt" id="modalTitle">Today</h3>
+    <div class="ms-streak"><span class="ms-fire" aria-hidden="true">🔥</span><div><b>${L.cur} ${L.cur === 1 ? "day" : "days"} in a row</b><span>Best ${L.best}. Tomorrow: ${fmtPP(LOGIN_PTS(next))}${LOGIN_PTS(next) > 25 ? " (a big day!)" : ""}. Every 7th day gives more, and day 30 the most. Missing a day keeps half your streak.</span></div></div>
+    <div class="cov-h">Daily missions</div>
+    <div class="ms-list">${T.list.map(row).join("")}</div>
+    <p class="note">${T.bonus ? "All done for today. New missions tomorrow!" : `Finish all three for a bonus of ${MISSION_BONUS} PokéPoints.`}</p>
+    <div class="actions"><button class="btn primary" type="button" data-close>OK</button></div>`);
+}
+
 // ================= MAIN MENU + SCREENS =================
 const ICON = {
   friends:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.6 14.2c2.6-.4 4.5 1.1 5 4.3"/></svg>',
@@ -7884,7 +7977,7 @@ function showHub(){
   if (!$("hof").hidden) closeHof(); if (!$("view").hidden) closeView();
   document.documentElement.dataset.view = "hub"; document.documentElement.dataset.mode = state.mode;
   $("app").hidden = true; $("screen").hidden = true; $("start").hidden = false;
-  nav.screen = null; renderStartUI(); renderHub(); renderSoundBtns();
+  nav.screen = null; loginTick(); renderStartUI(); renderHub(); renderSoundBtns();
   if (!startStage.running) startStage.start(); else startStage.load();
   setMusic("title");
   if (!state.games.intro && $("modalWrap").hidden) setTimeout(() => { if (document.documentElement.dataset.view === "hub" && $("modalWrap").hidden && !state.games.intro) showWelcome(); }, 700);
@@ -7898,12 +7991,14 @@ function renderHub(){
   $("hubGrid").innerHTML = HUB.map(h => `<button class="hub-tile${h.big ? " big" : ""}" type="button" data-go="${h.go}" title="${esc(h.sub || h.name)}">${ic(h.icon)}<span class="ht"><b>${h.name}</b>${h.big ? `<span>${state.sample ? h.sub : `Continue · ${esc(G().card)} team ${team().length}/${sizeOf(state.team)}`}</span>` : meta[h.go] ? `<span class="hm">${meta[h.go]}</span>` : ""}</span></button>`).join("");
   const ico = myIcon(); $("hubWho").innerHTML = profile ? `${ico ? iconHTML(ico, "sm") : ""}<span>${profile.guest ? "Playing as guest" : `Trainer ${esc(profile.name)}`}</span><span class="hub-pp">${fmtPP(state.games.pp)}</span>` : "";
   paintAll($("hubWho"));
+  renderHubToday();
 }
 $("hubGrid").addEventListener("click", e => {
   const b = e.target.closest("[data-go]"); if (!b) return; Sound.play("select");
   if (b.dataset.go === "app") enterApp(state.mode); else openScreen(b.dataset.go);
 });
 $("hubBack").addEventListener("click", () => { Sound.play("back"); showStart(); });
+$("hubToday").addEventListener("click", () => { Sound.play("select"); openMissions(); });
 $("hubHelp").addEventListener("click", () => { Sound.play("select"); showWelcome(); });
 // ---- first-run welcome (also under "How to play") ----
 function showWelcome(){
@@ -8061,6 +8156,8 @@ const ACH = [
   {id:"badges", name:"Badge master", desc:"Earn all 72 badges.", p:() => [totalBadges(), 72]},
   {id:"quiz10", name:"Quiz whiz", desc:"Reach a streak of 10 in any quiz.", p:() => [Math.min(10, bestQuiz()), 10]},
   {id:"quiz25", name:"Professor", desc:"Reach a streak of 25 in any quiz.", p:() => [Math.min(25, bestQuiz()), 25]},
+  {id:"missions", name:"Mission accomplished", desc:"Finish all three daily missions in one day.", p:() => [state.games.missions && state.games.missions.bonus ? 1 : 0, 1]},
+  {id:"streak7", name:"Every day", desc:"Visit seven days in a row.", p:() => [Math.min(7, state.games.login.best), 7]},
   {id:"tower", name:"Tower climber", desc:"Win 7 Battle Tower battles in a row.", p:() => [Math.min(7, state.games.tower.best), 7]},
   {id:"vs", name:"Head to head", desc:"Win a Versus battle against another save file.", p:() => [Math.min(1, state.games.vs.w), 1]},
   {id:"gif", name:"Director", desc:"Save a Hall of Fame GIF.", p:() => [Math.min(1, state.games.gifs), 1]},
@@ -8309,7 +8406,7 @@ function qzAnswer(v){
   const G9 = state.games.qbest;
   if (qz.mode === "daily") {
     const D = dailyState(); D.r += ok ? "1" : "0"; D.s += ok ? 1 : 0; D.i++;
-    if (D.i >= 10) { state.games.dailyN++; state.games.dailyBest = Math.max(state.games.dailyBest, D.s); }
+    if (D.i >= 10) { state.games.dailyN++; state.games.dailyBest = Math.max(state.games.dailyBest, D.s); missionBump("daily10"); }
     save(); Sound.play(ok ? "right" : "wrong");
     if (ok) earn(5, "Daily 10");
     if (D.i >= 10) setTimeout(() => earn(25 + (D.s === 10 ? 50 : 0), D.s === 10 ? "Perfect Daily 10!" : "Daily 10 finished"), 700);
@@ -9290,6 +9387,7 @@ function finishBattle(){
   const sk = $("scBody").querySelector(".bt-skip"); if (sk) sk.hidden = true;
   setTimeout(() => Sound.play(win || F.cfg.hotseat ? "victory" : "lose"), 150);
   const log = $("btLog"); if (log) { log.classList.toggle("win", win); log.classList.toggle("loss", !win && !F.cfg.hotseat); logLine(res.text); }
+  if (win && !F.cfg.replay && !F.cfg.hotseat) missionWin(F.cfg, B.s[F.me]);
   F.result = res.buttons.map(x => x[1]);
   const c = $("btCmd"); if (c) c.innerHTML = `<div class="bt-acts end">${res.buttons.map(([l, , p], k) => `<button class="btn${p ? " primary" : ""}" type="button" data-res="${k}">${esc(l)}</button>`).join("")}</div>`;
   toSide(c);
