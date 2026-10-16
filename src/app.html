@@ -634,6 +634,38 @@ button.fr-row{cursor:pointer} button.fr-row:hover{background:var(--raised-2, rgb
 .hm-berry[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset}
 :root[data-mode="2d"] .hm-berry{border-radius:0}
 .hm-hold{flex-basis:100%}
+/* friend battles: the invite card, the lobby, the turn timer */
+.fb-inv{position:fixed; z-index:72; right:max(16px, env(safe-area-inset-right, 0px)); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); width:min(360px, calc(100% - 32px)); box-sizing:border-box; display:flex; gap:12px; align-items:flex-start; padding:14px 16px;
+  background:var(--panel-solid); color:var(--fg); border:var(--bw) solid var(--accent); border-radius:var(--r); box-shadow:var(--e3)}
+.fb-inv.in{animation:msgIn .35s var(--ease)}
+.fb-inv-ic{flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-b)); color:#fff}
+.fb-inv-ic svg{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.fb-inv-b{display:flex; flex-direction:column; gap:3px; min-width:0}
+.fb-inv-b b{font-family:var(--font-d); font-size:var(--fs-h2)}
+.fb-inv-a{display:flex; gap:8px; margin-top:8px}
+:root[data-mode="2d"] .fb-inv{border-radius:0; border-color:var(--ink); background:var(--paper)} :root[data-mode="2d"] .fb-inv-ic{border-radius:0; background:var(--accent)}
+.fb-lobby .fb-h{display:flex; align-items:center; gap:10px; font-size:var(--fs-h1); margin-bottom:var(--sp-2)} .fb-lobby .fb-h .ic{width:28px; height:28px; color:var(--accent)}
+.fb-ps{display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin:var(--sp-4) 0}
+.fb-p{display:flex; flex-direction:column; gap:4px; padding:14px 16px; border-radius:var(--r-sm); background:var(--raised); border:var(--bw) solid var(--line); min-width:0}
+.fb-p b{font-family:var(--font-d); font-size:var(--fs-h2); overflow-wrap:anywhere} .fb-p span{color:var(--muted); font-size:var(--fs-sm)}
+.fb-p.ok{border-color:var(--good)} .fb-p.ok span{color:var(--good); font-weight:700}
+.fb-vs{font-family:var(--font-d); font-weight:700; font-style:italic; font-size:var(--fs-lg); color:var(--accent)}
+:root[data-mode="2d"] .fb-p{border-radius:0} :root[data-mode="2d"] .fb-vs{font-style:normal}
+.fb-wait{display:flex; flex-direction:column; align-items:center; gap:6px; padding:var(--sp-5) 0; text-align:center}
+.fb-why{font-size:var(--fs-h2)}
+.fb-acts .btn:not(.primary){flex:0 1 auto}
+.fb-spin{display:inline-block; width:28px; height:28px; border-radius:50%; border:3px solid var(--line-2); border-top-color:var(--accent); animation:spin .9s linear infinite; vertical-align:middle}
+.fb-spin.sm{width:14px; height:14px; border-width:2px}
+:root[data-mode="2d"] .fb-spin{border-radius:0}
+.fb-opt{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:var(--sp-3) 0} .fb-lbl{font-family:var(--font-d); font-weight:700}
+.bt-timer{margin-left:auto; flex:none; padding:4px 12px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; background:var(--raised); border:var(--bw) solid var(--line)}
+.bt-timer.low{background:var(--bad); color:#fff; border-color:var(--bad)}
+:root[data-mode="2d"] .bt-timer{border-radius:0}
+.fr-acc{display:flex; gap:8px; align-items:center} .fr-acc .fr-open{flex:1; min-width:0}
+.fr-bat{flex:none} .fr-bat .ic{width:16px; height:16px}
+.fr-on{color:var(--good); font-weight:700}
+.fr-on::before{content:""; display:inline-block; width:8px; height:8px; margin-right:5px; border-radius:50%; background:var(--good); box-shadow:0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); vertical-align:1px}
+:root[data-mode="2d"] .fr-on::before{border-radius:0}
 .hm-event{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0; color:var(--muted); font-size:var(--fs-sm)}
 .hm-ev-pill{display:inline-flex; align-items:center; gap:6px; padding:3px 12px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(100deg, #6b3fc4, #e2762b); box-shadow:var(--e1)}
 .hm-event[data-ev="winter"] .hm-ev-pill{background:linear-gradient(100deg, #3a68b8, #6fc3e8)}
@@ -1516,7 +1548,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 :root[data-mode="2d"] .hm-cnt{border-radius:0}
 .home-pp{margin-left:auto; display:inline-flex; align-items:center; gap:6px; min-height:var(--h-sm); box-sizing:border-box; padding:2px 14px 2px 4px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; background:var(--panel); border:var(--bw) solid var(--line); box-shadow:var(--e1)}
 :root[data-mode="2d"] .home-pp{border-radius:0; padding-left:6px; background:var(--paper)}
-@media (max-width:560px){ .hm-tb > span:not(.ic):not(.hm-cnt){position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)} .hm-tb{padding-inline:9px} .home-bar{gap:6px} .home-pp{padding-right:10px} }
+@media (max-width:560px){ .hm-tb > span:not(.ic):not(.hm-cnt){display:none} .hm-tb{padding-inline:9px} .home-bar{gap:6px} .home-pp{padding-right:10px} }
 .home-stage{position:relative; overflow:hidden; border-radius:var(--r); border:var(--bw) solid var(--line); background:#1a1410}
 .home-stage canvas{display:block; width:100%; outline:none; cursor:pointer; touch-action:none; -webkit-user-select:none; user-select:none}
 .home-stage canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--hi)}
@@ -1957,7 +1989,7 @@ function cleanUI(u){
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
 const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0});
-const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:""}});
+const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
   const int = v => Number.isInteger(v) && v > 0 ? v : 0;
@@ -1999,7 +2031,7 @@ function cleanGames(g){
   if (typeof g.card === "string" && unlockOf("card", g.card)) o.card = g.card;
   const sc = obj(g.showcase); o.showcase = {team:typeof sc.team === "string" && /^[a-z0-9]{1,16}$/.test(sc.team) ? sc.team : "all", style:sc.style === "2d" ? "2d" : "3d"};
   const so = obj(g.social);
-  o.social = {vis:Array.isArray(so.vis) ? [...new Set(so.vis.filter(v => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v)))].slice(-200) : [], likes:int(so.likes), friends:int(so.friends),
+  o.social = {vis:Array.isArray(so.vis) ? [...new Set(so.vis.filter(v => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v)))].slice(-200) : [], likes:int(so.likes), friends:int(so.friends), fbN:int(so.fbN), fbW:int(so.fbW),
     likeAt:typeof so.likeAt === "string" && !isNaN(Date.parse(so.likeAt)) ? so.likeAt : ""};
   return o;
 }
@@ -3059,7 +3091,7 @@ function signIn(id, remember){
   saveAccounts(); touchMeta();
   acct.ref = null; acct.status = "local"; acct.remote = null;
   document.documentElement.dataset.mode = state.mode;
-  SB.status = m.sb ? "checking" : "local"; SB.seen = 0; FR.list = null; FR.pubSig = "";
+  SB.status = m.sb ? "checking" : "local"; SB.seen = 0; FR.list = null; FR.pubSig = ""; fbStop();
   if (m.cloud) initAccount();
   if (m.sb) sbStart();
   renderAcct();
@@ -3650,6 +3682,7 @@ function publicProfile(){
 }
 async function friendsAfterSync(force){
   if (!friendsOn() || VISIT) return;
+  fbStart();
   const me0 = profile, c = SB.client;
   try {
     const pub = publicProfile(), sig = JSON.stringify(pub);
@@ -3699,6 +3732,7 @@ function friendAv(f){ const it = f.icon && unlockOf("icon", f.icon); return it ?
 function renderFriends(){
   if (nav.sub && nav.sub.startsWith("u:")) { renderFriendProfile(nav.sub.slice(2)); return; }
   if (nav.sub && nav.sub.startsWith("h:")) { renderFriendHome(nav.sub.slice(2)); return; }
+  if (nav.sub && nav.sub.startsWith("b:")) { setMusic("title"); fbRender(); return; }
   setMusic("title");
   if (!friendsOn()) {
     $("scBody").innerHTML = `<div class="sc-narrow fr-intro">${ic("friends")}<h3>Play with friends</h3>
@@ -3718,7 +3752,7 @@ function renderFriends(){
       <form class="on-row" id="frAdd" autocomplete="off"><input id="frQ" maxlength="20" placeholder="Friend code or username" aria-label="Friend code or username" spellcheck="false" autocapitalize="off"><button class="btn primary" type="submit">Send request</button></form></section>
     ${inc.length ? `<section class="set-card"><h3>Requests for you</h3>${inc.map(f => row(f, `<button class="btn sm primary" type="button" data-fok="${f.user_id}">Accept</button><button class="btn sm" type="button" data-fno="${f.user_id}">Decline</button><button class="btn sm" type="button" data-fblk="${f.user_id}">Block</button>`)).join("")}</section>` : ""}
     <section class="set-card"><h3>Friends <span class="meta">${acc.length}</span></h3>
-      ${FR.list === null ? `<p class="note">${FR.err ? esc(FR.err) : "Loading…"}</p>` : acc.length ? acc.map(f => `<button class="fr-row fr-open" type="button" data-fu="${f.user_id}">${friendAv(f)}<div class="fr-who"><b>${esc(f.username)}</b>${f.title ? `<small>★ ${esc(f.title)}</small>` : ""}${f.last_active ? `<small class="meta">Active ${fmtAgo(Date.parse(f.last_active))}</small>` : ""}</div><span class="save-go" aria-hidden="true">▶</span></button>`).join("") : `<p class="note">No friends yet. Share your code to get started.</p>`}</section>
+      ${FR.list === null ? `<p class="note">${FR.err ? esc(FR.err) : "Loading…"}</p>` : acc.length ? acc.map(f => `<div class="fr-acc"><button class="fr-row fr-open" type="button" data-fu="${f.user_id}">${friendAv(f)}<div class="fr-who"><b>${esc(f.username)}</b>${f.title ? `<small>★ ${esc(f.title)}</small>` : ""}${isOnlineNow(f) ? `<small class="fr-on">Online now</small>` : f.last_active ? `<small class="meta">Active ${fmtAgo(Date.parse(f.last_active))}</small>` : ""}</div><span class="save-go" aria-hidden="true">▶</span></button>${isOnlineNow(f) ? `<button class="btn sm primary fr-bat" type="button" data-fbat="${f.user_id}">${ic("battle")}Battle</button>` : ""}</div>`).join("") : `<p class="note">No friends yet. Share your code to get started.</p>`}</section>
     ${out.length ? `<section class="set-card"><h3>Waiting for an answer</h3>${out.map(f => row(f, `<button class="btn sm" type="button" data-fcancel="${f.user_id}">Cancel</button>`)).join("")}</section>` : ""}
     ${blk.length ? `<section class="set-card"><h3>Blocked</h3>${blk.map(f => row(f, `<button class="btn sm" type="button" data-funblk="${f.user_id}">Unblock</button>`)).join("")}</section>` : ""}
   </div>`;
@@ -3729,6 +3763,7 @@ function renderFriends(){
     if (e.target.closest("#frCopy")) { copyText(fmtCode(profile.code), "Friend code copied."); return; }
     if (e.target.closest("#frShare")) { const u = friendLink(profile.code); if (navigator.share) navigator.share({title:"Dream Team Dex", text:`Add me on Dream Team Dex! My friend code is ${fmtCode(profile.code)}.`, url:u}).catch(() => {}); else copyText(u, "Link copied. Send it to a friend."); return; }
     if ((b = e.target.closest("[data-fu]"))) { Sound.play("select"); openScreen("friends", "u:" + b.dataset.fu); return; }
+    if ((b = e.target.closest("[data-fbat]"))) { const f = acc.find(x => x.user_id === b.dataset.fbat); if (f) fbChallenge(f); return; }
     if ((b = e.target.closest("[data-fok]"))) { Sound.play("confirm"); act("respond_friend", {p_other:b.dataset.fok, p_accept:true}, "You’re now friends!"); return; }
     if ((b = e.target.closest("[data-fno]"))) act("respond_friend", {p_other:b.dataset.fno, p_accept:false}, "Request declined.");
     else if ((b = e.target.closest("[data-fcancel]"))) act("remove_friend", {p_other:b.dataset.fcancel}, "Request cancelled.");
@@ -3737,6 +3772,7 @@ function renderFriends(){
   };
   $("frAdd").onsubmit = e => { e.preventDefault(); const v = $("frQ").value; $("frQ").value = ""; sendFriendRequest(v); };
   if (FR.list === null && !FR.busy) { FR.busy = true; loadFriends().finally(() => { FR.busy = false; if (nav.screen === "friends" && !nav.sub) renderFriends(); }); }
+  fbStart();
 }
 function copyText(t, msg){ (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(msg), () => toast(t)); }
 
@@ -3778,13 +3814,13 @@ async function renderFriendProfile(uid){
   $("scTitle").textContent = F.who.username;
   $("scBody").innerHTML = `<div class="fr-prof">
     <div class="fr-top"><button class="btn sm" type="button" id="frBack">← Friends</button><span class="meta">${F.who.last ? `Active ${fmtAgo(Date.parse(F.who.last))}` : ""}</span>
-      <span class="fr-top-acts"><button class="btn sm primary" type="button" id="frHome">${ic("home")} Visit Home</button><button class="btn sm" type="button" id="frMore" aria-haspopup="true">⋯</button></span></div>
+      <span class="fr-top-acts">${isOnlineNow({last_active:F.who.last}) ? `<button class="btn sm primary" type="button" id="frLive">${ic("battle")} Battle</button>` : ""}<button class="btn sm${isOnlineNow({last_active:F.who.last}) ? "" : " primary"}" type="button" id="frHome">${ic("home")} Visit Home</button><button class="btn sm" type="button" id="frMore" aria-haspopup="true">⋯</button></span></div>
     ${hasPub ? "" : `<p class="note">${esc(F.who.username)} hasn’t synced since adding friends, so some of their profile isn’t here yet.</p>`}
     <canvas class="tcardcv" id="frCard" aria-label="${esc(F.who.username)}’s trainer card"></canvas>
     <h3 class="fr-h">Showcased team · ${esc(TEAM_BY.get(id).card)}</h3>
     <button class="hgal-card fr-hof" type="button" id="frHof" aria-label="View their Hall of Fame card full screen"><span class="hgal-cv"><canvas id="frHofCv" width="960" height="540"></canvas><i class="hgal-mode">${V.style === "2d" ? "2D" : "3D"}</i></span></button>
     <div class="fr-lineup">${lineupHTML(id)}</div>
-    <div class="actions left"><button class="btn primary" type="button" id="frBattle">Battle this team</button><button class="btn" type="button" id="frCopyTeam">Copy this team</button></div>
+    <div class="actions left"><button class="btn primary" type="button" id="frBattle">Battle this team (vs computer)</button><button class="btn" type="button" id="frCopyTeam">Copy this team</button></div>
     <p class="note">Battle their showcased team with the computer playing for them. Just for fun: no PokéPoints, and nothing changes for them.</p>
   </div>`;
   paintAll($("scBody"));
@@ -3793,6 +3829,7 @@ async function renderFriendProfile(uid){
   nav.onClick = e => {
     if (e.target.closest("#frBack")) { openScreen("friends"); return; }
     if (e.target.closest("#frHome")) { Sound.play("confirm"); openScreen("friends", "h:" + uid); return; }
+    if (e.target.closest("#frLive")) { fbChallenge({user_id:uid, username:F.who.username}); return; }
     const lu = e.target.closest("[data-lu]"); if (lu) { luStats(id, +lu.dataset.lu); return; }
     if (e.target.closest("#frHof")) {
       const md = openModal(`<h3 class="mt" id="modalTitle">${esc(F.who.username)}’s Hall of Fame</h3><div class="hgal-cv fr-hof-big"><canvas id="frHofBig" width="1280" height="720"></canvas></div>`, {wide:true});
@@ -3832,6 +3869,277 @@ async function battleFriend(id, who){
   startBattle({back:"menu", backFn:back, foe:{name:who.username, title:`Friend battle · ${T.dex}`, trIdx:trI, bg:"league"},
     sides:[{...playerSide(mine), foePrefix:""}, {name:who.username, party, human:false, foePrefix:`${who.username}’s `, bag:BAG.standard(), ai:3}], humans:[true, false],
     onEnd:win => ({text: win ? `You beat <b>${esc(who.username)}</b>’s team!` : `<b>${esc(who.username)}</b>’s team won this time.`, buttons:[["Back to " + esc(who.username), again, true]]})});
+}
+// ================= FRIEND BATTLES (live; tables, rules and the private channel in supabase/migrations/*_friend_battles.sql) =================
+// Two friends battle in real time, each controlling their own team. Both build the same Battle from the invite's seed
+// (the engine's opt.rand) and each sends only its own choices over the private broadcast channel battle:<match_id>;
+// when both are in, both resolve the turn (lockstep). Every 5 turns they compare a fingerprint of the battle; on a
+// mismatch the inviter's battle wins and the other side copies it. Shared randomness is only drawn inside step();
+// anything decided on one side alone (auto-picks when the timer runs out) uses Math.random.
+const FB = {m:null, sub:null, hb:0, inv:null, invT:0, seen:new Set()};
+const FB_PP = 60, FB_FMT = {1:"1 vs 1", 3:"3 vs 3", 6:"6 vs 6"};
+const fbTurnMs = () => window.DTD_FB_TURN || 60000, fbGoneMs = () => window.DTD_FB_GONE || 30000;   // tests shorten these
+const isOnlineNow = f => !!(f && f.last_active && Date.now() - Date.parse(f.last_active) < 180000);
+const fbName = uid => ((FR.list || []).find(f => f.user_id === uid) || {}).username || "A friend";
+// listen for challenges, and tell friends you're around (last_active, which only accepted friends can see)
+function fbStart(){
+  if (!friendsOn() || FB.sub) return;
+  const me = profile.sb, on = r => fbInvite(r && r.new);
+  FB.sub = SB.client.channel("invites:" + me)
+    .on("postgres_changes", {event:"*", schema:"public", table:"battle_invites", filter:`to_user=eq.${me}`}, on)
+    .on("postgres_changes", {event:"*", schema:"public", table:"battle_invites", filter:`from_user=eq.${me}`}, on)
+    .subscribe();
+  clearInterval(FB.hb); FB.hb = setInterval(fbBeat, 60000); fbBeat();
+  SB.client.rpc("battle_inbox").then(({data}) => (data || []).forEach(r => fbInvite({...r, status:"pending", to_user:me})), () => {});
+}
+function fbStop(){
+  if (FB.sub) { try { SB.client.removeChannel(FB.sub); } catch(e) { /* already gone */ } FB.sub = null; }
+  clearInterval(FB.hb); fbHideInvite(); if (FB.m) fbDrop();
+}
+function fbBeat(){ if (friendsOn() && !document.hidden) SB.client.from("profiles").update({last_active:new Date().toISOString()}).eq("id", profile.sb).then(() => {}, () => {}); }
+// an invite row changed: a challenge for me, or an answer to mine
+function fbInvite(r){
+  if (!r || !friendsOn()) return;
+  const me = profile.sb, M = FB.m;
+  if (r.to_user === me && r.status === "pending") {
+    if (FB.seen.has(r.match_id) || Date.now() - Date.parse(r.created_at) > 120000 || (M && M.phase !== "gone")) return;
+    FB.seen.add(r.match_id); fbShowInvite(r); return;
+  }
+  if (FB.inv && FB.inv.match_id === r.match_id && r.status !== "pending") fbHideInvite();   // withdrawn or expired
+  if (M && M.id === r.match_id && M.me === 0 && M.phase === "waiting") {
+    if (r.status === "accepted") { Sound.play("confirm"); fbJoin(); }
+    else if (r.status !== "pending") { M.phase = "gone"; M.why = r.status === "declined" ? `${M.foe.name} can’t battle right now.` : r.status === "expired" ? `${M.foe.name} didn’t answer in time.` : "The challenge was withdrawn."; fbRender(); }
+  }
+}
+function fbShowInvite(r){
+  FB.inv = r; let el = $("fbInv");
+  if (!el) { el = document.createElement("div"); el.id = "fbInv"; el.className = "fb-inv"; el.setAttribute("role", "alertdialog"); el.setAttribute("aria-labelledby", "fbInvT"); document.body.appendChild(el); }
+  const who = r.username || fbName(r.from_user), R = r.rules || {};
+  el.innerHTML = `<span class="fb-inv-ic" aria-hidden="true">${ICON.battle}</span><div class="fb-inv-b"><b id="fbInvT">${esc(who)} challenges you!</b><span class="meta">${FB_FMT[R.format] || "Battle"} · level 50 · Bag ${R.bag ? "on" : "off"} · <span class="fb-inv-c"></span></span>
+    <div class="fb-inv-a"><button class="btn sm primary" type="button" data-fbi="yes">Accept</button><button class="btn sm" type="button" data-fbi="no">Not now</button></div></div>`;
+  el.hidden = false; el.classList.remove("in"); void el.offsetWidth; el.classList.add("in"); Sound.play("up");
+  el.onclick = e => { const b = e.target.closest("[data-fbi]"); if (b) fbAnswer(b.dataset.fbi === "yes"); };
+  clearInterval(FB.invT); const end = Date.parse(r.created_at) + 120000;
+  const tick = () => { const s = Math.max(0, Math.round((end - Date.now())/1000)), c = el.querySelector(".fb-inv-c"); if (c) c.textContent = `${s}s left`; if (s <= 0) fbHideInvite(); };
+  tick(); FB.invT = setInterval(tick, 1000);
+}
+function fbHideInvite(){ clearInterval(FB.invT); FB.inv = null; const el = $("fbInv"); if (el) el.hidden = true; }
+async function fbAnswer(yes){
+  const r = FB.inv; if (!r) return; fbHideInvite();
+  const {data, error} = await SB.client.rpc("respond_battle", {p_match:r.match_id, p_accept:yes});
+  if (!yes) return;
+  if (error || !data || data.status !== "accepted") { toast(error ? sbErrText(error) : data && data.status === "expired" ? "That challenge expired." : "That challenge isn’t open any more."); return; }
+  Sound.play("confirm");
+  fbOpen({id:data.match_id, seed:data.seed, rules:data.rules, me:1, foe:{id:r.from_user, name:r.username || fbName(r.from_user)}});
+}
+// challenge a friend: pick the format and the Bag, then wait for them to accept
+function fbChallenge(f){
+  if (!friendsOn()) return;
+  let fmt = 3, bag = true;
+  const md = openModal(`<h3 class="mt" id="modalTitle">Battle ${esc(f.username)}</h3>
+    <p class="note">A live battle: you each control your own team, and everyone is level 50. A win is worth ${FB_PP} PokéPoints (up to 3 wins against each friend a day).</p>
+    <div class="fb-opt"><span class="fb-lbl">Format</span><div class="seg" role="group" aria-label="Format">${[1, 3, 6].map(n => `<button type="button" data-fmt="${n}" aria-pressed="${n === fmt}">${FB_FMT[n]}</button>`).join("")}</div></div>
+    <div class="vis-row"><span class="lab"><b>Bag</b><span>Potions, Revives and X items for both of you</span></span><button class="switch" type="button" role="switch" id="fbBag" aria-checked="true" aria-label="Bag"></button></div>
+    <div class="actions"><button class="btn primary" type="button" id="fbSend">Send challenge</button></div>`);
+  md.onclick = async e => {
+    const b = e.target.closest("[data-fmt]"); if (b) { fmt = +b.dataset.fmt; md.querySelectorAll("[data-fmt]").forEach(x => x.setAttribute("aria-pressed", x === b)); Sound.play("select"); return; }
+    if (e.target.closest("#fbBag")) { bag = !bag; md.querySelector("#fbBag").setAttribute("aria-checked", bag); return; }
+    if (!e.target.closest("#fbSend")) return;
+    closeModal();
+    const {data, error} = await SB.client.rpc("invite_battle", {p_to:f.user_id, p_rules:{format:fmt, bag}});
+    if (error || !data || data.status !== "sent") { toast(error ? sbErrText(error) : ({not_friends:"You can only battle friends.", too_many:"You have too many open challenges. Try again in a minute.", bad_rules:"Couldn’t send that challenge."})[data && data.status] || "Couldn’t send the challenge."); return; }
+    Sound.play("confirm"); fbOpen({id:data.match_id, seed:data.seed, rules:data.rules, me:0, foe:{id:f.user_id, name:f.username}, phase:"waiting", at:Date.now()});
+  };
+}
+// ---- the match (lobby → battle → rematch) ----
+function fbOpen(M){
+  if (FB.m) fbDrop(true);
+  FB.m = {phase:"lobby", round:0, mine:null, their:{}, q:{}, w:{}, ended:null, seenAt:Date.now(), ...M};
+  if (FB.m.phase === "lobby") fbJoin();
+  openScreen("friends", "b:" + M.id);
+}
+function fbJoin(){
+  const M = FB.m; if (!M) return; M.phase = "lobby"; M.seenAt = Date.now();
+  if (!M.ch) {
+    M.ch = SB.client.channel("battle:" + M.id, {config:{private:true, broadcast:{self:false}}})
+      .on("broadcast", {event:"m"}, msg => fbMsg(msg && msg.payload))
+      .subscribe(st => { if (st === "SUBSCRIBED") { M.live = true; fbSend({t:"hi"}); fbRender(); } });
+    clearInterval(M.ping); M.ping = setInterval(() => { fbSend({t:"ping"}); fbCheckGone(); }, 5000);
+  }
+  fbRender();
+}
+function fbSend(p){ const M = FB.m; if (M && M.ch) Promise.resolve(M.ch.send({type:"broadcast", event:"m", payload:p})).catch(() => {}); }
+function fbMsg(p){
+  const M = FB.m; if (!M || !p || typeof p.t !== "string") return;
+  M.seenAt = Date.now(); M.heard = true;
+  switch (p.t) {
+    case "hi": if (M.mine && M.mine.round === M.round) fbSend({t:"ready", v:M.mine}); fbSend({t:"hey"}); fbRender(); return;
+    case "hey": fbRender(); return;
+    case "ready": { const v = p.v; if (!v || !Array.isArray(v.team) || v.team.length < 1 || v.team.length > 6) return; M.their[v.round | 0] = {name:String(v.name || M.foe.name).slice(0, 24), tr:Number.isInteger(v.tr) ? v.tr : null, team:v.team.slice(0, M.rules.format), round:v.round | 0}; fbRender(); fbMaybeBegin(); return; }
+    case "bye": case "ff": fbAbort({ff:true, left:p.t === "bye"}); if (M.phase !== "battle") { M.phase = "gone"; M.why = `${M.foe.name} left the battle.`; fbRender(); } return;
+    case "c": case "r": case "u": case "h": case "st": fbPush(p.t, p.v); return;
+  }
+}
+function fbRecv(k){ const M = FB.m; return new Promise(res => { if (!M) return res({ff:true}); if (M.ended) return res(M.ended); const q = M.q[k] || (M.q[k] = []); if (q.length) res(q.shift()); else (M.w[k] = M.w[k] || []).push(res); }); }
+function fbPush(k, v){ const M = FB.m; if (!M) return; const w = M.w[k]; if (w && w.length) w.shift()(v); else (M.q[k] = M.q[k] || []).push(v); }
+function fbAbort(v){ const M = FB.m; if (!M || M.ended) return; M.ended = v; for (const k of Object.keys(M.w)) while (M.w[k].length) M.w[k].shift()(v); if (F.cfg && F.cfg.live === M && F.resolve) resolveAsk(null); }
+function fbCheckGone(){
+  const M = FB.m; if (!M || M.phase === "gone" || M.phase === "waiting") return;
+  if (M.heard && Date.now() - M.seenAt > fbGoneMs()) {   // nothing from them for 30 seconds: they forfeit
+    if (M.phase === "battle") fbAbort({ff:true, gone:true}); else if (M.phase !== "over") { M.phase = "gone"; M.why = `${M.foe.name} lost connection.`; fbRender(); }
+  }
+}
+// close the match: tell the other player, leave the channel, withdraw the invite
+function fbDrop(quiet){
+  const M = FB.m; if (!M) return; FB.m = null;
+  if (!quiet || M.phase !== "gone") fbSend({t:M.phase === "battle" ? "ff" : "bye"});
+  clearInterval(M.ping); clearInterval(M.tick);
+  const ch = M.ch; M.ch = null; setTimeout(() => { try { SB.client.removeChannel(ch); } catch(e) { /* gone */ } }, 300);
+  if (M.phase === "waiting" || M.phase === "lobby" || M.phase === "gone") SB.client.rpc("cancel_battle", {p_match:M.id}).then(() => {}, () => {});
+}
+function fbLeave(){ fbDrop(); openScreen("friends"); }
+// a team member as plain data for the other player (both sides rebuild both parties from these, at level 50)
+function fbSpec(teamId, n){ const m = monFromTeam(teamId, n, 50); return {n, nick:m.name !== m.species ? m.name : "", moves:m.moves.map(x => x[0]), ability:m.ability, item:m.item, nature:m.nature, evs:m.evs, ivs:m.ivs, sh:m.sh, ball:m.ball}; }
+function fbMon(x){
+  if (!x || !NAT_BY.has(+x.n)) return null;
+  const n = +x.n, sp = NAT_BY.get(n), s = (v, l) => typeof v === "string" ? v.slice(0, l) : "";
+  let moves = (Array.isArray(x.moves) ? x.moves : []).slice(0, 4).map(k => MOVE_BY.get(k)).filter(Boolean);
+  if (!moves.length) moves = autoMoves(n, sp.types, true, rng(n));   // never random: both sides must build the same Pokémon
+  return mkMon(n, {level:50, nick:s(x.nick, 24) || undefined, moves, ability:s(x.ability, 40) || undefined, item:s(x.item, 40), nature:s(x.nature, 12), evs:x.evs, ivs:x.ivs, sh:!!x.sh, ball:s(x.ball, 20) || "poke"});
+}
+function fbReady(teamId){
+  const M = FB.m; if (!M || M.phase !== "lobby") return;
+  pickForBattle(teamId, M.rules.format, `Your ${FB_FMT[M.rules.format]} line-up`, nums => {
+    if (!FB.m || FB.m !== M) return;
+    M.mine = {round:M.round, name:profile.uname || profile.name || "You", tr:trainerOf(teamId), team:nums.slice(0, M.rules.format).map(n => fbSpec(teamId, n))};
+    fbSend({t:"ready", v:M.mine}); Sound.play("confirm"); fbRender(); fbMaybeBegin();
+  });
+}
+async function fbMaybeBegin(){
+  const M = FB.m; if (!M || M.phase !== "lobby" || !M.mine || M.mine.round !== M.round || !M.their[M.round]) return;
+  M.phase = "battle"; await withMoves(); if (FB.m !== M) return;
+  const T = M.their[M.round], mine = M.mine, side = (R, isMe) => ({name:isMe ? R.name : T.name, party:R.team.map(fbMon).filter(Boolean), human:true, foePrefix:isMe ? "" : `${T.name}’s `, bag:M.rules.bag ? BAG.standard() : null, ai:3});
+  const sides = M.me === 0 ? [side(mine, true), side(T, false)] : [side(T, false), side(mine, true)];
+  if (sides.some(S => !S.party.length)) { M.phase = "gone"; M.why = "Couldn’t set up the battle."; fbRender(); return; }
+  const R = M.R = {s:(M.seed + M.round*7919) | 0};
+  M.rand = () => { R.s = R.s + 0x6D2B79F5 | 0; let t = Math.imul(R.s ^ R.s >>> 15, 1 | R.s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  M.q = {}; M.w = {}; M.ended = null; M.seenAt = Date.now();
+  state.games.social.fbN++; save();
+  startBattle({live:M, me:M.me, force:"manual", back:"menu", backFn:() => fbLeave(), foe:{name:T.name, title:`Friend battle · ${FB_FMT[M.rules.format]}`, trIdx:T.tr, bg:"league"},
+    sides, humans:[true, true], onEnd:(win, B) => fbEnd(win, B)});
+}
+// the lobby screen (friends → b:<match>)
+function fbRender(){
+  const M = FB.m; if (nav.screen !== "friends" || !nav.sub || !nav.sub.startsWith("b:")) return;
+  if (!M || nav.sub !== "b:" + M.id) { $("scBody").innerHTML = `<div class="sc-narrow"><p>This battle is over.</p><div class="actions"><button class="btn" type="button" id="fbBack">Back to friends</button></div></div>`; nav.onClick = e => { if (e.target.closest("#fbBack")) openScreen("friends"); }; return; }
+  $("scTitle").textContent = "Friend battle";
+  const R = M.rules, T = M.their[M.round], foe = esc(M.foe.name), rules = `${FB_FMT[R.format]} · level 50 · Bag ${R.bag ? "on" : "off"}`;
+  const stat = (who, st, cls) => `<div class="fb-p ${cls}"><b>${who}</b><span>${st}</span></div>`;
+  let body;
+  if (M.phase === "waiting") body = `<div class="fb-wait"><span class="fb-spin" aria-hidden="true"></span><p>Waiting for <b>${foe}</b> to accept…</p><p class="meta">${rules} · the challenge lasts 2 minutes</p></div><div class="actions"><button class="btn" type="button" id="fbCancel">Cancel challenge</button></div>`;
+  else if (M.phase === "gone") body = `<p class="fb-why">${esc(M.why || "This battle is over.")}</p><div class="actions"><button class="btn primary" type="button" id="fbBack">Back to friends</button></div>`;
+  else body = `<p class="meta fb-rules">${rules}${M.round ? ` · rematch ${M.round}` : ""}</p>
+    <div class="fb-ps">${stat("You", M.mine && M.mine.round === M.round ? "✓ Ready" : "Choosing a team…", M.mine && M.mine.round === M.round ? "ok" : "")}<span class="fb-vs" aria-hidden="true">VS</span>${stat(foe, T ? "✓ Ready" : M.heard ? "Choosing a team…" : "Connecting…", T ? "ok" : "")}</div>
+    ${M.mine && M.mine.round === M.round ? `<p class="note">Waiting for ${foe}…</p>` : nonEmptyTeams().length ? `${teamSelect("fbTeam", teamOf("all").length ? "all" : state.team, "Your team")}` : `<p class="note">Build a team first: you need at least one Pokémon to battle.</p>`}
+    <div class="actions fb-acts">${!(M.mine && M.mine.round === M.round) && nonEmptyTeams().length ? `<button class="btn primary" type="button" id="fbGo">Ready</button>` : ""}<button class="btn" type="button" id="fbQuit">Leave</button></div>`;
+  $("scBody").innerHTML = `<div class="sc-narrow fb-lobby"><h3 class="fb-h">${ic("battle")} You vs ${foe}</h3>${body}</div>`;
+  nav.onClick = e => {
+    if (e.target.closest("#fbGo")) { fbReady($("fbTeam").value); return; }
+    if (e.target.closest("#fbCancel") || e.target.closest("#fbQuit") || e.target.closest("#fbBack")) { fbLeave(); return; }
+  };
+  nav.cleanup = () => { if (FB.m === M && M.phase !== "battle") fbDrop(); };
+}
+// ---- the live battle loop (renderFight runs this instead of runBattle when cfg.live is set) ----
+function fbStep(B, fn){ const M = F.cfg.live; B.rand = M.rand; try { return fn(); } finally { B.rand = Math.random; } }
+function fbValid(B, i, k, v){   // the same check on both sides, so a bad message can't split the two battles
+  const S = B.s[i], O = B.options(i), firstMove = () => O.forced ? {move:O.forced.move} : O.struggle ? {move:-1} : {move:(O.moves.find(x => x.ok) || {j:-1}).j};
+  if (k === "r" || k === "u") { const bench = B.bench(i); return bench.includes(v) ? v : bench[0]; }
+  if (!v || typeof v !== "object") return firstMove();
+  if (v.move !== undefined) { if (O.forced) return {move:O.forced.move}; if (O.struggle) return {move:-1}; const x = O.moves[v.move]; return x && x.ok ? {move:v.move} : firstMove(); }
+  if (v.sw !== undefined) return O.canSwitch && B.bench(i).includes(v.sw) ? {sw:v.sw} : firstMove();
+  if (v.item) return S.bag && S.bag[v.item] > 0 && O.bag && Number.isInteger(v.target) && S.party[v.target] && bagCanUse(v.item, S.party[v.target], v.target === S.act) ? {item:v.item, target:v.target} : firstMove();
+  return firstMove();
+}
+// one of my decisions, with the turn timer; whatever I pick goes to the other player
+async function fbMine(k, askFn, autoFn){
+  F.timedOut = false; fbTimer(true);
+  let v = await askFn();
+  fbTimer(false);
+  const M = F.cfg.live; if (M.ended) return M.ended;
+  if (v && v.forfeit) { fbSend({t:"ff"}); return {ff:true, mine:true}; }
+  if (v === null || v === undefined || (v && v.auto)) v = autoFn();
+  fbSend({t:k, v}); renderWaitFor(); return v;
+}
+async function fbChoose(i, tok){
+  for (;;) {
+    const c = await ask(() => renderMoves(i)); if (tok !== F.tok || c === null) return null;
+    if (c.forfeit || c.auto) return c;
+    if (c.sw === "menu") { const k = await askSwitch(i, false); if (tok !== F.tok) return null; if (k === null) { if (F.timedOut || F.cfg.live.ended) return null; continue; } return {sw:k}; }
+    if (c.bag === "menu") { const u = await askBag(i); if (tok !== F.tok) return null; if (!u) { if (F.timedOut || F.cfg.live.ended) return null; continue; } return u; }
+    return c;
+  }
+}
+function renderWaitFor(){ const c = $("btCmd"); if (!c || !F.cfg.live) return; c.innerHTML = `<p class="bt-q fb-waitq"><span class="fb-spin sm" aria-hidden="true"></span> Waiting for <b>${esc(F.cfg.live.foe.name)}</b>…</p>`; toSide(c); }
+function fbTimer(on){
+  const M = F.cfg.live, el = $("btTimer"); clearInterval(M.tick); if (el) el.hidden = !on; if (!on) return;
+  const end = Date.now() + fbTurnMs();
+  const tick = () => { const s = Math.max(0, Math.ceil((end - Date.now())/1000)), e = $("btTimer"); if (e) { e.textContent = `⏱ ${s}s`; e.classList.toggle("low", s <= 10); } if (s <= 0) { clearInterval(M.tick); F.timedOut = true; if (F.resolve) resolveAsk(null); } };
+  tick(); M.tick = setInterval(tick, 250);
+}
+const fbHash = B => { const s = JSON.stringify([B.turnNo, B.weather, B.terrain, B.s.map(S => [S.act, S.party.map(m => [m.hp, m.status, m.pp, m.stages])]), F.cfg.live.R.s]); let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+const fbSnap = B => JSON.stringify({b:Object.fromEntries(Object.keys(B).filter(k => k !== "rand" && typeof B[k] !== "function").map(k => [k, B[k]])), r:F.cfg.live.R.s});
+async function fbSync(B, tok){
+  const M = F.cfg.live, h = fbHash(B); fbSend({t:"h", v:h});
+  const o = await fbRecv("h"); if (tok !== F.tok || o === h || (o && o.ff)) return;
+  if (M.me === 0) { fbSend({t:"st", v:fbSnap(B)}); return; }
+  const st = await fbRecv("st"); if (tok !== F.tok || !st || st.ff) return;
+  try { const x = JSON.parse(st); Object.assign(B, x.b); M.R.s = x.r; } catch(e) { return; }
+  for (const i of [0, 1]) { const m = B.get(i); setHP(i, m.hp, m.max, true); setSt(i, m.status); }
+  logLine("Battle synced with " + esc(M.foe.name) + ".");
+}
+async function runLive(tok){
+  const B = F.b, M = F.cfg.live, me = F.me, foe = 1 - me, alive = () => tok === F.tok && !B.over;
+  const stop = async v => { if (!v || !v.ff) return false; await playEv(v.mine ? B.forfeit(me) : [{k:"msg", t:v.gone ? `${esc(M.foe.name)} lost connection.` : `${esc(M.foe.name)} left the battle.`}, ...B.forfeit(foe)], tok); return true; };
+  await playEv(fbStep(B, () => B.start()), tok);
+  while (alive()) {
+    if (B.need[0] === "switch" || B.need[1] === "switch") {   // fainted: each picks their own, then both bring them in, side 0 first
+      const pick = await Promise.all([0, 1].map(i => B.need[i] !== "switch" ? null : i === me ? fbMine("r", () => askSwitch(i, true), () => B.aiReplace(i)) : fbRecv("r")));
+      if (!alive() || await stop(pick.find(p => p && p.ff))) break;
+      for (const i of [0, 1]) if (pick[i] !== null) await playEv(fbStep(B, () => B.replace(i, fbValid(B, i, "r", pick[i]))), tok);
+      continue;
+    }
+    const got = await Promise.all([fbMine("c", () => fbChoose(me, tok), () => B.ai(me)), fbRecv("c")]);
+    if (!alive() || await stop(got.find(p => p && p.ff))) break;
+    const ch = []; ch[me] = fbValid(B, me, "c", got[0]); ch[foe] = fbValid(B, foe, "c", got[1]);
+    renderWait(); await playEv(fbStep(B, () => B.turn(ch)), tok);
+    while (B.pend && alive()) {   // U-turn, Volt Switch, Eject Button…: whoever's side it is picks who comes in
+      const i = B.pend.side, k = i === me ? await fbMine("u", () => askSwitch(i, true, true), () => B.aiReplace(i)) : await fbRecv("u");
+      if (!alive() || await stop(k && k.ff ? k : null)) break;
+      await playEv(fbStep(B, () => B.resume(i, fbValid(B, i, "u", k))), tok);
+    }
+    if (alive() && B.turnNo % 5 === 0) await fbSync(B, tok);
+  }
+  if (tok === F.tok) finishBattle();
+}
+// the result: both players report it; when they agree, the winner gets PokéPoints (3 paid wins per friend a day)
+function fbEnd(win, B){
+  const M = F.cfg.live; M.phase = "over"; clearInterval(M.tick);
+  if (win) state.games.social.fbW++; save();
+  const round = M.round, winner = B.winner === M.me ? profile.sb : M.foe.id, solo = M.ended && M.ended.ff && !M.ended.mine;
+  const report = (n = 0) => SB.client.rpc("report_battle", {p_match:M.id, p_round:round, p_winner:winner, p_turns:Math.min(1000, B.turnNo)}).then(({data}) => {
+    if (data && data.status === "waiting" && n < 5) { setTimeout(() => report(n + 1), 2500); return; }
+    if (data && data.status === "confirmed" && data.winner === profile.sb) { if (data.paid) earn(FB_PP, `Beat ${M.foe.name} in a friend battle`); else toast(`That’s 3 paid wins against ${M.foe.name} today: this one was just for fun.`); }
+  }, () => {});
+  report();
+  return {text:win ? `You beat <b>${esc(M.foe.name)}</b>!${solo ? ` <span class="meta">PokéPoints need both players to confirm the result.</span>` : ""}` : `<b>${esc(M.foe.name)}</b> won this time.`,
+    buttons:[...(solo || M.ended ? [] : [["Rematch", () => fbRematch(), true]]), ["Back to friends", () => fbLeave()]]};
+}
+function fbRematch(){
+  const M = FB.m; if (!M) { openScreen("friends"); return; }
+  if (M.phase === "gone" || M.ended) { toast(M.why || `${M.foe.name} left.`); fbLeave(); return; }
+  if (M.phase !== "over") return;
+  M.round++; M.mine = null; M.phase = "lobby"; M.ended = null; Sound.play("select");
+  openScreen("friends", "b:" + M.id);
 }
 // ---- visiting a friend's Home: walk around and pet their Pokémon (read-only), leave one Like a day ----
 async function renderFriendHome(uid){
@@ -6247,10 +6555,10 @@ function renderHome(){
   const cap = homeCap(), mons = homeMons();
   $("scBody").innerHTML = `<div class="home">
     <div class="home-bar">
-      <button class="btn sm primary hm-tb" type="button" id="hmPick" title="Choose who lives here">${ic("paw")}<span>Pokémon</span><span class="hm-cnt">${mons.length}/${cap}</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms">${ic("shop")}<span>Shop</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode">${ic("camera")}<span>Photo</span></button>
+      <button class="btn sm primary hm-tb" type="button" id="hmPick" title="Choose who lives here" aria-label="Pokémon, ${mons.length} of ${cap}">${ic("paw")}<span>Pokémon</span><span class="hm-cnt">${mons.length}/${cap}</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture" aria-label="${HS.edit ? "Done decorating" : "Decorate"}">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms" aria-label="Shop">${ic("shop")}<span>Shop</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode" aria-label="Photo mode">${ic("camera")}<span>Photo</span></button>
       <span class="home-pp" title="Your PokéPoints">${fmtPP(state.games.pp)}</span>
     </div>
     ${HS.edit ? "" : `<div class="hm-bag" id="hmBag"></div>`}
@@ -7441,6 +7749,8 @@ const ACH = [
   {id:"ribbons", name:"Ribbon collector", desc:"Earn three friendship ribbons (100 friendship).", p:() => [Math.min(3, Object.values(homeData().fr).filter(v => v >= 100).length), 3]},
   {id:"photo", name:"Home photographer", desc:"Take a photo in your Home.", p:() => [Math.min(1, homeData().photos), 1]},
   {id:"friend1", name:"First friend", desc:"Add a friend with an online account.", p:() => [Math.min(1, state.games.social.friends), 1]},
+  {id:"fbattle1", name:"Friendly rivals", desc:"Battle a friend live.", p:() => [Math.min(1, state.games.social.fbN), 1]},
+  {id:"fbattle10", name:"Best of friends", desc:"Win 10 live battles against friends.", p:() => [Math.min(10, state.games.social.fbW), 10]},
   {id:"friend5", name:"Social circle", desc:"Have five friends.", p:() => [Math.min(5, state.games.social.friends), 5]},
   {id:"visits", name:"House guest", desc:"Visit 10 friends’ Homes.", p:() => [Math.min(10, state.games.social.vis.length), 10]},
   {id:"likes", name:"Talk of the town", desc:"Get 10 Likes on your Home.", p:() => [Math.min(10, state.games.social.likes), 10]},
@@ -7954,7 +8264,7 @@ const F = {b:null, cfg:null, auto:false, fast:false, timer:0, resolve:null, tok:
 const WEATHER_LBL = {sun:"☀ Harsh sunlight", rain:"☂ Rain", sand:"≋ Sandstorm", snow:"❄ Snow"};
 const TERRAIN_LBL = {electric:"⚡ Electric Terrain", grassy:"✿ Grassy Terrain", misty:"✧ Misty Terrain", psychic:"◎ Psychic Terrain"};
 function startBattle(cfg){
-  F.cfg = cfg; F.b = new Battle(cfg.sides); F.auto = cfg.force ? cfg.force === "auto" : state.ui.bmode === "auto"; F.fast = false; F.tok++;
+  F.cfg = cfg; F.me = cfg.me || 0; F.b = new Battle(cfg.sides); F.auto = cfg.force ? cfg.force === "auto" : state.ui.bmode === "auto"; F.fast = false; F.tok++;
   if (nav.screen === "battle" && nav.sub === "fight") renderScreen(); else openScreen("battle", "fight");
 }
 function renderFight(){
@@ -7966,22 +8276,23 @@ function renderFight(){
   const trHtml = f.trIdx !== undefined && f.trIdx !== null ? `<div class="stage medal"><img class="tr" data-tr="${f.trIdx}" alt="" draggable="false"></div>` : trOrEmblem(f.name, f.type);
   $("scBody").innerHTML = `<div class="bt2">
     <div class="bt-head">${trHtml}<div><span class="meta">${esc(f.title || "")}</span><h3>vs ${esc(f.name)}</h3></div>
-      ${cfg.hotseat ? "" : `<button class="btn sm bt-skip" type="button" data-bt="fast" title="The rest of the battle plays itself out instantly and jumps straight to the result">⏭ Skip to the result</button>`}</div>
-    <div class="bt-main"><div class="bt-field"><canvas class="bt-bg" aria-hidden="true"></canvas><span class="bt-weather" id="btWeather" hidden></span>${hp("foe")}${mon("foe")}${mon("you")}${hp("you")}${party("foe", cfg.sides[1].party)}${party("you", cfg.sides[0].party)}</div><div class="bt-side idle" id="btSide"></div></div>
+      ${cfg.live ? `<span class="bt-timer" id="btTimer" hidden></span>` : cfg.hotseat ? "" : `<button class="btn sm bt-skip" type="button" data-bt="fast" title="The rest of the battle plays itself out instantly and jumps straight to the result">⏭ Skip to the result</button>`}</div>
+    <div class="bt-main"><div class="bt-field"><canvas class="bt-bg" aria-hidden="true"></canvas><span class="bt-weather" id="btWeather" hidden></span>${hp("foe")}${mon("foe")}${mon("you")}${hp("you")}${party("foe", cfg.sides[1 - F.me].party)}${party("you", cfg.sides[F.me].party)}</div><div class="bt-side idle" id="btSide"></div></div>
     <div class="bt-bottom"><div class="bt-log" id="btLog" role="log" aria-live="polite"></div><div class="bt-cmd" id="btCmd"></div></div></div>`;
   const cv = $("scBody").querySelector(".bt-bg"), V = two ? {W:320, H:180} : {W:960, H:540}; cv.width = V.W; cv.height = V.H;
   cv.getContext("2d").drawImage(paintBg(f.bg || "league", f.bg === "city" ? "night" : "day", V, {x:0, y:0, w:V.W, h:V.H}, two), 0, 0);
   paintAll($("scBody").querySelector(".bt-head"));
   // restore persisted HP for gauntlet parties
-  cfg.sides[0].party.forEach((m, k) => { if (m.hp <= 0) { const pk = $("scBody").querySelector(`.bt-party.you [data-pk="${k}"]`); if (pk) pk.classList.add("out"); } });
+  cfg.sides[F.me].party.forEach((m, k) => { if (m.hp <= 0) { const pk = $("scBody").querySelector(`.bt-party.you [data-pk="${k}"]`); if (pk) pk.classList.add("out"); } });
   nav.onClick = e => onFightClick(e);
-  nav.cleanup = () => { F.tok++; clearTimeout(F.timer); if (F.wake) F.wake(); if (F.resolve) { const r = F.resolve; F.resolve = null; r(null); } };
+  nav.cleanup = () => { const B = F.b; F.tok++; clearTimeout(F.timer); if (F.wake) F.wake(); if (F.resolve) { const r = F.resolve; F.resolve = null; r(null); }
+    if (cfg.live) { clearInterval(cfg.live.tick); if (B && !B.over && FB.m === cfg.live) fbDrop(); } };   // leaving a live battle forfeits it
   setMusic("battle");
   // first alive Pokémon leads (gauntlet)
   for (const s of F.b.s) { const k = s.party.findIndex(m => m.hp > 0); s.act = k < 0 ? 0 : k; }
-  runBattle(F.tok);
+  (cfg.live ? runLive : runBattle)(F.tok);
 }
-const sideEl = i => { const root = $("scBody"), s = i === 0 ? "you" : "foe"; return {mon:root.querySelector(`.bt-mon.${s}`), hp:root.querySelector(`.bt-hp.${s}`), party:root.querySelector(`.bt-party.${s}`)}; };
+const sideEl = i => { const root = $("scBody"), s = i === F.me ? "you" : "foe"; return {mon:root.querySelector(`.bt-mon.${s}`), hp:root.querySelector(`.bt-hp.${s}`), party:root.querySelector(`.bt-party.${s}`)}; };
 const wait = ms => new Promise(r => { F.wake = r; F.timer = setTimeout(r, F.fast ? 0 : state.ui.bspeed === "fast" ? ms*.5 : ms); });
 function logLine(t){ const log = $("btLog"); if (!log) return; log.insertAdjacentHTML("beforeend", `<p>${t}</p>`); while (log.children.length > 3) log.firstElementChild.remove(); }
 function setHP(i, hp, max, instant){
@@ -7997,12 +8308,12 @@ async function showEv(e){
     case "send": {
       const s = sideEl(e.side), m = B.s[e.side].party[e.idx], img = s.mon.querySelector("img");
       img.dataset.num = m.n; if (m.sh) img.dataset.sh = "1"; else delete img.dataset.sh;
-      if (e.side === 0) { img.dataset.back = "1"; img.classList.toggle("back", imgMode(img) === "3d" && hasBack(m.n, !!m.sh || state.shiny)); }   // 3D: a real back sprite, else the mirrored front
+      if (e.side === F.me) { img.dataset.back = "1"; img.classList.toggle("back", imgMode(img) === "3d" && hasBack(m.n, !!m.sh || state.shiny)); }   // 3D: a real back sprite, else the mirrored front
       paintImg(img);
       s.mon.classList.remove("faint", "hit", "lunge", "recall"); anim(s.mon, "enter");
       s.hp.querySelector(".bt-nm").textContent = m.name; s.hp.querySelector(".bt-lv").textContent = "Lv" + m.level; setHP(e.side, m.hp, m.max, true); setSt(e.side, e.st);
       s.party.querySelectorAll("[data-pk]").forEach(x => x.classList.toggle("act", +x.dataset.pk === e.idx));
-      const S0 = B.s[e.side]; logLine(e.side === 0 && !F.cfg.hotseat ? `Go! <b>${esc(m.name)}</b>!` : `${esc(S0.name)} sent out <b>${esc(m.name)}</b>!`);
+      const S0 = B.s[e.side]; logLine(e.side === F.me && !F.cfg.hotseat ? `Go! <b>${esc(m.name)}</b>!` : `${esc(S0.name)} sent out <b>${esc(m.name)}</b>!`);
       if (!F.fast) Sound.play("send"); await wait(750); break;
     }
     case "st": { setSt(e.side, e.st); if (e.st && !F.fast) Sound.play("down"); break; }
@@ -8073,7 +8384,7 @@ function toSide(c){
 }
 function renderWait(){
   const c = $("btCmd"); if (!c) return;
-  c.innerHTML = `<div class="bt-acts">${F.cfg.humans.some(Boolean) ? `<button class="btn sm" type="button" data-bt="autotog" aria-pressed="${F.auto}">${F.auto ? "Auto: on" : "Auto: off"}</button>` : ""}</div>`;
+  c.innerHTML = `<div class="bt-acts">${F.cfg.humans.some(Boolean) && !F.cfg.live ? `<button class="btn sm" type="button" data-bt="autotog" aria-pressed="${F.auto}">${F.auto ? "Auto: on" : "Auto: off"}</button>` : ""}</div>`;
   toSide(c);
 }
 function renderCurtain(i){
@@ -8098,7 +8409,7 @@ function renderMoves(i){
   else if (O.struggle) body = `<div class="bt-moves one"><button class="bt-move" type="button" data-mv="-1" style="${tStyle("Normal")}"><b>Struggle</b><span>No moves left to use · hurts ${esc(me.name)} too</span></button></div>`;
   else body = `<div class="bt-moves">${O.moves.map(x => card(x.mv, x.j, x.pp, x.max, x.ok, x.why)).join("")}</div>`;
   c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${O.forced ? `<b>${esc(me.name)}</b> keeps going…` : `What will <b>${esc(me.name)}</b> do?`}</p>${body}
-    <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${O.canSwitch ? "" : "disabled"} ${O.trapped ? `title="${esc(me.name)} can’t escape!"` : ""}>${O.trapped ? "Trapped" : "Switch"}</button>${S.bag ? `<button class="btn sm" type="button" data-bt="bag" ${O.bag ? "" : "disabled"}>Bag</button>` : ""}${F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
+    <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${O.canSwitch ? "" : "disabled"} ${O.trapped ? `title="${esc(me.name)} can’t escape!"` : ""}>${O.trapped ? "Trapped" : "Switch"}</button>${S.bag ? `<button class="btn sm" type="button" data-bt="bag" ${O.bag ? "" : "disabled"}>Bag</button>` : ""}${F.cfg.hotseat || F.cfg.live ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
   toSide(c);
 }
 // the Bag: pick an item, then (for Potions, Revives, status heals) who it’s for
@@ -8148,7 +8459,7 @@ function askSwitch(i, forced, mid){
     const B = F.b, S = B.s[i], c = $("btCmd");
     c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${mid ? "Who comes in?" : forced ? "Choose your next Pokémon." : "Switch to which Pokémon?"}</p>
       <div class="bt-sw">${(() => { const foe = B.get(1 - i); return foe && foe.hp > 0 ? `<p class="sw-key">Moves rated against <b>${esc(foe.name)}</b>: ×2 super effective · ½ not very effective · ✕ no effect. Green edge = has a super-effective move.</p>` : ""; })()}${S.party.map((m, k) => swButton(B, i, m, k, k === S.act)).join("")}</div>
-      <div class="bt-acts">${forced ? (F.cfg.hotseat || mid ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
+      <div class="bt-acts">${forced ? (F.cfg.hotseat || F.cfg.live || mid ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
     toSide(c);
   });
 }
@@ -8188,7 +8499,7 @@ function onFightClick(e){
   else if (a === "run") askConfirm("Forfeit this battle?", "It counts as a loss.", "Forfeit").then(ok => { if (ok) resolveAsk({forfeit:true}); });
 }
 function finishBattle(){
-  const B = F.b; B.cleanup(); const win = B.winner === 0, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
+  const B = F.b; B.cleanup(); const win = B.winner === F.me, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
   F.fast = false; setMusic(null);
   const sk = $("scBody").querySelector(".bt-skip"); if (sk) sk.hidden = true;
   setTimeout(() => Sound.play(win || F.cfg.hotseat ? "victory" : "lose"), 150);

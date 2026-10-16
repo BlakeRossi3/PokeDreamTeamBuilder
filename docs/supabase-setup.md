@@ -24,11 +24,17 @@ Everything here is free on Supabase's free plan. It takes about 20 minutes.
 1. In the left sidebar open **SQL Editor** → **New query**.
 2. Open `supabase/migrations/20261016000000_accounts_and_friends.sql` from this repo, copy all of it, paste it in and
    click **Run**. It should finish with "Success. No rows returned".
+   Then do the same with `supabase/migrations/20261017000000_friend_battles.sql` (live friend battles). Run the files
+   in date order; both are safe to run again.
    - It's safe to run again later (for example after an update): it only creates what's missing and replaces the
      functions.
    - With the Supabase CLI instead: `supabase link --project-ref <ref>` then `supabase db push`.
-3. Check **Table Editor**. You should see `profiles`, `saves`, `save_versions`, `friendships`, `public_profile` and
-   `home_likes`, each marked "RLS enabled".
+3. Check **Table Editor**. You should see `profiles`, `saves`, `save_versions`, `friendships`, `public_profile`,
+   `home_likes`, `battle_invites`, `battle_reports` and `battle_results`, each marked "RLS enabled".
+4. Friend battles use **Realtime**, which is on by default. The battle migration adds `battle_invites` to the
+   `supabase_realtime` publication (so challenges arrive instantly) and adds the policies that keep each match's
+   private channel `battle:<match_id>` to its two players. In **Project Settings → Realtime**, leave "Allow public
+   access" **off** so only those policies decide who can join a channel.
 
 ## 3. Sign-in methods
 
@@ -121,13 +127,21 @@ To try it locally first: `python3 scripts/build.py && python3 -m http.server 876
   online account (deletes every row; the device keeps a local copy).
 - **Friends (Phase 6):** use the `friendships`, `public_profile` and `home_likes` tables and the functions in the same
   migration. Only accepted friends can read a player's `public_profile`; nobody can read anyone else's save.
+- **Friend battles (Roadmap 2, phase 5):** `invite_battle` (accepted friends only, at most 5 open challenges, each
+  lasts 2 minutes), `respond_battle`, `cancel_battle`, `battle_inbox`. The invite holds the battle's random seed and
+  rules (1v1, 3v3 or 6v6; Bag on or off). Both players build the same battle from the seed and send only their
+  choices over the private broadcast channel, resolving each turn together. Each reports the result with
+  `report_battle`; when both agree it goes in `battle_results`, and a win pays 60 PokéPoints, at most 3 paid wins per
+  friend per day. "Online" on the friends list means the friend's app was open in the last 3 minutes
+  (`profiles.last_active`, refreshed every minute and visible only to accepted friends).
 
 ## Checking the SQL without touching the real project
 
-`sh supabase/tests/run.sh` (needs PostgreSQL installed locally) applies the migration to a throwaway database
+`sh supabase/tests/run.sh` (needs PostgreSQL installed locally) applies the migrations to a throwaway database
 twice. It then runs `supabase/tests/scenario.sql`, which acts as three pretend players and covers:
 - usernames, versioned saves, conflicts and the 1 MB cap;
 - friend requests, who can see what, and once-a-day Likes;
+- friend battles: rules, friends only, privacy, results both players confirm, the 3-paid-wins cap and expiry;
 - blocks and account deletion.
 
 ## Free plan notes

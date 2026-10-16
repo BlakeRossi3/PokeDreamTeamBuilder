@@ -2,7 +2,8 @@
 # Check the migration on a throwaway local Postgres (needs postgres installed; nothing touches the real project):
 #   sh supabase/tests/run.sh
 # Starts a temporary server in /tmp/dtd-pg, applies the migration twice (it must be re-runnable), then runs
-# scenario.sql: usernames, versioned saves, the 1 MB cap, friends, privacy, Likes, blocks and account deletion.
+# scenario.sql: usernames, versioned saves, the 1 MB cap, friends, privacy, Likes, friend battles (invites, expiry,
+# results both players confirm, the daily paid-win cap), blocks and account deletion.
 set -e
 cd "$(dirname "$0")/../.."
 BIN=$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | tail -1); D=/tmp/dtd-pg
@@ -12,7 +13,6 @@ sleep 1
 P="psql -h $D -p 5434 -U postgres -q"
 $P -c "drop database if exists dtd" && $P -c "create database dtd"
 $P -d dtd -f supabase/tests/shim.sql
-$P -d dtd -v ON_ERROR_STOP=1 -f supabase/migrations/20261016000000_accounts_and_friends.sql >/dev/null 2>&1
-$P -d dtd -v ON_ERROR_STOP=1 -f supabase/migrations/20261016000000_accounts_and_friends.sql >/dev/null 2>&1
-echo "migration applies (twice)"
+for i in 1 2; do for f in supabase/migrations/*.sql; do $P -d dtd -v ON_ERROR_STOP=1 -f $f >/dev/null 2>&1 || { echo "FAILED: $f"; $P -d dtd -v ON_ERROR_STOP=1 -f $f; exit 1; }; done; done
+echo "migrations apply (twice)"
 $P -d dtd -f supabase/tests/scenario.sql
