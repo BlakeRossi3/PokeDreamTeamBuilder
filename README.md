@@ -23,13 +23,16 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 ## PokéPoints and unlockables
 - **Categories:** Hall of Fame backgrounds, Home furniture, Home rooms, profile icons, Poké Balls, trainer card designs.
 - **Earning:** quiz answers +3 (+23 on every 10th in a row) · Daily 10: +5 per correct, +25 for finishing, +50 more for 10/10 ·
-  achievements +100 each · rivals 150 the first time, 40 after · Gym Leaders 200 + an exclusive reward the first time, 40 after ·
-  leagues 1,000 + the Champion's card design and icon the first time, 250 after · Versus wins 60 ·
+  achievements +100 each · rivals 150 the first time, 40 after · Gym Leaders 200 + exclusive rewards the first time, 40 after ·
+  Elite Four members 300 + elite rewards the first time · leagues 1,000 + the Champion's set the first time, 250 after · Versus wins 60 ·
   +10 per Home Pokémon you play with each day.
-- **Gym exclusives** are never sold: each region's 4th gym gives a rare Poké Ball, the 6th gym in regions I–III a
-  background, the 8th a trophy for your Home, the others an icon of the leader's ace.
+- **Exclusives** are never sold (the Shop shows them as "?" until earned). Every Gym Leader gives their badge, a themed
+  exclusive (furniture or a rare Poké Ball that fits them) and an icon of their ace; the first badge of a region gives its
+  Badge Case. Elite Four members give an elite profile icon and a signature statue; Champions give their card design,
+  Champion's Hall background, trophy, title and an icon. The full table is in `docs/rewards.md` / `data/rewards.json`.
 - New saves start with 500. Saves from before the economy get points for past progress plus the rewards for badges
-  they already had, and keep anything they were using.
+  they already had, and keep anything they were using. Saves from before the reward table (v2) get the new rewards for
+  leaders they already beat, and keep everything they own.
 
 ## Saves
 Progress lives in each player's browser (several save files per device, optional PIN). Players move a save between

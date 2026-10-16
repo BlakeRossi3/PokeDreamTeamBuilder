@@ -1,0 +1,620 @@
+{
+ "_doc": "Gym, Elite Four and Champion rewards. See docs/rewards.md. Every Gym Leader also gives their badge and a bonus profile icon of their ace.",
+ "version": 2,
+ "gyms": {
+  "1": [
+   {
+    "cat": "furn",
+    "id": "fossil",
+    "name": "Fossil display",
+    "kind": "display",
+    "var": "fossil",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "shellfountain",
+    "name": "Seashell fountain",
+    "kind": "shellfountain",
+    "var": "Water",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "teslalamp",
+    "name": "Tesla lamp",
+    "kind": "lamp2",
+    "var": "tesla",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "flowerarch",
+    "name": "Flower arch",
+    "kind": "arch",
+    "var": "flower",
+    "w": 2,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "safari"
+   },
+   {
+    "cat": "furn",
+    "id": "crystalball",
+    "name": "Crystal ball",
+    "kind": "orb",
+    "var": "crystal",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "volcanotub",
+    "name": "Volcano hot tub",
+    "kind": "tub",
+    "var": "volcano",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "groundrug",
+    "name": "Ground-type rug",
+    "kind": "rugt",
+    "var": "Ground",
+    "w": 2,
+    "d": 2
+   }
+  ],
+  "2": [
+   {
+    "cat": "furn",
+    "id": "windvane",
+    "name": "Wind vane",
+    "kind": "windvane",
+    "var": "Flying",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "sport"
+   },
+   {
+    "cat": "ball",
+    "id": "friend"
+   },
+   {
+    "cat": "furn",
+    "id": "ghostlantern",
+    "name": "Ghost lantern",
+    "kind": "lamp2",
+    "var": "lantern",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "punchbag",
+    "name": "Punching bag",
+    "kind": "bag",
+    "var": "bag",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "heavy"
+   },
+   {
+    "cat": "furn",
+    "id": "snowman",
+    "name": "Snowman",
+    "kind": "snowman",
+    "var": "Ice",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "dragonbanner",
+    "name": "Dragon banner",
+    "kind": "banner",
+    "var": "Dragon",
+    "w": 1,
+    "d": 1
+   }
+  ],
+  "3": [
+   {
+    "cat": "furn",
+    "id": "stonetotem",
+    "name": "Stone totem",
+    "kind": "totem",
+    "var": "Rock",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "dojobanner",
+    "name": "Dojo banner",
+    "kind": "banner",
+    "var": "Fighting",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "thunderrug",
+    "name": "Thunder rug",
+    "kind": "rugt",
+    "var": "Electric",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "lavalamp",
+    "name": "Lava lamp",
+    "kind": "lamp2",
+    "var": "lava",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "level"
+   },
+   {
+    "cat": "furn",
+    "id": "featherrug",
+    "name": "Feather rug",
+    "kind": "rugt",
+    "var": "Flying",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "ball",
+    "id": "dream"
+   },
+   {
+    "cat": "ball",
+    "id": "dive"
+   }
+  ],
+  "4": [
+   {
+    "cat": "furn",
+    "id": "gemdisplay",
+    "name": "Gem display",
+    "kind": "display",
+    "var": "gem",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "park"
+   },
+   {
+    "cat": "furn",
+    "id": "dummy",
+    "name": "Training dummy",
+    "kind": "bag",
+    "var": "dummy",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "lure"
+   },
+   {
+    "cat": "ball",
+    "id": "dusk"
+   },
+   {
+    "cat": "furn",
+    "id": "steeltotem",
+    "name": "Steel totem",
+    "kind": "totem",
+    "var": "Steel",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "icedisplay",
+    "name": "Ice crystal display",
+    "kind": "display",
+    "var": "ice",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "lighthouse",
+    "name": "Lighthouse lamp",
+    "kind": "lamp2",
+    "var": "beacon",
+    "w": 1,
+    "d": 1
+   }
+  ],
+  "5": [
+   {
+    "cat": "furn",
+    "id": "cactuspot",
+    "name": "Cactus pot",
+    "kind": "pot2",
+    "var": "cactus",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "museum",
+    "name": "Museum display",
+    "kind": "display",
+    "var": "bone",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "terrarium",
+    "name": "Bug terrarium",
+    "kind": "terrarium",
+    "var": "Bug",
+    "w": 2,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "fast"
+   },
+   {
+    "cat": "furn",
+    "id": "groundtotem",
+    "name": "Ground totem",
+    "kind": "totem",
+    "var": "Ground",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "skybanner",
+    "name": "Flying banner",
+    "kind": "banner",
+    "var": "Flying",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "frozentotem",
+    "name": "Frozen totem",
+    "kind": "totem",
+    "var": "Ice",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "dragontotem",
+    "name": "Dragon totem",
+    "kind": "totem",
+    "var": "Dragon",
+    "w": 1,
+    "d": 1
+   }
+  ],
+  "6": [
+   {
+    "cat": "ball",
+    "id": "net"
+   },
+   {
+    "cat": "furn",
+    "id": "rockrug",
+    "name": "Rock rug",
+    "kind": "rugt",
+    "var": "Rock",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "beltdisplay",
+    "name": "Champion belt display",
+    "kind": "display",
+    "var": "belt",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "bonsai",
+    "name": "Bonsai pot",
+    "kind": "pot2",
+    "var": "bonsai",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "electrictotem",
+    "name": "Electric totem",
+    "kind": "totem",
+    "var": "Electric",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "moon"
+   },
+   {
+    "cat": "furn",
+    "id": "cosmicorb",
+    "name": "Cosmic orb",
+    "kind": "orb",
+    "var": "cosmic",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "icerug",
+    "name": "Ice rug",
+    "kind": "rugt",
+    "var": "Ice",
+    "w": 2,
+    "d": 2
+   }
+  ],
+  "7": [
+   {
+    "cat": "furn",
+    "id": "pillowpile",
+    "name": "Pillow pile",
+    "kind": "pillowpile",
+    "var": "Normal",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "waverug",
+    "name": "Wave rug",
+    "kind": "rugt",
+    "var": "Water",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "firetorches",
+    "name": "Fire torches",
+    "kind": "lamp2",
+    "var": "torch",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "herbplanter",
+    "name": "Herb planter",
+    "kind": "pot2",
+    "var": "herb",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "festivalbanner",
+    "name": "Festival banner",
+    "kind": "banner",
+    "var": "Electric",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "ghosttotem",
+    "name": "Ghost totem",
+    "kind": "totem",
+    "var": "Ghost",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "love"
+   },
+   {
+    "cat": "ball",
+    "id": "beast"
+   }
+  ],
+  "8": [
+   {
+    "cat": "furn",
+    "id": "flowerplanter",
+    "name": "Flower planter",
+    "kind": "pot2",
+    "var": "flower",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "wavebanner",
+    "name": "Wave banner",
+    "kind": "banner",
+    "var": "Water",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "firerug",
+    "name": "Fire rug",
+    "kind": "rugt",
+    "var": "Fire",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "fighttotem",
+    "name": "Fighting totem",
+    "kind": "totem",
+    "var": "Fighting",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "fairyarch",
+    "name": "Fairy arch",
+    "kind": "arch",
+    "var": "fairy",
+    "w": 2,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "rockbanner",
+    "name": "Rock banner",
+    "kind": "banner",
+    "var": "Rock",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "moonlamp",
+    "name": "Neon moon lamp",
+    "kind": "lamp2",
+    "var": "moon",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "dragonrug",
+    "name": "Dragon rug",
+    "kind": "rugt",
+    "var": "Dragon",
+    "w": 2,
+    "d": 2
+   }
+  ],
+  "9": [
+   {
+    "cat": "furn",
+    "id": "honeycauldron",
+    "name": "Honey cauldron",
+    "kind": "cauldron",
+    "var": "honey",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "leafsculpture",
+    "name": "Leaf sculpture",
+    "kind": "totem",
+    "var": "Grass",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "ball",
+    "id": "cherish"
+   },
+   {
+    "cat": "furn",
+    "id": "watertotem",
+    "name": "Water totem",
+    "kind": "totem",
+    "var": "Water",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "plainrug",
+    "name": "Plain rug",
+    "kind": "rugt",
+    "var": "Normal",
+    "w": 2,
+    "d": 2
+   },
+   {
+    "cat": "furn",
+    "id": "ghostbanner",
+    "name": "Ghost banner",
+    "kind": "banner",
+    "var": "Ghost",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "beautyorb",
+    "name": "Beauty orb",
+    "kind": "orb",
+    "var": "beauty",
+    "w": 1,
+    "d": 1
+   },
+   {
+    "cat": "furn",
+    "id": "icebanner",
+    "name": "Ice banner",
+    "kind": "banner",
+    "var": "Ice",
+    "w": 1,
+    "d": 1
+   }
+  ]
+ },
+ "gymPoints": 200,
+ "gymRematch": 40,
+ "e4": {
+  "icon": true,
+  "statue": true,
+  "bg": {
+   "4-3": "spear",
+   "7-2": "ultra",
+   "9-3": "crater"
+  },
+  "points": 300
+ },
+ "champ": {
+  "card": true,
+  "hall": true,
+  "trophy": true,
+  "title": true,
+  "icon": true,
+  "extra": {
+   "1": {
+    "cat": "ball",
+    "id": "master"
+   }
+  },
+  "points": 1000,
+  "rematch": 250
+ },
+ "badgeCase": true
+}
