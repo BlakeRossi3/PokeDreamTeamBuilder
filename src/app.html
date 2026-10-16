@@ -761,6 +761,13 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 :root[data-mode="2d"] .fchip{border-radius:var(--r-sm)}
 @media (max-width:560px){ .frow{grid-template-columns:1fr; gap:4px} }
 .empty-grid .btn{margin-top:10px}
+.rp-list{display:grid; gap:8px} .rp-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 12px; background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--r-sm); box-shadow:var(--e1)}
+.rp-res{flex:none; min-width:52px; text-align:center; padding:2px 8px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); color:#fff; background:var(--bad)} .rp-res.won{background:var(--good)}
+.rp-who{flex:1 1 200px; min-width:0; display:flex; flex-direction:column} .rp-who b{font-family:var(--font-d)} .rp-who small{color:var(--muted); font-size:var(--fs-sm)}
+.rp-acts{display:flex; gap:6px; flex-wrap:wrap}
+.rp-botw{display:flex; align-items:center; gap:10px; margin:8px 0 12px; padding:10px 12px; border-radius:var(--r-sm); background:var(--raised); border:var(--bw) solid var(--hi)}
+.rp-botw > span:not(.ic){flex:1; min-width:0; display:flex; flex-direction:column} .rp-botw .ic{width:26px; height:26px; color:#e2b13c} .rp-botw small{color:var(--muted); font-size:var(--fs-sm)}
+:root[data-mode="2d"] .rp-row, :root[data-mode="2d"] .rp-botw, :root[data-mode="2d"] .rp-res{border-radius:0}
 .empty-grid > .ic{width:44px; height:44px; margin:0 auto 6px; color:var(--accent)} .empty-grid h3{margin-bottom:6px; font-size:var(--fs-h2)} .empty-grid .actions{justify-content:center}
 
 /* Pokémon sheet: Battle tab, move picker, item picker */
@@ -2003,7 +2010,7 @@ function cleanUI(u){
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
 const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0});
-const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}});
+const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
   const int = v => Number.isInteger(v) && v > 0 ? v : 0;
@@ -2044,6 +2051,7 @@ function cleanGames(g){
   for (const [k, v] of Object.entries(obj(g.ach))) if (int(v)) o.ach[k] = v;
   if (typeof g.card === "string" && unlockOf("card", g.card)) o.card = g.card;
   const sc = obj(g.showcase); o.showcase = {team:typeof sc.team === "string" && /^[a-z0-9]{1,16}$/.test(sc.team) ? sc.team : "all", style:sc.style === "2d" ? "2d" : "3d"};
+  const bw = obj(g.botw); o.botw = typeof bw.code === "string" && /^[zj][A-Za-z0-9_-]{20,16000}$/.test(bw.code) ? {code:bw.code, ti:String(bw.ti || "Battle").slice(0, 60), w:bw.w ? 1 : 0, at:Number.isFinite(bw.at) ? bw.at : 0} : null;
   const so = obj(g.social);
   o.social = {vis:Array.isArray(so.vis) ? [...new Set(so.vis.filter(v => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v)))].slice(-200) : [], likes:int(so.likes), friends:int(so.friends), fbN:int(so.fbN), fbW:int(so.fbW),
     likeAt:typeof so.likeAt === "string" && !isNaN(Date.parse(so.likeAt)) ? so.likeAt : ""};
@@ -3683,7 +3691,8 @@ const LIKE_PP = 20;
 const friendsOn = () => CLOUD_ON && !!(profile && profile.sb && SB.client);
 function cleanCardPub(c){
   const rows = Array.isArray(c && c.rows) ? c.rows.filter(r => Array.isArray(r) && r.length === 2).slice(0, 12).map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 24)]) : [];
-  return {rows};
+  const b = c && c.botw, botw = b && typeof b.code === "string" && /^[zj][A-Za-z0-9_-]{20,16000}$/.test(b.code) ? {code:b.code, ti:String(b.ti || "Battle").slice(0, 60), w:b.w ? 1 : 0} : null;
+  return {rows, botw};
 }
 function enterVisit(pub, who){
   if (VISIT) leaveVisit();
@@ -3711,7 +3720,7 @@ function publicProfile(){
   const pick = (o, keys) => Object.fromEntries(keys.filter(k => o && o[k] !== undefined).map(k => [k, o[k]]));
   const nicks = {}; for (const n of homeMons()) { const k = nickFor(n); if (k !== monName(n)) nicks[n] = k; }
   return {
-    card:{rows:cardStats()},
+    card:{rows:cardStats(), ...(G.botw ? {botw:G.botw} : {})},
     showcase:{team:id, style:sc.style, save:{custom:state.custom.filter(c => ids.includes(c.id)), teams:pick(state.teams, ids), teamShiny:pick(state.teamShiny, ids), members:pick(state.members, ids), trainers:pick(state.trainers, ids), scenes:pick(state.scenes, [id, id + "~2d", "all", "all~2d"])}},
     home:{games:{badges:G.badges, leagues:G.leagues, e4:G.e4, card:G.card, icon:G.icon, title:G.title, since:G.since, own:G.own, home:{mons:G.home.mons, items:G.home.items, fr:G.home.fr}}, nicks},
   };
@@ -3856,6 +3865,7 @@ async function renderFriendProfile(uid){
     <h3 class="fr-h">Showcased team · ${esc(TEAM_BY.get(id).card)}</h3>
     <button class="hgal-card fr-hof" type="button" id="frHof" aria-label="View their Hall of Fame card full screen"><span class="hgal-cv"><canvas id="frHofCv" width="960" height="540"></canvas><i class="hgal-mode">${V.style === "2d" ? "2D" : "3D"}</i></span></button>
     <div class="fr-lineup">${lineupHTML(id)}</div>
+    ${F.pub && F.pub.card && cleanCardPub(F.pub.card).botw ? `<div class="rp-botw">${ic("trophy")}<span><b>Battle of the week</b><small>${esc(cleanCardPub(F.pub.card).botw.ti)}</small></span><button class="btn sm" type="button" id="frBotw">▶ Watch</button></div>` : ""}
     <div class="actions left"><button class="btn primary" type="button" id="frBattle">Battle this team (vs computer)</button><button class="btn" type="button" id="frCopyTeam">Copy this team</button></div>
     <p class="note">Battle their showcased team with the computer playing for them. Just for fun: no PokéPoints, and nothing changes for them.</p>
   </div>`;
@@ -3873,6 +3883,7 @@ async function renderFriendProfile(uid){
     }
     if (e.target.closest("#frCopyTeam")) { copyFriendTeam(id, F.who.username); return; }
     if (e.target.closest("#frBattle")) { battleFriend(id, F.who); return; }
+    if (e.target.closest("#frBotw")) { const code = cleanCardPub(F.pub.card).botw.code; leaveVisit(); nav.cleanup = null; rpDecode(code).then(r => r ? rpPlay(r, () => openScreen("friends", "u:" + uid)) : toast("That replay can’t be played.")); return; }
     if (e.target.closest("#frMore")) {
       const md = openModal(`<h3 class="mt" id="modalTitle">${esc(F.who.username)}</h3><div class="actions"><button class="btn" type="button" id="frRm">Remove friend</button><button class="btn danger" type="button" id="frBl">Block</button></div><p class="note">Blocking removes them and hides you from them completely.</p>`);
       const go = async (fn, msg) => { closeModal(); const {error} = await SB.client.rpc(fn, {p_other:uid}); toast(error ? sbErrText(error) : msg); FR.list = null; openScreen("friends"); };
@@ -4135,23 +4146,23 @@ async function fbSync(B, tok){
 }
 async function runLive(tok){
   const B = F.b, M = F.cfg.live, me = F.me, foe = 1 - me, alive = () => tok === F.tok && !B.over;
-  const stop = async v => { if (!v || !v.ff) return false; await playEv(v.mine ? B.forfeit(me) : [{k:"msg", t:v.gone ? `${esc(M.foe.name)} lost connection.` : `${esc(M.foe.name)} left the battle.`}, ...B.forfeit(foe)], tok); return true; };
+  const stop = async v => { if (!v || !v.ff) return false; rpLog(["f", v.mine ? me : foe]); await playEv(v.mine ? B.forfeit(me) : [{k:"msg", t:v.gone ? `${esc(M.foe.name)} lost connection.` : `${esc(M.foe.name)} left the battle.`}, ...B.forfeit(foe)], tok); return true; };
   await playEv(fbStep(B, () => B.start()), tok);
   while (alive()) {
     if (B.need[0] === "switch" || B.need[1] === "switch") {   // fainted: each picks their own, then both bring them in, side 0 first
       const pick = await Promise.all([0, 1].map(i => B.need[i] !== "switch" ? null : i === me ? fbMine("r", () => askSwitch(i, true), () => B.aiReplace(i)) : fbRecv("r")));
       if (!alive() || await stop(pick.find(p => p && p.ff))) break;
-      for (const i of [0, 1]) if (pick[i] !== null) await playEv(fbStep(B, () => B.replace(i, fbValid(B, i, "r", pick[i]))), tok);
+      for (const i of [0, 1]) if (pick[i] !== null) { const k = fbValid(B, i, "r", pick[i]); rpLog(["r", i, k]); await playEv(fbStep(B, () => B.replace(i, k)), tok); }
       continue;
     }
     const got = await Promise.all([fbMine("c", () => fbChoose(me, tok), () => B.ai(me)), fbRecv("c")]);
     if (!alive() || await stop(got.find(p => p && p.ff))) break;
     const ch = []; ch[me] = fbValid(B, me, "c", got[0]); ch[foe] = fbValid(B, foe, "c", got[1]);
-    renderWait(); await playEv(fbStep(B, () => B.turn(ch)), tok);
+    renderWait(); rpLog(["c", ch]); await playEv(fbStep(B, () => B.turn(ch)), tok);
     while (B.pend && alive()) {   // U-turn, Volt Switch, Eject Button…: whoever's side it is picks who comes in
       const i = B.pend.side, k = i === me ? await fbMine("u", () => askSwitch(i, true, true), () => B.aiReplace(i)) : await fbRecv("u");
       if (!alive() || await stop(k && k.ff ? k : null)) break;
-      await playEv(fbStep(B, () => B.resume(i, fbValid(B, i, "u", k))), tok);
+      const kk = fbValid(B, i, "u", k); rpLog(["u", i, kk]); await playEv(fbStep(B, () => B.resume(i, kk)), tok);
     }
     if (alive() && B.turnNo % 5 === 0) await fbSync(B, tok);
   }
@@ -7586,6 +7597,7 @@ const HUB = [
 ];
 function showHub(){
   if (!profile) { showSignIn(); return; }
+  { const rl = ss.get(RPLINK); if (rl) { ss.del(RPLINK); setTimeout(() => rpOpenCode(rl), 300); } }
   leaveScreen(); hideTip(); closeModal(); hideSignIn();
   if (!$("hof").hidden) closeHof(); if (!$("view").hidden) closeView();
   document.documentElement.dataset.view = "hub"; document.documentElement.dataset.mode = state.mode;
@@ -7890,6 +7902,7 @@ function renderCard(){
     return `<button type="button" class="card-opt${ok ? "" : " locked"}" data-card="${it.id}" aria-pressed="${G.card === it.id}" title="${esc(it.name)}${ok ? "" : " (locked)"}"><span class="card-sw ${d.pat || ""}" style="--a:${d.c[0]};--b:${d.c[1]};--c:${d.c[2]}"><i></i></span><small>${ok ? esc(it.name) : fmtPP(it.price)}</small></button>`; };
   $("scBody").innerHTML = `<div class="card-wrap"><canvas class="tcardcv" id="cardCv" aria-label="Your trainer card"></canvas>
     <div class="card-side">
+      <div class="set-sub">Battle of the week</div>${state.games.botw ? `<div class="rp-botw">${ic("trophy")}<span><b>${esc(state.games.botw.ti)}</b><small>${state.games.botw.w ? "A win" : "A close one"} · friends can watch it on your profile</small></span><button class="btn sm" type="button" id="cardBotw">▶ Watch</button></div>` : `<p class="note">Pin a battle from Battle → Replays and friends can watch it from your profile.</p>`}
       <div class="set-sub">Card design</div><div class="card-grid">${shown.map(sw).join("")}${hiddenN ? `<button type="button" class="card-opt mystery" data-cardmore title="Champion designs"><span class="card-sw q">?</span><small>${hiddenN} Champion designs</small></button>` : ""}</div>
       <div class="set-sub">Title <span class="meta">· Champions earn one per region</span></div>
       <div class="segrow title-row">${[{id:"", name:"None"}, ...TITLES()].map(t => `<button type="button" data-title="${t.id}" aria-pressed="${(G.title || "") === t.id}">${esc(t.name)}</button>`).join("")}${TITLES().length ? "" : `<span class="meta">Clear a region’s Elite Four and Champion to earn its title.</span>`}</div>
@@ -7904,6 +7917,7 @@ function renderCard(){
   const draw = () => drawCard($("cardCv"));
   draw();
   nav.onChange = e => { if (e.target.id === "scTeam") { G.showcase.team = e.target.value; save(); Sound.play("select"); friendsAfterSync(); toast("Friends will see this team."); } };
+  const bw = $("cardBotw"); if (bw) bw.onclick = () => rpOpenCode(state.games.botw.code);
   nav.onClick = async e => {
     const b = e.target.closest("[data-card]");
     if (b) { const it = unlockOf("card", b.dataset.card), use = () => { G.card = it.id; save(); renderCard(); };
@@ -8279,7 +8293,7 @@ function playMoveFx(mv, from, to, o = {}){
   let steps = moveRecipe(mv);
   if (o.miss) steps = steps.filter(s => !["impact", "shake", "multi", "fist", "fangs", "rise", "quake", "flash"].includes(s[0])).map(s => [s[0], s[1], Math.min(s[2], .7), s[3]]);
   if (reduced) steps = [["flash", 0, 1, {a:.25, col:T0.c[1]}]];
-  const dur = (reduced ? 300 : 950)*(state.ui.bspeed === "fast" ? .55 : 1);
+  const dur = (reduced ? 300 : 950)*(state.ui.bspeed === "fast" ? .55 : 1)/(F.speed || 1);
   g.c.imageSmoothingEnabled = !pixel;
   return new Promise(res => {
     const t0 = performance.now(), tok = F.tok;
@@ -8295,6 +8309,95 @@ function playMoveFx(mv, from, to, o = {}){
     };
     requestAnimationFrame(frame);
   });
+}
+
+// ================= REPLAYS =================
+// A battle is recorded as its seed, both sides as they started and every choice, in order. Replaying runs the same
+// engine with the same dice (drawn only inside battle steps; the computer's choices and the screen use other dice)
+// and the same choices, so it plays out exactly the same. The last 30 are kept per save file in this browser; any can
+// be shared as a link (?replay=…) or pinned to the trainer card as the Battle of the week (friends can watch it).
+const RP_MAX = 30, RPLINK = "dreamteamdex.replayLink";
+const rpKey = () => "dreamteamdex.replays." + (profile && profile.id || "guest");
+function rpList(){ try { const v = JSON.parse(ls.get(rpKey()) || "[]"); return Array.isArray(v) ? v.filter(r => r && r.v === 1) : []; } catch(e) { return []; } }
+function rpStore(L){ try { ls.set(rpKey(), JSON.stringify(L.slice(0, RP_MAX))); } catch(e) { /* storage full: replays are a nice-to-have */ } }
+const monOut = m => ({n:m.n, nk:m.name, lv:m.level, na:m.nature, ev:{...m.evs}, iv:{...m.ivs}, mv:m.moves.map(x => x[0]), ab:m.ability, it:m.item, sh:m.sh ? 1 : 0, b:m.ball, hp:m.hp, st:m.status || 0, sl:m.sleep || 0, tx:m.toxN || 0, pp:[...m.pp], th:m.timesHit || 0});   // copies: the battle changes these as it goes
+// a recorded Pokémon back into a battler (also checks everything a shared link could carry)
+function monIn(x){
+  if (!x || !NAT_BY.has(+x.n)) return null;
+  const n = +x.n, s = (v, l) => typeof v === "string" ? v.slice(0, l) : "", moves = (Array.isArray(x.mv) ? x.mv : []).slice(0, 4).map(k => MOVE_BY.get(k)).filter(Boolean);
+  const m = mkMon(n, {level:Math.max(1, Math.min(100, x.lv | 0 || 50)), nick:s(x.nk, 24) || undefined, moves:moves.length ? moves : autoMoves(n, NAT_BY.get(n).types, true, rng(n)), ability:s(x.ab, 40) || undefined, item:s(x.it, 40), nature:s(x.na, 12), evs:x.ev, ivs:x.iv, sh:!!x.sh, ball:s(x.b, 20) || "poke"});
+  m.hp = Math.max(0, Math.min(m.max, Number.isFinite(x.hp) ? Math.round(x.hp) : m.max));
+  m.status = ["brn", "par", "psn", "tox", "slp", "frz"].includes(x.st) ? x.st : null; m.sleep = Math.max(0, Math.min(4, x.sl | 0)); m.toxN = Math.max(0, Math.min(16, x.tx | 0)); m.timesHit = Math.max(0, Math.min(6, x.th | 0));
+  if (Array.isArray(x.pp)) m.pp = m.moves.map((mv, j) => Math.max(0, Math.min(maxPP(mv), Number.isFinite(x.pp[j]) ? x.pp[j] | 0 : maxPP(mv))));
+  return m;
+}
+const sideOut = S => ({nm:S.name, h:S.human ? 1 : 0, fp:S.foePrefix || "", bag:S.bag ? {...S.bag} : null, ai:S.ai, a:S.act, p:S.party.map(monOut)});
+function sideIn(x){
+  const party = (Array.isArray(x && x.p) ? x.p : []).slice(0, 12).map(monIn).filter(Boolean); if (!party.length) return null;
+  const bag = x.bag && typeof x.bag === "object" ? Object.fromEntries(Object.entries(x.bag).filter(([k, v]) => BAG_ITEMS[k] && Number.isInteger(v) && v > 0).map(([k, v]) => [k, Math.min(9, v)])) : null;
+  return {name:String(x.nm || "Trainer").slice(0, 30), human:!!x.h, foePrefix:String(x.fp || "").slice(0, 40), bag, ai:Math.max(0, Math.min(4, x.ai | 0)), act:Math.max(0, Math.min(party.length - 1, x.a | 0)), party};
+}
+// the starting record of a battle (startBattle); its sides are filled in when it starts and its steps as it goes
+const rpNew = (cfg, seed) => ({v:1, seed, me:cfg.me || 0, at:Date.now(), ti:String(cfg.foe && cfg.foe.title || "Battle").slice(0, 60), fo:{nm:String(cfg.foe && cfg.foe.name || "").slice(0, 30), tr:cfg.foe && Number.isInteger(cfg.foe.trIdx) ? cfg.foe.trIdx : null, bg:cfg.foe && cfg.foe.bg || "league"}, s:null, st:[]});
+function rpFinish(B){
+  const r = F.rec; if (!r || !r.s || F.cfg.replay) return; F.rec = null;
+  r.w = B.winner; r.tn = B.turnNo; r.h = rpHash(B); const L = rpList(); L.unshift(r); rpStore(L);
+}
+// a fingerprint of how a battle ended (a replay that ends the same way has the same one)
+const rpHash = B => { const t = JSON.stringify([B.turnNo, B.winner, B.weather, B.terrain, B.s.map(S => [S.act, S.party.map(m => [m.hp, m.status, m.pp])])]); let h = 2166136261; for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619); return h >>> 0; };
+// a record from a link or a friend: shape, sizes and every value checked; returns null if it isn't a replay
+function rpCheck(r){
+  if (!r || r.v !== 1 || !Array.isArray(r.s) || r.s.length !== 2 || !Array.isArray(r.st) || r.st.length > 1500) return null;
+  const sides = r.s.map(sideIn); if (sides.some(x => !x)) return null;
+  const st = r.st.filter(x => Array.isArray(x) && ["c", "r", "u", "f"].includes(x[0]));
+  return {v:1, seed:r.seed | 0, me:r.me === 1 ? 1 : 0, at:Number.isFinite(r.at) ? r.at : Date.now(), ti:String(r.ti || "Battle").slice(0, 60), fo:{nm:String(r.fo && r.fo.nm || "").slice(0, 30), tr:r.fo && Number.isInteger(r.fo.tr) && TRAINERS[r.fo.tr] !== undefined ? r.fo.tr : null, bg:SCENE_BY.has(r.fo && r.fo.bg) ? r.fo.bg : "league"}, s:r.s, st, w:r.w === 1 ? 1 : 0, tn:r.tn | 0, sides};
+}
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64u = str => Uint8Array.from(atob(str.replace(/-/g, "+").replace(/_/g, "/")), ch => ch.charCodeAt(0));
+async function rpEncode(r){
+  const json = JSON.stringify({v:1, seed:r.seed, me:r.me, at:r.at, ti:r.ti, fo:r.fo, s:r.s, st:r.st, w:r.w, tn:r.tn});
+  if (!window.CompressionStream) return "j" + b64u(new TextEncoder().encode(json));
+  return "z" + b64u(await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());
+}
+async function rpDecode(code){
+  try {
+    code = String(code || "").trim(); if (code.length > 30000) return null;
+    const bytes = unb64u(code.slice(1)), json = code[0] === "z" ? await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text() : code[0] === "j" ? new TextDecoder().decode(bytes) : null;
+    return json && json.length < 400000 ? rpCheck(JSON.parse(json)) : null;
+  } catch(e) { return null; }
+}
+const rpLink = code => `${location.origin}${location.pathname}?replay=${code}`;
+// watch a replay (checked record); back: where the end-screen button goes
+function rpPlay(r, back){
+  const R = rpCheck(r); if (!R) { toast("That replay can’t be played."); return; }
+  const sides = R.sides; sides.forEach((S, i) => { S.act = R.sides[i].act; });
+  startBattle({replay:R, seed:R.seed, me:R.me, force:"manual", back:"menu", backFn:back, humans:[false, false], foe:{name:R.fo.nm || sides[1 - R.me].name, title:"Replay · " + R.ti, trIdx:R.fo.tr, bg:R.fo.bg}, sides,
+    onEnd:(win, B) => ({text:`Replay over: <b>${esc(B.s[B.winner].name)}</b> won in ${B.turnNo} turns.`, buttons:[["Watch again", () => rpPlay(r, back), true], ["Back", back]]})});
+}
+async function rpOpenCode(code){ const r = await rpDecode(code); if (!r) { toast("That replay link is broken or too old."); return; } rpPlay(r, () => openScreen("battle", "replays")); }
+async function rpShare(r){
+  const code = await rpEncode(r), url = rpLink(code);
+  if (navigator.share) navigator.share({title:"Dream Team Dex replay", text:`Watch my battle: ${r.ti}`, url}).catch(() => {}); else copyText(url, "Replay link copied.");
+}
+async function rpPin(r){ state.games.botw = {code:await rpEncode(r), ti:r.ti, w:r.w === r.me ? 1 : 0, at:r.at}; save(); Sound.play("confirm"); toast("Pinned to your trainer card as your Battle of the week."); }
+// the replays list (battle → replays)
+function renderReplays(){
+  const L = rpList(), botw = state.games.botw;
+  $("scBody").innerHTML = `<div class="sc-narrow rp-wrap"><div class="ph"><h2>Replays</h2><span class="meta">Your last ${RP_MAX} battles on this device</span></div>
+    ${botw ? `<div class="rp-botw">${ic("trophy")}<span><b>Battle of the week</b><small>${esc(botw.ti)} · ${botw.w ? "won" : "lost"}</small></span><button class="btn sm" type="button" data-rpb="watch">Watch</button><button class="btn sm" type="button" data-rpb="unpin">Unpin</button></div>` : ""}
+    ${L.length ? `<div class="rp-list">${L.map((r, i) => `<div class="rp-row"><span class="rp-res ${r.w === r.me ? "won" : "lost"}">${r.w === r.me ? "Won" : "Lost"}</span><span class="rp-who"><b>${esc(r.ti)}</b><small>${esc(r.s[r.me].nm)} vs ${esc(r.s[1 - r.me].nm)} · ${r.tn} turns · ${fmtAgo(r.at)}</small></span>
+      <span class="rp-acts"><button class="btn sm primary" type="button" data-rp="${i}" data-a="watch" aria-label="Watch">▶ Watch</button><button class="btn sm" type="button" data-rp="${i}" data-a="share">Share</button><button class="btn sm" type="button" data-rp="${i}" data-a="pin" title="Pin to your trainer card">★ Pin</button><button class="btn sm" type="button" data-rp="${i}" data-a="del" aria-label="Delete">✕</button></span></div>`).join("")}</div>`
+      : `<div class="empty-grid">${ic("battle")}<h3>No replays yet</h3><p>Every battle you play is saved here so you can watch it again, share it or pin it to your trainer card.</p></div>`}
+  </div>`;
+  nav.onClick = async e => {
+    const b = e.target.closest("[data-rp]"), back = () => openScreen("battle", "replays");
+    if (b) { const r = L[+b.dataset.rp]; if (!r) return; const a = b.dataset.a;
+      if (a === "watch") rpPlay(r, back); else if (a === "share") rpShare(r); else if (a === "pin") { await rpPin(r); renderReplays(); }
+      else if (a === "del") { L.splice(+b.dataset.rp, 1); rpStore(L); renderReplays(); } return; }
+    const k = e.target.closest("[data-rpb]");
+    if (k && k.dataset.rpb === "watch" && botw) rpOpenCode(botw.code);
+    if (k && k.dataset.rpb === "unpin") { state.games.botw = null; save(); renderReplays(); }
+  };
 }
 
 // ================= BATTLE SCREENS =================
@@ -8320,6 +8423,7 @@ function renderBattleScreen(){
           <span class="bm-rw">Gym Leaders give PokéPoints and exclusive rewards you can’t buy in the Shop.</span></span>
       </button>
       <button class="bm-card" type="button" data-bsub="rival">${ic("battle")}<b>Rival battle</b><span>Take on ${RIVALS.length} famous trainers with any of your teams.</span><span class="meta">${Object.keys(state.games.wins).length} of ${RIVALS.length} beaten</span></button>
+      <button class="bm-card" type="button" data-bsub="replays">${ic("frame")}<b>Replays</b><span>Watch your last battles again, share them, or pin one to your trainer card.</span><span class="meta">${rpList().length} saved</span></button>
       <button class="bm-card" type="button" data-bsub="vs">${ic("card")}<b>Versus</b><span>Battle another save file on this device. Pass the device and pick moves in secret.</span><span class="meta">${state.games.vs.w} wins · ${state.games.vs.l} losses</span></button>
     </div>
     <div class="set-row bm-style"><span>Battle style</span><div class="segrow" data-bmode><button type="button" data-v="manual" aria-pressed="${state.ui.bmode === "manual"}">You choose moves</button><button type="button" data-v="auto" aria-pressed="${state.ui.bmode === "auto"}">Auto battle</button></div></div>
@@ -8331,6 +8435,7 @@ function renderBattleScreen(){
   if (sub === "rival") return renderRivals();
   if (sub === "gym") return renderGym();
   if (sub === "vs") return renderVersus();
+  if (sub === "replays") return renderReplays();
 }
 const teamSelect = (id, sel, label = "Your team") => { const ts = nonEmptyTeams(); return `<label class="field">${label}<select class="select" id="${id}">${ts.map(t => `<option value="${t.id}" ${t.id === sel ? "selected" : ""}>${esc(t.dex)} · ${teamOf(t.id).length} Pokémon</option>`).join("")}</select></label>`; };
 const playerSide = (teamId, level = 50, bag = BAG.standard()) => ({name: profile && !profile.guest ? profile.name : "You", party: teamOf(teamId).slice(0, MAX).map(n => monFromTeam(teamId, n, level)), human:true, foePrefix:"", bag, ai:3});
@@ -8555,7 +8660,9 @@ const F = {b:null, cfg:null, auto:false, fast:false, timer:0, resolve:null, tok:
 const WEATHER_LBL = {sun:"☀ Harsh sunlight", rain:"☂ Rain", sand:"≋ Sandstorm", snow:"❄ Snow"};
 const TERRAIN_LBL = {electric:"⚡ Electric Terrain", grassy:"✿ Grassy Terrain", misty:"✧ Misty Terrain", psychic:"◎ Psychic Terrain"};
 function startBattle(cfg){
-  F.cfg = cfg; F.me = cfg.me || 0; F.b = new Battle(cfg.sides); F.auto = cfg.force ? cfg.force === "auto" : state.ui.bmode === "auto"; F.fast = false; F.tok++;
+  F.cfg = cfg; F.me = cfg.me || 0; F.b = new Battle(cfg.sides); F.speed = 1;
+  F.seed = Number.isInteger(cfg.seed) ? cfg.seed : (cfg.live ? (cfg.live.seed + cfg.live.round*7919) | 0 : (Math.random()*2147483647) | 0); F.R = rng(F.seed);
+  F.rec = cfg.replay ? null : rpNew(cfg, F.seed); F.auto = cfg.force ? cfg.force === "auto" : state.ui.bmode === "auto"; F.fast = false; F.tok++;
   if (nav.screen === "battle" && nav.sub === "fight") renderScreen(); else openScreen("battle", "fight");
 }
 function renderFight(){
@@ -8581,10 +8688,11 @@ function renderFight(){
   setMusic("battle");
   // first alive Pokémon leads (gauntlet)
   for (const s of F.b.s) { const k = s.party.findIndex(m => m.hp > 0); s.act = k < 0 ? 0 : k; }
-  (cfg.live ? runLive : runBattle)(F.tok);
+  if (F.rec) F.rec.s = F.b.s.map(sideOut);   // the record starts from the sides as they begin (after the lead fix above)
+  (cfg.replay ? runReplay : cfg.live ? runLive : runBattle)(F.tok);
 }
 const sideEl = i => { const root = $("scBody"), s = i === F.me ? "you" : "foe"; return {mon:root.querySelector(`.bt-mon.${s}`), hp:root.querySelector(`.bt-hp.${s}`), party:root.querySelector(`.bt-party.${s}`)}; };
-const wait = ms => new Promise(r => { F.wake = r; F.timer = setTimeout(r, F.fast ? 0 : state.ui.bspeed === "fast" ? ms*.5 : ms); });
+const wait = ms => new Promise(r => { F.wake = r; F.timer = setTimeout(r, F.fast ? 0 : (state.ui.bspeed === "fast" ? ms*.5 : ms)/(F.speed || 1)); });
 function logLine(t){ const log = $("btLog"); if (!log) return; log.insertAdjacentHTML("beforeend", `<p>${t}</p>`); while (log.children.length > 3) log.firstElementChild.remove(); }
 function setHP(i, hp, max, instant){
   const s = sideEl(i); if (!s.hp) return; const pct = Math.max(0, hp/max*100), bar = s.hp.querySelector(".bt-bar i");
@@ -8636,14 +8744,16 @@ async function playEv(evs, tok){ let n = 0; for (let i = 0; i < evs.length; i++)
 const humanFor = i => F.cfg.humans[i] && !F.auto;
 function ask(render){ return new Promise(res => { F.resolve = res; render(); }); }
 function resolveAsk(v){ const r = F.resolve; F.resolve = null; if (r) r(v); }
+const rpStep = (B, fn) => { B.rand = F.R; try { return fn(); } finally { B.rand = Math.random; } };
+const rpLog = x => { if (F.rec) F.rec.st.push(JSON.parse(JSON.stringify(x))); };   // a copy: the engine may change choice objects as the turn runs
 async function runBattle(tok){
   const B = F.b;
-  await playEv(B.start(), tok);
+  await playEv(rpStep(B, () => B.start()), tok);
   while (!B.over && tok === F.tok) {
     for (const i of [0, 1]) if (!B.over && B.need[i] === "switch") {
       let k = humanFor(i) ? await askSwitch(i, true) : B.aiReplace(i);
       if (tok !== F.tok) return; if (k === null || k === undefined) k = B.aiReplace(i);
-      await playEv(B.replace(i, k), tok);
+      rpLog(["r", i, k]); await playEv(rpStep(B, () => B.replace(i, k)), tok);
     }
     if (B.over || tok !== F.tok) break;
     const ch = [null, null];
@@ -8653,7 +8763,7 @@ async function runBattle(tok){
       for (;;) {
         if (F.auto) { ch[i] = B.ai(i); break; }
         const c = await ask(() => renderMoves(i)); if (tok !== F.tok) return;
-        if (c && c.forfeit) { await playEv(B.forfeit(i), tok); break; }
+        if (c && c.forfeit) { rpLog(["f", i]); await playEv(B.forfeit(i), tok); break; }
         if (c && c.auto) { ch[i] = B.ai(i); break; }
         if (c && c.sw === "menu") { const k = await askSwitch(i, false); if (tok !== F.tok) return; if (k === null) continue; ch[i] = {sw:k}; break; }
         if (c && c.bag === "menu") { const u = await askBag(i); if (tok !== F.tok) return; if (!u) continue; ch[i] = u; break; }
@@ -8663,15 +8773,33 @@ async function runBattle(tok){
     }
     if (B.over || tok !== F.tok) break;
     renderWait();
-    await playEv(B.turn(ch), tok);
+    rpLog(["c", ch]); await playEv(rpStep(B, () => B.turn(ch)), tok);
     // U-turn, Volt Switch, Baton Pass, Eject Button…: someone picks who comes in, then the turn carries on
     while (B.pend && !B.over && tok === F.tok) {
       const i = B.pend.side; let k = humanFor(i) ? await askSwitch(i, true, true) : B.aiReplace(i);
       if (tok !== F.tok) return; if (k === null || k === undefined) k = B.aiReplace(i);
-      await playEv(B.resume(i, k), tok);
+      rpLog(["u", i, k]); await playEv(rpStep(B, () => B.resume(i, k)), tok);
     }
   }
   if (tok === F.tok) finishBattle();
+}
+// a replay: the same steps with the same dice; choices are checked the same way as a friend's (links can't break it)
+async function runReplay(tok){
+  const B = F.b, R = F.cfg.replay; renderReplayBar();
+  await playEv(rpStep(B, () => B.start()), tok);
+  for (const x of R.st) {
+    if (tok !== F.tok || B.over) break;
+    if (x[0] === "c" && Array.isArray(x[1])) { const ch = [fbValid(B, 0, "c", x[1][0]), fbValid(B, 1, "c", x[1][1])]; await playEv(rpStep(B, () => B.turn(ch)), tok); }
+    else if ((x[0] === "r" || x[0] === "u") && (x[1] === 0 || x[1] === 1)) { if (x[0] === "u" && !(B.pend && B.pend.side === x[1])) continue; if (x[0] === "r" && B.need[x[1]] !== "switch") continue; const k = fbValid(B, x[1], x[0], x[2]); await playEv(rpStep(B, () => x[0] === "r" ? B.replace(x[1], k) : B.resume(x[1], k)), tok); }
+    else if (x[0] === "f" && (x[1] === 0 || x[1] === 1)) await playEv(B.forfeit(x[1]), tok);
+  }
+  if (tok === F.tok && !B.over) { B.over = true; B.winner = R.w; }   // a cut-off record still ends cleanly
+  if (tok === F.tok) finishBattle();
+}
+function renderReplayBar(){
+  const c = $("btCmd"); if (!c) return;
+  c.innerHTML = `<div class="bt-acts rp-bar"><span class="meta">Replay</span><button class="btn sm" type="button" data-bt="speed">Speed ${F.speed}×</button></div>`;
+  toSide(c);
 }
 // choices (moves, who to switch in) go in the panel beside the battlefield; the other buttons stay under the text box
 function toSide(c){
@@ -8682,6 +8810,7 @@ function toSide(c){
   if (!items.length) side.innerHTML = `<p class="bt-idle">Your moves appear here on your turn.</p>`;
 }
 function renderWait(){
+  if (F.cfg.replay) { renderReplayBar(); return; }
   const c = $("btCmd"); if (!c) return;
   c.innerHTML = `<div class="bt-acts">${F.cfg.humans.some(Boolean) && !F.cfg.live ? `<button class="btn sm" type="button" data-bt="autotog" aria-pressed="${F.auto}">${F.auto ? "Auto: on" : "Auto: off"}</button>` : ""}</div>`;
   toSide(c);
@@ -8794,11 +8923,14 @@ function onFightClick(e){
   else if (a === "auto") { F.auto = true; resolveAsk({auto:true}); }
   else if (a === "autosw") { F.auto = true; resolveAsk(null); }
   else if (a === "autotog") { F.auto = !F.auto; renderWait(); }
+  else if (a === "speed") { F.speed = F.speed >= 4 ? 1 : F.speed*2; renderReplayBar(); }
   else if (a === "fast") { F.fast = true; F.auto = true; b.disabled = true; b.textContent = "⏭ Skipping to the result…"; clearTimeout(F.timer); if (F.wake) F.wake(); if (F.resolve) resolveAsk(document.querySelector("#btSide .bt-moves, #btCmd .bt-moves") ? {auto:true} : null); else renderWait(); }   // the choices may sit in the side panel
   else if (a === "run") askConfirm("Forfeit this battle?", "It counts as a loss.", "Forfeit").then(ok => { if (ok) resolveAsk({forfeit:true}); });
 }
 function finishBattle(){
-  const B = F.b; B.cleanup(); const win = B.winner === F.me, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
+  const B = F.b; rpFinish(B); const rec = rpList()[0], fresh = rec && !F.cfg.replay && Date.now() - rec.at < 864e5 && rec.seed === F.seed;
+  B.cleanup(); const win = B.winner === F.me, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
+  if (fresh && !F.cfg.hotseat) res.buttons = [...res.buttons, ["▶ Replay", () => rpPlay(rec, () => openScreen("battle", "replays"))]];
   F.fast = false; setMusic(null);
   const sk = $("scBody").querySelector(".bt-skip"); if (sk) sk.hidden = true;
   setTimeout(() => Sound.play(win || F.cfg.hotseat ? "victory" : "lose"), 150);
@@ -8851,6 +8983,11 @@ loadAccounts(); migrateLegacy();
   else { document.documentElement.dataset.mode = state.mode; showSignIn(); }
 }
 achReady = true; renderSoundBtns();
+{ // a replay link: ?replay=CODE (watched once a save file is open; it never touches the save)
+  const q = new URLSearchParams(location.search), code = q.get("replay") || "";
+  if (q.has("replay")) { q.delete("replay"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
+  if (/^[zj][A-Za-z0-9_-]{20,30000}$/.test(code)) { ss.set(RPLINK, code); if (profile) setTimeout(() => { if (ss.get(RPLINK)) { ss.del(RPLINK); rpOpenCode(code); } }, 900); }
+}
 { // a friend's share link: ?friend=CODE
   const q = new URLSearchParams(location.search), code = (q.get("friend") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (q.has("friend")) { q.delete("friend"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
