@@ -1,7 +1,7 @@
 // Dream Team Dex service worker: the page and data load network-first (so updates show right away);
 // sprite packs are versioned (?v=build) and cached on first use, so repeat visits are fast and work offline.
 const VERSION = "__BUILD__", CACHE = "dtd-" + VERSION;
-self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "./gifkit.js", "./manifest.webmanifest"]).catch(() => {}))); });
+self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "./gifkit.js", "./manifest.webmanifest", "./config.js", "./vendor/supabase.js"]).catch(() => {}))); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("dtd-") && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
   const r = e.request; if (r.method !== "GET") return;

@@ -26,6 +26,8 @@ TESTS = [  # (file, args)
     ("test_sheet.py", ["390", "844", "2d"]),
     ("test_rewards.py", ["1366", "860", "3d"]),         # reward table v2, migration, Shop exclusives, new furniture, halls, titles
     ("test_rewards.py", ["390", "844", "2d"]),
+    ("test_online.py", ["1280", "860"]),                  # online accounts with a stand-in Supabase: sign-in, sync, conflicts
+    ("test_online.py", ["390", "844"]),
     ("test_engine.mjs", []),                            # engine rules: stats, crits, status, PP, items, Bag, AI (Node)
     ("test_damage.mjs", ["1500"]),                      # damage vs @smogon/calc (Node)
 ]

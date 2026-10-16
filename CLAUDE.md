@@ -48,7 +48,9 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `[id, offset, length, kind]` — kind 0 png, 1 gif, 2 webp, 3 = shiny stored as a palette patch of the normal sprite.
   `.wasm` is only a container name so hosts serve them compressed; they are not WebAssembly. Packs are large
   binaries: don't rewrite them unless asked.
-- `site/` — icons, share image, service worker template, notes for other hosts.
+- `site/` — icons, share image, service worker template, notes for other hosts, `config.js` (Supabase URL + anon key;
+  empty = local saves only) and `vendor/supabase.js` (supabase-js, vendored).
+- `supabase/` — `migrations/*.sql` (tables, RLS, RPCs for accounts, saves and friends) and `tests/` (runs them on a local Postgres).
 - `art/2d/` — the 2D pixel art (Hall of Fame backgrounds `hof/<scene>[_sunset|_night]`, Home `furn/<id>`, `room/…`
   walls/floors/windows, `div/<type>_col|cap|post|door` room dividers). Embedded in the page at build time (`/*ART2D*/`);
   the app looks them up with `artOf(key)` and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
@@ -62,7 +64,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
 `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
-`POKÉMON HOME` · `HALL OF FAME GALLERY` · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
 
@@ -82,6 +84,11 @@ Boot code is at the very end of the script.
 - **Screens** render into `#scBody` and wire events through `nav.onClick` etc.; anything with timers, rAF or observers
   must undo it in `nav.cleanup` (see `renderHome`).
 - **Modals:** `openModal(html, {wide, onClose})` / `closeModal()`; the modal layer sits above the overlays.
+- **Online accounts** (`ONLINE ACCOUNTS` section, `docs/supabase-setup.md`): on only when `site/config.js` has a Supabase
+  URL + anon key (`CLOUD_ON`). A linked save file has `sb`/`sbVer`/`sbDirty` in its `accounts.list` entry; `save()` marks
+  it dirty and `sbQueue()` uploads via the `put_save` RPC with the version it builds on (conflict → `syncConflict`).
+  Cloud data goes through `applySaved` like local saves. Schema, RLS and RPCs: `supabase/migrations/*.sql`; check them
+  with `sh supabase/tests/run.sh`. `tests/test_online.py` uses a stand-in client. Never commit the service_role key.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
 - **Size:** the site is ~417 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.

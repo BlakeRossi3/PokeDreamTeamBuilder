@@ -71,6 +71,7 @@ def build_web(page: str) -> None:
 <meta name="twitter:title" content="{TITLE}">
 <meta name="twitter:description" content="{DESC}">
 <meta name="twitter:image" content="og-image.png">
+<script src="config.js"></script>
 '''
     tail = '''
 <script>if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
@@ -94,6 +95,9 @@ def build_web(page: str) -> None:
         shutil.copy(PACKS / rel, W / rel)
     shutil.copytree(SITE / "icons", W / "icons")
     shutil.copy(SITE / "og-image.png", W / "og-image.png")
+    # online accounts: the Supabase settings (empty = local saves only) and the vendored client, loaded on demand
+    shutil.copy(SITE / "config.js", W / "config.js")
+    shutil.copytree(SITE / "vendor", W / "vendor")
     (W / "sw.js").write_text((SITE / "sw.js").read_text().replace("__BUILD__", build))
     json.dump({"name": TITLE, "short_name": "Dream Team", "description": DESC, "start_url": "./", "scope": "./",
                "display": "standalone", "orientation": "any", "background_color": "#0e1729", "theme_color": "#0e1729",
