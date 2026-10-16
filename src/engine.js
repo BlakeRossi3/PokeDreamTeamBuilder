@@ -63,7 +63,7 @@ for (const it of ITEMS) { if (it[2] === "plate") PLATE_TYPE[it[0]] = ITEM_TYPE[i
 const GEMS = {}; for (const it of ITEMS) if (it[2] === "gem") GEMS[it[0]] = it[0].replace(" Gem", "");
 
 // ---- abilities this engine runs (everything else is shown as "No battle effect here") ----
-const ABIL_WORKS = new Set(["Adaptability","Aerilate","Aftermath","Air Lock","Analytic","Anger Point","Anger Shell","Armor Tail","Battle Armor","Beads of Ruin","Beast Boost","Berserk","Big Pecks","Blaze","Bulletproof","Chilling Neigh","Chlorophyll","Clear Body","Cloud Nine","Competitive","Compound Eyes","Contrary","Corrosion","Cotton Down","Dauntless Shield","Dazzling","Defeatist","Defiant","Download","Dragon's Maw","Dragonize","Drizzle","Drought","Dry Skin","Early Bird","Earth Eater","Effect Spore","Electric Surge","Electromorphosis","Filter","Flame Body","Flare Boost","Flash Fire","Fluffy","Full Metal Body","Fur Coat","Gale Wings","Galvanize","Gooey","Gorilla Tactics","Grassy Surge","Grim Neigh","Guts","Hadron Engine","Heatproof","Huge Power","Hustle","Hydration","Hyper Cutter","Ice Body","Ice Scales","Immunity","Inner Focus","Insomnia","Intimidate","Intrepid Sword","Iron Barbs","Iron Fist","Justified","Keen Eye","Leaf Guard","Levitate","Libero","Lightning Rod","Limber","Liquid Ooze","Liquid Voice","Magic Bounce","Magic Guard","Magma Armor","Marvel Scale","Mega Launcher","Merciless","Mind's Eye","Misty Surge","Mold Breaker","Motor Drive","Moxie","Multiscale","Natural Cure","Neuroforce","No Guard","Normalize","Oblivious","Orichalcum Pulse","Overcoat","Overgrow","Own Tempo","Pastel Veil","Pixilate","Poison Heal","Poison Point","Poison Touch","Prankster","Pressure","Prism Armor","Protean","Protosynthesis","Psychic Surge","Punk Rock","Pure Power","Purifying Salt","Quark Drive","Queenly Majesty","Quick Feet","Rain Dish","Rattled","Reckless","Refrigerate","Regenerator","Ripen","Rock Head","Rocky Payload","Rough Skin","Sand Force","Sand Rush","Sand Spit","Sand Stream","Sand Veil","Sap Sipper","Scrappy","Serene Grace","Shadow Shield","Sharpness","Shed Skin","Sheer Force","Shell Armor","Shield Dust","Simple","Skill Link","Slow Start","Slush Rush","Sniper","Snow Cloak","Snow Warning","Solar Power","Solid Rock","Soundproof","Speed Boost","Stamina","Static","Steadfast","Steam Engine","Steelworker","Steely Spirit","Storm Drain","Strong Jaw","Sturdy","Super Luck","Supreme Overlord","Swarm","Sweet Veil","Swift Swim","Sword of Ruin","Tablets of Ruin","Tangling Hair","Technician","Teravolt","Thermal Exchange","Thick Fat","Tinted Lens","Torrent","Tough Claws","Toxic Boost","Transistor","Triage","Turboblaze","Unaware","Unburden","Vessel of Ruin","Vital Spirit","Volt Absorb","Water Absorb","Water Bubble","Water Compaction","Water Veil","Weak Armor","Well-Baked Body","White Smoke","Wind Rider","Wonder Guard","Comatose","Fire Mane","Seed Sower"]);
+const ABIL_WORKS = new Set(["Adaptability","Aerilate","Aftermath","Air Lock","Analytic","Anger Point","Anger Shell","Armor Tail","Battle Armor","Beads of Ruin","Beast Boost","Berserk","Big Pecks","Blaze","Bulletproof","Chilling Neigh","Chlorophyll","Clear Body","Cloud Nine","Competitive","Compound Eyes","Contrary","Corrosion","Cotton Down","Dauntless Shield","Dazzling","Defeatist","Defiant","Download","Dragon's Maw","Dragonize","Drizzle","Drought","Dry Skin","Early Bird","Earth Eater","Effect Spore","Electric Surge","Electromorphosis","Filter","Flame Body","Flare Boost","Flash Fire","Fluffy","Full Metal Body","Fur Coat","Gale Wings","Galvanize","Gooey","Gorilla Tactics","Grassy Surge","Grim Neigh","Guts","Hadron Engine","Heatproof","Huge Power","Hustle","Hydration","Hyper Cutter","Ice Body","Ice Scales","Immunity","Inner Focus","Insomnia","Intimidate","Intrepid Sword","Iron Barbs","Iron Fist","Justified","Keen Eye","Leaf Guard","Levitate","Libero","Lightning Rod","Limber","Liquid Ooze","Liquid Voice","Magic Bounce","Magic Guard","Magma Armor","Marvel Scale","Mega Launcher","Merciless","Mind's Eye","Misty Surge","Mold Breaker","Motor Drive","Moxie","Multiscale","Natural Cure","Neuroforce","No Guard","Normalize","Oblivious","Orichalcum Pulse","Overcoat","Overgrow","Own Tempo","Pastel Veil","Pixilate","Poison Heal","Poison Point","Poison Touch","Prankster","Pressure","Prism Armor","Protean","Protosynthesis","Psychic Surge","Punk Rock","Pure Power","Purifying Salt","Quark Drive","Queenly Majesty","Quick Feet","Rain Dish","Rattled","Reckless","Refrigerate","Regenerator","Ripen","Rock Head","Rocky Payload","Rough Skin","Sand Force","Sand Rush","Sand Spit","Sand Stream","Sand Veil","Sap Sipper","Scrappy","Serene Grace","Shadow Shield","Sharpness","Shed Skin","Sheer Force","Shell Armor","Shield Dust","Simple","Skill Link","Slow Start","Slush Rush","Sniper","Snow Cloak","Snow Warning","Solar Power","Solid Rock","Soundproof","Speed Boost","Stamina","Static","Steadfast","Steam Engine","Steelworker","Steely Spirit","Storm Drain","Strong Jaw","Sturdy","Super Luck","Supreme Overlord","Swarm","Sweet Veil","Swift Swim","Sword of Ruin","Tablets of Ruin","Tangling Hair","Technician","Teravolt","Thermal Exchange","Thick Fat","Tinted Lens","Torrent","Tough Claws","Toxic Boost","Transistor","Triage","Turboblaze","Unaware","Unburden","Vessel of Ruin","Vital Spirit","Volt Absorb","Water Absorb","Water Bubble","Water Compaction","Water Veil","Weak Armor","Well-Baked Body","White Smoke","Wind Rider","Wonder Guard","Comatose","Fire Mane","Seed Sower","Aura Break","Fairy Aura","Dark Aura","Heavy Metal","Light Metal","Gluttony","Infiltrator","Long Reach","Arena Trap","Shadow Tag","Magnet Pull","Suction Cups","Sticky Hold","Unseen Fist","Bad Dreams","Stall","Grass Pelt","Synchronize","Trace","Unnerve","Moody","Truant","Disguise","Mummy","Lingering Aroma","Wandering Spirit","Magician","Pickpocket","Cheek Pouch","Harvest","Toxic Debris","Innards Out","Color Change","Good as Gold","Quick Draw","Screen Cleaner","Stench","Toxic Chain","Supersweet Syrup","Guard Dog","Parental Bond","Wimp Out","Emergency Exit","Propeller Tail","Stalwart","Run Away","Pickup","Honey Gather","Ball Fetch","Illuminate","Telepathy","Friend Guard","Healer","Battery","Power Spot","Plus","Minus","Symbiosis","Receiver","Power of Alchemy","Frisk","Anticipation","Forewarn"]);
 // abilities a Mold Breaker attacker ignores
 const BREAKABLE = new Set(["Armor Tail","Battle Armor","Big Pecks","Bulletproof","Clear Body","Contrary","Dazzling","Dry Skin","Earth Eater","Filter","Flash Fire","Fluffy","Full Metal Body","Fur Coat","Heatproof","Hyper Cutter","Ice Scales","Immunity","Inner Focus","Insomnia","Keen Eye","Leaf Guard","Levitate","Lightning Rod","Limber","Magic Bounce","Magma Armor","Marvel Scale","Mind's Eye","Motor Drive","Multiscale","Oblivious","Overcoat","Own Tempo","Pastel Veil","Punk Rock","Purifying Salt","Queenly Majesty","Sand Veil","Sap Sipper","Shell Armor","Shield Dust","Simple","Snow Cloak","Solid Rock","Soundproof","Storm Drain","Sturdy","Sweet Veil","Thermal Exchange","Thick Fat","Unaware","Vital Spirit","Volt Absorb","Water Absorb","Water Bubble","Water Veil","Well-Baked Body","White Smoke","Wind Rider","Wonder Guard"]);
 const ATE = {Pixilate:"Fairy", Aerilate:"Flying", Refrigerate:"Ice", Galvanize:"Electric", Dragonize:"Dragon"};
@@ -76,7 +76,7 @@ const TERRAIN_TXT = {electric:["An electric current ran across the battlefield!"
 const ABSORB = {"Volt Absorb":["Electric", "heal"], "Water Absorb":["Water", "heal"], "Dry Skin":["Water", "heal"], "Earth Eater":["Ground", "heal"], "Lightning Rod":["Electric", "spa"], "Storm Drain":["Water", "spa"], "Motor Drive":["Electric", "spe"], "Sap Sipper":["Grass", "atk"], "Flash Fire":["Fire", "flash"], "Well-Baked Body":["Fire", "def2"], "Levitate":["Ground", ""]};
 
 // ---- held items this engine runs (the item picker labels the rest "No battle effect here") ----
-const ITEM_WORKS = new Set(["Leftovers","Black Sludge","Life Orb","Choice Band","Choice Specs","Choice Scarf","Assault Vest","Eviolite","Focus Sash","Focus Band","Expert Belt","Muscle Band","Wise Glasses","Rocky Helmet","Air Balloon","Heavy-Duty Boots","Sitrus Berry","Oran Berry","Lum Berry","Chesto Berry","Persim Berry","Cheri Berry","Pecha Berry","Rawst Berry","Aspear Berry","Leppa Berry","Figy Berry","Wiki Berry","Mago Berry","Aguav Berry","Iapapa Berry","Liechi Berry","Ganlon Berry","Salac Berry","Petaya Berry","Apicot Berry","Lansat Berry","Starf Berry","Enigma Berry","Kee Berry","Maranga Berry","Jaboca Berry","Rowap Berry","Berry Juice","Weakness Policy","White Herb","Mental Herb","Power Herb","Light Clay","Shell Bell","Scope Lens","Razor Claw","King's Rock","Razor Fang","Bright Powder","Lax Incense","Quick Claw","Metronome","Toxic Orb","Flame Orb","Light Ball","Thick Club","Leek","Stick","Lucky Punch","Deep Sea Tooth","Deep Sea Scale","Metal Powder","Quick Powder","Soul Dew","Adamant Orb","Adamant Crystal","Lustrous Orb","Lustrous Globe","Griseous Orb","Griseous Core","Heat Rock","Damp Rock","Smooth Rock","Icy Rock","Terrain Extender","Utility Umbrella","Safety Goggles","Covert Cloak","Clear Amulet","Protective Pads","Punching Glove","Loaded Dice","Big Root","Wide Lens","Zoom Lens","Blunder Policy","Throat Spray","Room Service","Booster Energy","Adrenaline Orb","Absorb Bulb","Cell Battery","Luminous Moss","Snowball","Binding Band","Grip Claw","Iron Ball","Lagging Tail","Full Incense","Sticky Barb","Shed Shell","Red Card","Eject Button","Eject Pack","Float Stone","Ability Shield","Macho Brace","Power Anklet","Power Band","Power Belt","Power Bracer","Power Lens","Power Weight","Electric Seed","Grassy Seed","Misty Seed","Psychic Seed"]);
+const ITEM_WORKS = new Set(["Leftovers","Black Sludge","Life Orb","Choice Band","Choice Specs","Choice Scarf","Assault Vest","Eviolite","Focus Sash","Focus Band","Expert Belt","Muscle Band","Wise Glasses","Rocky Helmet","Air Balloon","Heavy-Duty Boots","Sitrus Berry","Oran Berry","Lum Berry","Chesto Berry","Persim Berry","Cheri Berry","Pecha Berry","Rawst Berry","Aspear Berry","Leppa Berry","Figy Berry","Wiki Berry","Mago Berry","Aguav Berry","Iapapa Berry","Liechi Berry","Ganlon Berry","Salac Berry","Petaya Berry","Apicot Berry","Lansat Berry","Starf Berry","Enigma Berry","Kee Berry","Maranga Berry","Jaboca Berry","Rowap Berry","Berry Juice","Weakness Policy","White Herb","Mental Herb","Power Herb","Light Clay","Shell Bell","Scope Lens","Razor Claw","King's Rock","Razor Fang","Bright Powder","Lax Incense","Quick Claw","Metronome","Toxic Orb","Flame Orb","Light Ball","Thick Club","Leek","Stick","Lucky Punch","Deep Sea Tooth","Deep Sea Scale","Metal Powder","Quick Powder","Soul Dew","Adamant Orb","Adamant Crystal","Lustrous Orb","Lustrous Globe","Griseous Orb","Griseous Core","Heat Rock","Damp Rock","Smooth Rock","Icy Rock","Terrain Extender","Utility Umbrella","Safety Goggles","Covert Cloak","Clear Amulet","Protective Pads","Punching Glove","Loaded Dice","Big Root","Wide Lens","Zoom Lens","Blunder Policy","Throat Spray","Room Service","Booster Energy","Adrenaline Orb","Absorb Bulb","Cell Battery","Luminous Moss","Snowball","Binding Band","Grip Claw","Iron Ball","Lagging Tail","Full Incense","Sticky Barb","Shed Shell","Red Card","Eject Button","Eject Pack","Float Stone","Ability Shield","Macho Brace","Power Anklet","Power Band","Power Belt","Power Bracer","Power Lens","Power Weight","Electric Seed","Grassy Seed","Misty Seed","Psychic Seed","Ring Target","Custap Berry","Micle Berry","Mirror Herb"]);
 for (const it of ITEMS) if (ITEM_TYPE[it[0]] || RESIST_BERRY[it[0]] || GEMS[it[0]] || MEMORY_TYPE[it[0]] || DRIVE_TYPE[it[0]]) ITEM_WORKS.add(it[0]);
 const EV_ITEMS = new Set(["Macho Brace","Power Anklet","Power Band","Power Belt","Power Bracer","Power Lens","Power Weight"]);
 const STATUS_BERRY = {"Lum Berry":"all", "Cheri Berry":"par", "Chesto Berry":"slp", "Rawst Berry":"brn", "Pecha Berry":"psn", "Aspear Berry":"frz"};
@@ -90,7 +90,10 @@ const SEMI = {Fly:"sky", Bounce:"sky", "Sky Drop":"sky", Dig:"under", Dive:"wate
 const HITS_SEMI = {sky:["Thunder", "Hurricane", "Gust", "Twister", "Sky Uppercut", "Smack Down", "Thousand Arrows"], under:["Earthquake", "Magnitude", "Fissure"], water:["Surf", "Whirlpool"], gone:[]};
 const CHARGE_TXT = {"Solar Beam":"absorbed light!", "Solar Blade":"absorbed light!", Fly:"flew up high!", Bounce:"sprang up!", Dig:"burrowed its way under the ground!", Dive:"hid underwater!", "Phantom Force":"vanished instantly!", "Shadow Force":"vanished instantly!", "Sky Attack":"became cloaked in a harsh light!", "Skull Bash":"tucked in its head!", "Razor Wind":"whipped up a whirlwind!", "Freeze Shock":"became cloaked in a freezing light!", "Ice Burn":"became cloaked in freezing air!", "Meteor Beam":"is overflowing with space power!", "Electro Shot":"absorbed electricity!", Geomancy:"is absorbing power!", "Sky Drop":"flew up high!"};
 const TRAP_MOVES = new Set(["Mean Look", "Block", "Spider Web", "Jaw Lock", "Anchor Shot", "Spirit Shackle", "Thousand Waves"]);
-const NO_EFFECT_MOVES = new Set(["Bide","Ally Switch","Helping Hand","Follow Me","Rage Powder","Spotlight","After You","Quash","Instruct","Coaching","Aromatic Mist","Hold Hands","Celebrate","Splash","Happy Hour","Snatch","Imprison","Grudge","Telekinesis","Magic Room","Wonder Room","Gravity","Ion Deluge","Electrify","Mud Sport","Water Sport","Fairy Lock","Powder","Sky Drop","Attract","Captivate","Nightmare","Foresight","Odor Sleuth","Miracle Eye","Embargo","Heal Block","Torment","Disable","Gastro Acid","Simple Beam","Worry Seed","Entrainment","Skill Swap","Role Play","Transform","Mimic","Sketch","Copycat","Mirror Move","Me First","Assist","Metronome","Sleep Talk","Nature Power","Conversion","Conversion 2","Reflect Type","Soak","Magic Powder","Trick-or-Treat","Forest's Curse","Lock-On","Mind Reader","Laser Focus","Tar Shot","Octolock","Power Trick","Power Shift","Power Split","Guard Split","Speed Swap","Heart Swap","Guard Swap","Power Swap","Topsy-Turvy","Psych Up","Spite","Lucky Chant","Wide Guard","Quick Guard","Crafty Shield","Mat Block","Max Guard","Healing Wish","Lunar Dance","Revival Blessing","Stockpile","Swallow","Spit Up","Bestow","Recycle","Fling","Natural Gift","Belch","Stuff Cheeks","Teatime","Court Change","Corrosive Gas","Purify","Floral Healing","Heal Pulse","Pollen Puff","Decorate","Jungle Healing","Lunar Blessing","Life Dew","Dragon Cheer","Magnet Rise","Charge","Minimize","Defense Curl","Rage","Uproar","Rollout","Ice Ball","Fury Cutter","Echoed Voice","Round","Fusion Bolt","Fusion Flare","Pursuit","Future Sight","Doom Desire","Shed Tail","Perish Song","Magic Coat","Camouflage","Secret Power","Synchronoise"]);
+// moves this engine doesn't run (they say so in battle and in the move picker)
+const NO_EFFECT_MOVES = new Set(["Bide","Snatch","Imprison","Grudge","Telekinesis","Magic Room","Wonder Room","Ion Deluge","Electrify","Powder","Attract","Captivate","Embargo","Transform","Mimic","Sketch","Me First","Assist","Conversion 2","Natural Gift","Instruct","Quash","Rage","Uproar","Pursuit","Beat Up"]);
+// moves that only work with a partner, so they fail in a one-on-one battle (as in the games)
+const DOUBLES_ONLY = new Set(["After You","Ally Switch","Aromatic Mist","Coaching","Dragon Cheer","Follow Me","Helping Hand","Hold Hands","Rage Powder","Spotlight","Decorate","Wide Guard"]);
 
 // what a move does, in a few words (battle menu, move picker)
 const ST_TAG = {brn:"BRN", par:"PAR", psn:"PSN", tox:"PSN", slp:"SLP", frz:"FRZ"};
@@ -115,14 +118,15 @@ function moveHint(mv){
   if (fx.v === "yawn") return "Makes it drowsy";
   if (fx.ss || fx.fs) return "Switches";
   if (NO_EFFECT_MOVES.has(nm)) return "No effect here";
+  if (DOUBLES_ONLY.has(nm)) return "Needs a partner";
   return "";
 }
-const moveWorks = mv => !!mv && !NO_EFFECT_MOVES.has(mv[0]);
+const moveWorks = mv => !!mv && !NO_EFFECT_MOVES.has(mv[0]) && !DOUBLES_ONLY.has(mv[0]);
 
 // ---- building a battler ----
 function autoMoves(n, types, setup = true, rnd = Math.random){
   const m = NAT_BY.get(n), phys = m.stats[1] >= m.stats[3];
-  const ok = mv => isDmg(mv) && mv[3] > 0 && mv[3] <= 130 && mv[4] !== 30 && !fl(mv, "2") && !fl(mv, "r") && !fxOf(mv).sd && !fxOf(mv).ohko && !NO_EFFECT_MOVES.has(mv[0]) && !["Focus Punch","Dream Eater","Last Resort","Steel Roller","Burn Up","Double Shock","Shell Trap","Belch","Fake Out","First Impression","Sucker Punch","Thunderclap","Snore","Hold Back","False Swipe","Synchronoise","Poltergeist","Outrage","Petal Dance","Thrash","Raging Fury","Mind Blown","Steel Beam","Chloroblast","Head Smash","Explosion","Self-Destruct","Misty Explosion","Hyper Beam","Giga Impact"].includes(mv[0]);
+  const ok = mv => isDmg(mv) && mv[3] > 0 && mv[3] <= 130 && mv[4] !== 30 && !fl(mv, "2") && !fl(mv, "r") && !fxOf(mv).sd && !fxOf(mv).ohko && !NO_EFFECT_MOVES.has(mv[0]) && !["Focus Punch","Dream Eater","Last Resort","Tera Blast","Tera Starstorm","Natural Gift","Fling","Spit Up","Steel Roller","Burn Up","Double Shock","Shell Trap","Belch","Fake Out","First Impression","Sucker Punch","Thunderclap","Snore","Hold Back","False Swipe","Synchronoise","Poltergeist","Outrage","Petal Dance","Thrash","Raging Fury","Mind Blown","Steel Beam","Chloroblast","Head Smash","Explosion","Self-Destruct","Misty Explosion","Hyper Beam","Giga Impact"].includes(mv[0]);
   let ls = learnset(n).filter(ok);
   if (!ls.length) ls = MOVES.filter(mv => ok(mv) && types.includes(mv[1]) && mv[3] >= 60 && mv[3] <= 90);
   const hits = mv => { const h = fxOf(mv).mh; return Array.isArray(h) ? 3 : h || 1; };
@@ -198,13 +202,14 @@ class Battle {
   bench(i){ return this.aliveIdx(i).filter(k => k !== this.s[i].act); }
   who(i, m){ return (this.s[i].foePrefix || "") + (m || this.get(i)).name; }
   msg(ev, t, x){ ev.push({k:"msg", t, ...(x || {})}); }
-  start(){ const ev = []; for (const i of this.order([0, 1])) this.enter(i, ev); return ev; }
+  // both leads come out first, then their entry abilities run, fastest first
+  start(){ const ev = []; for (const i of [1, 0]) this.enter(i, ev, true); for (const i of this.order([0, 1])) this.entryEffects(i, ev); for (const i of [0, 1]) this.get(i).v.turns = 0; return ev; }
   order(list){ return [...list].sort((a, b) => this.speed(this.get(b)) - this.speed(this.get(a)) || this.rand() - .5); }
 
   // ---------- helpers ----------
   abil(m, other){ return m.v.noAbil ? "" : m.ability; }   // other: attacker ignoring (Mold Breaker) is handled in calc
   hasItem(m, it){ return m.item === it; }
-  grounded(m, ab = m.ability){ return !((m.types.includes("Flying") && !m.v.roost) || ab === "Levitate" || m.item === "Air Balloon") || m.item === "Iron Ball" || !!m.v.smackdown; }
+  grounded(m, ab = m.ability){ return !((m.types.includes("Flying") && !m.v.roost) || ab === "Levitate" || m.item === "Air Balloon" || m.v.magnetRise) || m.item === "Iron Ball" || !!m.v.smackdown || !!this.gravity; }
   umbrella(m){ return m.item === "Utility Umbrella"; }
   wx(){ return this.s.some((s, i) => { const m = this.get(i); return m && m.hp > 0 && (m.ability === "Cloud Nine" || m.ability === "Air Lock"); }) ? null : this.weather; }
   speed(m){
@@ -239,7 +244,7 @@ class Battle {
   isAte(a, mv){ return !["Revelation Dance", "Judgment", "Nature Power", "Techno Blast", "Multi-Attack", "Natural Gift", "Weather Ball", "Terrain Pulse", "Struggle"].includes(mv[0]) && (ATE[a.ability] && mv[1] === "Normal" || a.ability === "Normalize"); }
   typeMul(a, d, mv, type){
     if (type === "???") return 1;
-    const reveal = a.ability === "Scrappy" || a.ability === "Mind's Eye";
+    const reveal = a.ability === "Scrappy" || a.ability === "Mind's Eye" || d.v.foresight;
     let e = 1;
     for (const dt of d.types) {
       let x;
@@ -248,10 +253,12 @@ class Battle {
       else if (mv[0] === "Nihil Light" && dt === "Fairy") x = 1;
       else { x = (CHART9[dt] || {})[type]; if (x === undefined) x = 1; if (mv[0] === "Flying Press") { const y = (CHART9[dt] || {}).Flying; x *= y === undefined ? 1 : y; } }
       if (x === 0 && d.item === "Ring Target") x = 1;
-      if (x === 0 && type === "Ground" && dt === "Flying" && (d.item === "Iron Ball" || d.v.smackdown)) x = 1;
+      if (x === 0 && type === "Ground" && dt === "Flying" && (d.item === "Iron Ball" || d.v.smackdown || this.gravity)) x = 1;
+      if (x === 0 && type === "Psychic" && dt === "Dark" && d.v.miracleEye) x = 1;
       e *= x;
     }
     if (e === 0 && mv[0] === "Thousand Arrows") e = 1;
+    if (d.v.tarShot && type === "Fire") e *= 2;
     return e;
   }
   // ---------- damage (exact Gen 9 formula; returns 16 rolls) ----------
@@ -281,9 +288,9 @@ class Battle {
     else if (nm === "Final Gambit") fixed = a.hp;
     else if (nm === "Endeavor") { if (a.hp >= d.hp) { res.fail = true; return res; } fixed = d.hp - a.hp; }
     else if (nm === "Psywave") fixed = Math.max(1, Math.floor(a.level*(o.est ? 100 : 50 + this.r(101))/100));
-    else if (nm === "Counter" || nm === "Mirror Coat" || nm === "Metal Burst") {
+    else if (nm === "Counter" || nm === "Mirror Coat" || nm === "Metal Burst" || nm === "Comeuppance") {
       const h = a.v.hitBy; if (!h || (nm === "Counter" && h.cat !== "P") || (nm === "Mirror Coat" && h.cat !== "S")) { res.fail = true; return res; }
-      fixed = Math.max(1, Math.floor(h.dmg*(nm === "Metal Burst" ? 1.5 : 2)));
+      fixed = Math.max(1, Math.floor(h.dmg*(nm === "Metal Burst" || nm === "Comeuppance" ? 1.5 : 2)));
     }
     if (fixed) { res.fixed = true; res.rolls = Array(16).fill(fixed); return res; }
     if (fx.ohko) { res.ohko = true; res.rolls = Array(16).fill(d.hp); return res; }
@@ -322,6 +329,13 @@ class Battle {
       case "Assurance": bp *= d.v.damagedTurn === this.turnNo ? 2 : 1; break;
       case "Stomping Tantrum": case "Temper Flare": bp *= a.v.failed ? 2 : 1; break;
       case "Fling": bp = (ITEM_INFO.get(a.item) || [])[4] || 0; break;
+      case "Present": bp = o.est ? 60 : [40, 40, 40, 40, 80, 80, 80, 120][this.r(8)]; break;
+      case "Magnitude": { if (o.est) { bp = 71; break; } const x = this.r(100); bp = x < 5 ? 10 : x < 15 ? 30 : x < 35 ? 50 : x < 65 ? 70 : x < 85 ? 90 : x < 95 ? 110 : 150; break; }
+      case "Trump Card": { const left = o.ppLeft ?? 4; bp = left >= 4 ? 40 : left === 3 ? 50 : left === 2 ? 60 : left === 1 ? 80 : 200; break; }
+      case "Spit Up": bp = 100*(a.v.stockpile || 0); break;
+      case "Fury Cutter": bp = Math.min(160, 40*2 ** Math.min(2, a.v.furyCutter || 0)); break;
+      case "Echoed Voice": bp = Math.min(200, 40*(1 + (a.v.echo || 0))); break;
+      case "Rollout": case "Ice Ball": bp = 30*2 ** ((a.v.roll || 0) + (a.v.curled ? 1 : 0)); break;
       case "Tera Blast": bp = 80; break;
       case "Water Shuriken": bp = 15; break;
     }
@@ -343,6 +357,7 @@ class Battle {
     if (this.isAte(a, mv)) bpm.push(4915);
     if ((A === "Reckless" && (fx.r || fx.crash)) || (A === "Iron Fist" && fl(mv, "p"))) bpm.push(4915);
     if (D === "Dry Skin" && type === "Fire") bpm.push(5120);
+    if ((this.mudSport && type === "Electric") || (this.waterSport && type === "Fire")) bpm.push(1352);
     if (A === "Supreme Overlord" && o.lostAllies) bpm.push([4096, 4506, 4915, 5325, 5734, 6144][Math.min(5, o.lostAllies)]);
     const bn = baseOf(a.n);
     if (GEMS[a.item] === type) bpm.push(5325);
@@ -380,6 +395,7 @@ class Battle {
     if (w === "snow" && d.types.includes("Ice") && hitsPhys) def = pokeRound(def*3/2);
     const dfm = [];
     if (D === "Marvel Scale" && d.status && hitsPhys) dfm.push(6144);
+    else if (D === "Grass Pelt" && this.terrain === "grassy" && hitsPhys) dfm.push(6144);
     else if (D === "Fur Coat" && hitsPhys) dfm.push(8192);
     if (((A === "Sword of Ruin" && D !== "Sword of Ruin") && hitsPhys) || ((A === "Beads of Ruin" && D !== "Beads of Ruin") && !hitsPhys)) dfm.push(3072);
     if ((hitsPhys && d.v.qp === "def") || (!hitsPhys && d.v.qp === "spd")) dfm.push(5324);
@@ -389,6 +405,7 @@ class Battle {
     def = OF16(Math.max(1, pokeRound(def*chainMods(dfm, 410, 131072)/4096)));
     // base damage, weather, crit
     let base = baseDamage(a.level, bp, atk, def);
+    if (o.child) base = pokeRound(OF32(base*1024)/4096);   // Parental Bond's second hit
     if (w === "sun" && nm === "Hydro Steam" && !this.umbrella(a)) base = pokeRound(OF32(base*6144)/4096);
     else if (!this.umbrella(d)) {
       if ((w === "sun" && type === "Fire") || (w === "rain" && type === "Water")) base = pokeRound(OF32(base*6144)/4096);
@@ -412,7 +429,7 @@ class Battle {
     if (a.item === "Expert Belt" && eff > 1) fm.push(4915);
     else if (a.item === "Life Orb") fm.push(5324);
     else if (a.item === "Metronome" && a.v.metro && a.v.metro.name === nm && a.v.metro.n >= 1) fm.push(a.v.metro.n <= 4 ? 4096 + a.v.metro.n*819 : 8192);
-    if (RESIST_BERRY[d.item] === type && (eff > 1 || type === "Normal") && hit === 1) { fm.push(D === "Ripen" ? 1024 : 2048); res.berry = d.item; }
+    if (RESIST_BERRY[d.item] === type && (eff > 1 || type === "Normal") && hit === 1 && !o.child && A !== "Unnerve") { fm.push(D === "Ripen" ? 1024 : 2048); res.berry = d.item; }
     const fmod = chainMods(fm, 41, 131072);
     res.rolls = Array.from({length:16}, (_, i) => finalDamage(base, i, eff, burn, stab, fmod));
     void aS;
@@ -429,7 +446,8 @@ class Battle {
     return s;
   }
   rollCrit(a, d, mv){
-    if (d.ability === "Battle Armor" || d.ability === "Shell Armor") return false;
+    if (d.ability === "Battle Armor" || d.ability === "Shell Armor" || this.s.some(S => S.sc.luckychant && S.party.includes(d))) return false;
+    if (a.v.laserFocus) return true;
     if (fxOf(mv).wc || (a.ability === "Merciless" && (d.status === "psn" || d.status === "tox"))) return true;
     return this.r([24, 8, 2, 1][Math.min(3, this.critStage(a, mv))]) === 0;
   }
@@ -452,16 +470,27 @@ class Battle {
   }
 
   // ---------- switching in ----------
-  enter(i, ev){
-    const S = this.s[i], m = this.get(i), foe = this.get(1 - i);
+  enter(i, ev, only){
+    const S = this.s[i], m = this.get(i);
     m.stages = {atk:0, def:0, spa:0, spd:0, spe:0, acc:0, eva:0}; m.toxN = 0;
     const keep = S.passing; S.passing = null;
     m.v = {turns:0}; if (keep) { m.stages = keep.stages; if (keep.sub) m.v.sub = keep.sub; if (keep.critUp) m.v.critUp = keep.critUp; if (keep.confusion) m.v.confusion = keep.confusion; }
     ev.push({k:"send", side:i, idx:S.act, n:m.n, sh:m.sh, name:m.name, hp:m.hp, max:m.max, st:m.status, lv:m.level});
+    if (S.healWish && m.hp > 0) { S.healWish = false; m.hp = m.max; m.status = null; m.sleep = 0; this.msg(ev, `The healing wish came true for ${this.who(i)}!`); ev.push({k:"hp", side:i, hp:m.hp, max:m.max, heal:true}); ev.push({k:"st", side:i, st:null}); }
+    if (S.shedSub) { m.v.sub = S.shedSub; S.shedSub = 0; ev.push({k:"sub", side:i, on:true}); }
+    if (!only) this.entryEffects(i, ev);
+  }
+  entryEffects(i, ev){
+    const m = this.get(i), foe = this.get(1 - i);
     this.hazards(i, ev); if (m.hp <= 0) return;
     if (m.item === "Air Balloon") this.msg(ev, `${this.who(i)} floats in the air with its Air Balloon!`);
+    if (m.ability === "Trace" && foe && foe.hp > 0 && !["Trace", "Multitype", "Stance Change", "Schooling", "Comatose", "Disguise", "Zen Mode", "Imposter", "Illusion", "Power Construct", "RKS System", "Shields Down", "Ice Face", "Neutralizing Gas"].includes(foe.ability)) { m.ability = foe.ability; this.msg(ev, `${this.who(i)} traced ${this.who(1 - i)}’s ${foe.ability}!`); }
     const A = m.ability;
-    if (A === "Intimidate" && foe && foe.hp > 0) {
+    if (A === "Screen Cleaner") for (const S of this.s) { if (S.sc.reflect || S.sc.lightscreen || S.sc.auroraveil) { S.sc.reflect = S.sc.lightscreen = S.sc.auroraveil = 0; this.msg(ev, "The screens were removed!"); } }
+    if (A === "Supersweet Syrup" && foe && foe.hp > 0 && !m.syrup) { m.syrup = true; this.msg(ev, `A supersweet aroma is wafting from ${this.who(i)}!`); this.boost(1 - i, {eva:-1}, ev, {foe:true}); }
+    if (A === "Unnerve") this.msg(ev, `${this.s[1 - i].human === false ? "The opposing team" : "Your team"} is too nervous to eat Berries!`);
+    if (A === "Intimidate" && foe && foe.hp > 0 && foe.ability === "Guard Dog") { this.msg(ev, `${this.who(i)}’s Intimidate!`); this.boost(1 - i, {atk:1}, ev, {by:"Guard Dog"}); }
+    else if (A === "Intimidate" && foe && foe.hp > 0) {
       this.msg(ev, `${this.who(i)}’s Intimidate!`);
       if (["Inner Focus", "Oblivious", "Own Tempo", "Scrappy"].includes(foe.ability)) this.msg(ev, `${this.who(1 - i)}’s ${foe.ability} kept its Attack from dropping!`);
       else { this.boost(1 - i, {atk:-1}, ev, {foe:true}); if (foe.ability === "Rattled") this.boost(1 - i, {spe:1}, ev); if (foe.item === "Adrenaline Orb" && foe.hp > 0) { foe.item = ""; this.boost(1 - i, {spe:1}, ev, {by:"Adrenaline Orb"}); } }
@@ -535,6 +564,7 @@ class Battle {
     const m = this.get(i); if (!m || m.hp <= 0) return false;
     const A = m.ability, S = this.s[i]; let any = false, dropped = false;
     for (let [k, v] of Object.entries(ch)) {
+      k = {accuracy:"acc", evasion:"eva"}[k] || k;
       if (!(k in m.stages) || !v) continue;
       if (A === "Contrary") v = -v; if (A === "Simple") v *= 2;
       if (v < 0 && o.foe) {
@@ -550,6 +580,7 @@ class Battle {
       if (d) any = true; if (d < 0) { dropped = true; m.v.lowered = this.turnNo; }
       if (d < 0 && o.foe && (A === "Defiant" || A === "Competitive")) this.boost(i, A === "Defiant" ? {atk:2} : {spa:2}, ev, {by:A});
     }
+    if (any && !o.foe && !o.mirror) { const j = 1 - i, f = this.get(j); if (f && f.hp > 0 && f.item === "Mirror Herb") { const up = Object.fromEntries(Object.entries(ch).filter(([, v]) => v > 0)); if (Object.keys(up).length) { f.item = ""; this.boost(j, up, ev, {by:"Mirror Herb", mirror:true}); } } }
     if (dropped && m.item === "White Herb") { for (const k in m.stages) if (m.stages[k] < 0) m.stages[k] = 0; m.item = ""; m.v.unburden = true; this.msg(ev, `${this.who(i)} returned its stats to normal using its White Herb!`); }
     if (dropped && m.item === "Eject Pack" && this.bench(i).length && m.hp > 0) { m.item = ""; this.msg(ev, `${this.who(i)} is switched out by the Eject Pack!`); this.selfSwitch(i, ev); }
     return any;
@@ -577,6 +608,7 @@ class Battle {
     m.status = st; m.toxN = 0; if (st === "slp") m.sleep = 2 + this.r(3);
     ev.push({k:"st", side:i, st}); this.msg(ev, `${this.who(i)} ${ST_GOT[st]}`);
     this.berryCure(i, ev);
+    if (m.ability === "Synchronize" && src && src !== m && src === this.get(1 - i) && ["brn", "par", "psn", "tox"].includes(st) && m.status) { this.msg(ev, `${this.who(i)}’s Synchronize!`); this.setStatus(1 - i, st, ev, m); }
     return true;
   }
   cure(i, ev, why, m = this.get(i)){
@@ -593,17 +625,21 @@ class Battle {
     if (m.item === "Persim Berry" || m.item === "Lum Berry") { const it = m.item; this.eat(i); m.v.confusion = 0; this.msg(ev, `${this.who(i)}’s ${it} snapped it out of its confusion!`); }
     return true;
   }
-  eat(i){ const m = this.get(i); m.v.ate = m.item; m.item = ""; m.v.unburden = true; }
+  eat(i, ev){ const m = this.get(i); m.v.ate = m.item; m.lastBerry = m.item; m.item = ""; m.v.unburden = true; if (m.ability === "Cheek Pouch" && m.hp > 0 && ev) this.heal(i, m.max/3, ev, `${this.who(i)}’s Cheek Pouch restored its HP!`); }
+  nervous(i){ const f = this.get(1 - i); return !!f && f.hp > 0 && f.ability === "Unnerve"; }
   berryCure(i, ev){
     const m = this.get(i), c = STATUS_BERRY[m.item];
-    if (!m.status || !c || (c !== "all" && c !== m.status && !(c === "psn" && m.status === "tox"))) return;
+    if (!m.status || !c || this.nervous(i) || (c !== "all" && c !== m.status && !(c === "psn" && m.status === "tox"))) return;
     const it = m.item; this.eat(i); this.cure(i, ev, `${this.who(i)}’s ${it} cured its status!`);
   }
+  hpBerryForce(i, ev){ const m = this.get(i), it = m.item; if (it === "Sitrus Berry") { this.eat(i, ev); this.heal(i, m.max/4, ev); } else if (it === "Oran Berry") { this.eat(i, ev); this.heal(i, 10, ev); } else if (FLAVOR_BERRY[it]) { this.eat(i, ev); this.heal(i, m.max/3, ev); } else if (PINCH_BERRY[it]) { this.eat(i, ev); this.boost(i, {[PINCH_BERRY[it]]:1}, ev, {by:it}); } else if (STATUS_BERRY[it]) { const c = STATUS_BERRY[it]; this.eat(i, ev); if (m.status && (c === "all" || c === m.status || (c === "psn" && m.status === "tox"))) this.cure(i, ev); } else this.eat(i, ev); }
   // HP berries: Sitrus/Oran at half, pinch berries at a quarter (half with Gluttony)
   hpBerry(i, ev){
     const m = this.get(i); if (m.hp <= 0 || !m.item) return;
     const it = m.item, q = m.ability === "Gluttony" ? 2 : 4, rip = m.ability === "Ripen" ? 2 : 1;
-    if (it === "Sitrus Berry" && m.hp <= m.max/2) { this.eat(i); this.heal(i, Math.floor(m.max/4)*rip, ev, `${this.who(i)} restored its health using its Sitrus Berry!`); }
+    if (/Berry$/.test(it) && this.nervous(i)) return;
+    if (it === "Micle Berry" && m.hp <= m.max/q) { this.eat(i, ev); m.v.micle = true; this.msg(ev, `${this.who(i)} boosted the accuracy of its next move using its Micle Berry!`); return; }
+    if (it === "Sitrus Berry" && m.hp <= m.max/2) { this.eat(i, ev); this.heal(i, Math.floor(m.max/4)*rip, ev, `${this.who(i)} restored its health using its Sitrus Berry!`); }
     else if (it === "Oran Berry" && m.hp <= m.max/2) { this.eat(i); this.heal(i, 10*rip, ev, `${this.who(i)} restored its health using its Oran Berry!`); }
     else if (it === "Berry Juice" && m.hp <= m.max/2) { m.item = ""; this.heal(i, 20, ev, `${this.who(i)} restored its health using its Berry Juice!`); }
     else if (FLAVOR_BERRY[it] && m.hp <= m.max/q) { this.eat(i); this.heal(i, Math.floor(m.max/3)*rip, ev, `${this.who(i)} restored its health using its ${it}!`); if ((NATURES[m.nature] || [])[1] === FLAVOR_BERRY[it]) this.confuse(i, ev, true); }
@@ -625,10 +661,12 @@ class Battle {
       if (ok && v.encore && v.encore.j !== j) { ok = false; why = `Encore: only ${m.moves[v.encore.j][0]}`; }
       if (ok && !isDmg(mv) && v.taunt) { ok = false; why = "Taunted"; }
       if (ok && !isDmg(mv) && m.item === "Assault Vest") { ok = false; why = "Assault Vest blocks status moves"; }
-      if (ok && v.lastName === mv[0] && (mv[0] === "Gigaton Hammer" || mv[0] === "Blood Moon")) { ok = false; why = "Can’t be used twice in a row"; }
+      if (ok && v.lastName === mv[0] && (mv[0] === "Gigaton Hammer" || mv[0] === "Blood Moon" || v.torment)) { ok = false; why = v.torment ? "Tormented: can’t repeat a move" : "Can’t be used twice in a row"; }
+      if (ok && v.disable && v.disable.name === mv[0]) { ok = false; why = "Disabled"; }
+      if (ok && v.healBlock && !isDmg(mv) && (fl(mv, "h") || fxOf(mv).h)) { ok = false; why = "Heal Block"; }
       return {j, mv, pp:m.pp[j], max:maxPP(mv), ok, why};
     });
-    const trapped = !m.types.includes("Ghost") && m.item !== "Shed Shell" && (!!v.partial || !!v.trapped || (foe && foe.hp > 0 && ((foe.ability === "Shadow Tag" && m.ability !== "Shadow Tag") || (foe.ability === "Arena Trap" && this.grounded(m)) || (foe.ability === "Magnet Pull" && m.types.includes("Steel")))));
+    const trapped = !m.types.includes("Ghost") && m.item !== "Shed Shell" && (!!v.partial || (v.trapped !== undefined && v.trapped !== null) || this.fairyLock === this.turnNo || (foe && foe.hp > 0 && ((foe.ability === "Shadow Tag" && m.ability !== "Shadow Tag") || (foe.ability === "Arena Trap" && this.grounded(m)) || (foe.ability === "Magnet Pull" && m.types.includes("Steel")))));
     return {moves, forced, struggle: !forced && !moves.some(x => x.ok), canSwitch: !forced && !trapped && this.bench(i).length > 0, trapped, bag: !!S.bag && !forced && BAG_ORDER.some(k => S.bag[k] > 0)};
   }
 
@@ -637,7 +675,7 @@ class Battle {
   turn(ch){
     if (this.over) return [];
     const ev = []; this.turnNo++;
-    for (const i of [0, 1]) { const m = this.get(i); if (m) { m.v.hitBy = null; m.v.moved = false; m.v.failed = m.v.failedNext || false; m.v.failedNext = false; } this.s[i].faintedThis = false; }
+    for (const i of [0, 1]) { const m = this.get(i); if (m) { m.v.hitBy = null; m.v.moved = false; m.v.failed = m.v.failedNext || false; m.v.failedNext = false; m.v.turns = (m.v.turns || 0) + 1; } this.s[i].faintedThis = false; }
     // Bag items first, then switches (fastest first), then moves
     for (const i of [0, 1]) if (ch[i] && ch[i].item) this.useItem(i, ch[i].item, ch[i].target, ev);
     for (const i of this.order([0, 1])) if (ch[i] && ch[i].sw !== undefined) this.switchOut(i, ch[i].sw, ev);
@@ -650,7 +688,9 @@ class Battle {
       if (mv[0] === "Grassy Glide" && this.terrain === "grassy" && this.grounded(m)) pr += 1;
       let sub = 0;
       if (m.item === "Quick Claw" && this.chance(.2)) { sub = 1; this.msg(ev, `${this.who(i)}’s Quick Claw let it move first!`); }
-      if (m.item === "Lagging Tail" || m.item === "Full Incense") sub = -1;
+      else if (m.ability === "Quick Draw" && isDmg(mv) && this.chance(.3)) { sub = 1; this.msg(ev, `${this.who(i)}’s Quick Draw let it move first!`); }
+      else if (m.item === "Custap Berry" && m.hp <= m.max/(m.ability === "Gluttony" ? 2 : 4) && !this.nervous(i) && j !== -2) { sub = 1; this.eat(i, ev); this.msg(ev, `${this.who(i)} can act faster than normal, thanks to its Custap Berry!`); }
+      if (m.item === "Lagging Tail" || m.item === "Full Incense" || m.ability === "Stall") sub = -1;
       return {i, j, pr, sub};
     });
     this.queue = q; this.foeMove = Object.fromEntries(q.map(x => [x.i, x.j]));
@@ -665,6 +705,7 @@ class Battle {
   runQueue(ev){
     while (this.queue && this.queue.length && !this.over) {
       const a = this.nextInQueue(), m = this.get(a.i);
+      this.curPrio = a.pr;
       if (m.hp > 0 && !m.v.switchedIn) this.act(a.i, a.j, ev);
       this.check(ev, true);
       if (this.pend) return;   // waiting for the player to pick who comes in (U-turn, Eject Button…)
@@ -707,8 +748,10 @@ class Battle {
     if (m.status === "tox") m.toxN = 0;
     const foe = this.get(1 - i); if (foe && foe.v.leechFrom === i) { /* seed belongs to the target, nothing to do */ }
     if (foe) { if (foe.v.trapped === i) foe.v.trapped = null; if (foe.v.partial && foe.v.partial.from === i) foe.v.partial = null; }
+    if (m.v.origAbility !== undefined) m.ability = m.v.origAbility;
+    if (m.v.powerTrick) [m.stats.atk, m.stats.def] = [m.stats.def, m.stats.atk];
+    const sp = NAT_BY.get(m.n); if (sp) { const st = calcStats(sp.stats, m.level, m.nature, m.evs, m.ivs, baseOf(m.n) === 292); m.stats = {...st, hp:m.stats.hp}; m.types = [...sp.types]; }
     m.v = {}; m.stages = {atk:0, def:0, spa:0, spd:0, spe:0, acc:0, eva:0};
-    if (this.s[i].sc.wishHeal) {/* wish stays with the slot */}
   }
   // bag items (any side may carry a bag; AI trainers use theirs in aiItem)
   useItem(i, it, k, ev){
@@ -733,7 +776,7 @@ class Battle {
     if (j === -2 || v.recharge) { v.recharge = false; this.msg(ev, `${this.who(i)} must recharge!`); v.moved = true; return; }
     let mv = j >= 0 ? me.moves[j] : STRUGGLE; if (!mv) { mv = STRUGGLE; j = -1; }
     const fx = fxOf(mv), nm = mv[0], cont = !!(v.charging || v.lock);
-    v.moved = true;
+    v.moved = true; v.acts = (v.acts || 0) + 1;
     // things that stop a move
     if (me.status === "slp") {
       me.sleep -= me.ability === "Early Bird" ? 2 : 1;
@@ -744,8 +787,12 @@ class Battle {
       if (fl(mv, "f") || this.chance(.2)) this.cure(i, ev);
       else { this.msg(ev, `${this.who(i)} is frozen solid!`); return; }
     }
+    if (me.ability === "Truant") { if (v.loaf) { v.loaf = false; this.msg(ev, `${this.who(i)} is loafing around!`); return; } v.loaf = true; }
     if (v.flinch) { this.msg(ev, `${this.who(i)} flinched and couldn’t move!`); if (me.ability === "Steadfast") this.boost(i, {spe:1}, ev, {by:"Steadfast"}); v.charging = null; return; }
     if (v.taunt && !isDmg(mv) && mv !== STRUGGLE) { this.msg(ev, `${this.who(i)} can’t use ${nm} after the taunt!`); return; }
+    if (v.disable && v.disable.name === nm) { this.msg(ev, `${this.who(i)}’s ${nm} is disabled!`); return; }
+    if (v.healBlock && (fl(mv, "h") || fx.h) && !isDmg(mv)) { this.msg(ev, `${this.who(i)} can’t use ${nm} because of Heal Block!`); return; }
+    if (this.gravity && ["Fly", "Bounce", "Sky Drop", "High Jump Kick", "Jump Kick", "Splash", "Magnet Rise", "Telekinesis", "Flying Press", "Floaty Fall"].includes(nm)) { this.msg(ev, `${this.who(i)} can’t use ${nm} because of gravity!`); return; }
     if (v.confusion) {
       v.confusion--;
       if (!v.confusion) this.msg(ev, `${this.who(i)} snapped out of its confusion!`);
@@ -763,7 +810,9 @@ class Battle {
     if (j >= 0 && me.item.startsWith("Choice")) v.choice = j;
     if (!fx.stall && !(fx.v === "endure")) v.stall = 0;
     if (me.item === "Metronome") { v.metro = v.metro && v.metro.name === nm ? {name:nm, n:v.metro.n + 1} : {name:nm, n:0}; }
-    v.lastName = nm; if (j >= 0) v.lastJ = j;
+    v.furyCutter = v.lastName === "Fury Cutter" && nm === "Fury Cutter" ? (v.furyCutter || 0) + 1 : 0;
+    v.echo = this.lastEcho === this.turnNo - 1 && nm === "Echoed Voice" ? (v.echo || 0) + 1 : 0;
+    v.lastName = nm; if (j >= 0) v.lastJ = j; this.lastMove = mv;
     if (me.ability === "Protean" || me.ability === "Libero") { const t = this.moveType(me, mv); if (t !== "???" && !v.protean && (me.types.length !== 1 || me.types[0] !== t)) { me.types = [t]; v.protean = true; this.msg(ev, `${this.who(i)} transformed into the ${t} type!`); } }
     ev.push({k:"move", side:i, t:`${this.who(i)} used ${nm}!`, type:this.moveType(me, mv)});
     // two-turn moves
@@ -778,6 +827,9 @@ class Battle {
       }
     }
     v.charging = null; const semiWas = v.semi; v.semi = null;
+    if (nm === "Echoed Voice") this.lastEcho = this.turnNo;
+    if (isDmg(mv) && this.moveType(me, mv) === "Electric") v.charge = false;
+    if (isDmg(mv)) v.laserFocus = false;
     let ok;
     if (!isDmg(mv)) ok = this.statusMove(i, mv, ev);
     else ok = this.attack(i, j, mv, ev, semiWas);
@@ -785,14 +837,16 @@ class Battle {
     // locked moves (Outrage etc.) end in confusion
     if (fx.sv === "lockedmove" && me.hp > 0) {
       if (!v.lock && ok !== false) v.lock = {j, left:1 + this.r(2)};
-      else if (v.lock) { v.lock.left--; if (v.lock.left <= 0) { v.lock = null; if (!v.confusion) { this.msg(ev, `${this.who(i)} became confused due to fatigue!`); this.confuse(i, ev, true); } } }
+      else if (v.lock && !v.lock.roll) { v.lock.left--; if (v.lock.left <= 0) { v.lock = null; if (!v.confusion) { this.msg(ev, `${this.who(i)} became confused due to fatigue!`); this.confuse(i, ev, true); } } }
     }
     if (fx.sv === "mustrecharge" && ok !== false && me.hp > 0) v.recharge = true;
+    if ((nm === "Rollout" || nm === "Ice Ball") && me.hp > 0) { if (ok === false) { v.roll = 0; v.lock = null; } else { v.roll = (v.roll || 0) + 1; if (v.roll < 5) v.lock = {j, left:99, roll:true}; else { v.roll = 0; v.lock = null; } } }
     if (j >= 0 && v.encore) { v.encore.left--; if (v.encore.left <= 0) { v.encore = null; this.msg(ev, `${this.who(i)}’s encore ended!`); } }
   }
   accuracy(i, mv, semi){
     const me = this.get(i), foe = this.get(1 - i), fx = fxOf(mv), nm = mv[0], w = this.wx();
-    if (me.ability === "No Guard" || foe.ability === "No Guard") return true;
+    if (me.ability === "No Guard" || foe.ability === "No Guard" || (me.v.lockOn && me.v.lockOn >= this.turnNo)) return true;
+    if (foe.v.minimized && ["Body Slam", "Stomp", "Dragon Rush", "Heat Crash", "Heavy Slam", "Flying Press", "Malicious Moonsault", "Steamroller", "Supercell Slam"].includes(nm) && !foe.v.semi) return true;
     if (foe.v.semi && !HITS_SEMI[foe.v.semi].includes(nm)) return false;
     let acc = mv[4];
     if ((nm === "Thunder" || nm === "Hurricane" || nm === "Bleakwind Storm" || nm === "Wildbolt Storm" || nm === "Sandsear Storm") && w === "rain") return true;
@@ -806,6 +860,7 @@ class Battle {
     else if (me.ability === "Unaware") b = me.stages.acc;
     b = Math.max(-6, Math.min(6, b));
     acc = b > 0 ? Math.floor(acc*ACC_T[b]) : b < 0 ? Math.floor(acc/ACC_T[-b]) : acc;
+    if (this.gravity) acc = Math.floor(acc*5/3);
     const mods = [];
     if (me.ability === "Compound Eyes") mods.push(5325);
     if (me.ability === "Hustle" && mv[2] === "P") mods.push(3277);
@@ -813,6 +868,7 @@ class Battle {
     if (foe.item === "Bright Powder" || foe.item === "Lax Incense") mods.push(3686);
     if (me.item === "Wide Lens") mods.push(4505);
     if (me.item === "Zoom Lens" && foe.v.moved) mods.push(4915);
+    if (me.v.micle) { mods.push(4915); me.v.micle = false; }
     acc = pokeRound(acc*chainMods(mods, 0, 1 << 30)/4096);
     void semi;
     return this.r(100) < acc;
@@ -821,6 +877,9 @@ class Battle {
   lands(i, mv, ev){
     const me = this.get(i), foe = this.get(1 - i), fx = fxOf(mv);
     if (!foe || foe.hp <= 0) { this.msg(ev, "But there was no target…"); return false; }
+    const sideG = this.s[1 - i].guard;
+    if (sideG && sideG.turn === this.turnNo && fl(mv, "x") && !fx.bp && ((sideG.kind === "quick" && this.curPrio > 0) || (sideG.kind === "crafty" && !isDmg(mv)) || (sideG.kind === "mat" && isDmg(mv)))) { this.msg(ev, `${this.who(1 - i)} was protected by ${{quick:"Quick Guard", crafty:"Crafty Shield", mat:"Mat Block"}[sideG.kind]}!`); return false; }
+    if (foe.v.magicCoat && fl(mv, "m") && !isDmg(mv)) return "bounce";
     if (foe.v.protect && fl(mv, "x") && !fx.bp && !(me.ability === "Unseen Fist" && fl(mv, "c"))) {
       this.msg(ev, `${this.who(1 - i)} protected itself!`);
       const p = foe.v.protect, ct = fl(mv, "c") && me.item !== "Protective Pads" && !(me.item === "Punching Glove" && fl(mv, "p"));
@@ -844,21 +903,29 @@ class Battle {
   attack(i, j, mv, ev, semi){
     const me = this.get(i), foe = this.get(1 - i), fx = fxOf(mv), nm = mv[0], S = this.s[i], FS = this.s[1 - i];
     const crash = () => { if (fx.crash && me.ability !== "Magic Guard") this.hurt(i, me.max/2, ev, `${this.who(i)} kept going and crashed!`); };
-    if ((nm === "Fake Out" || nm === "First Impression" || nm === "Mat Block") && (me.v.turns || 0) > 0) { this.msg(ev, "But it failed!"); return false; }
+    if ((nm === "Fake Out" || nm === "First Impression" || nm === "Mat Block") && (me.v.acts || 0) > 1) { this.msg(ev, "But it failed!"); return false; }
     if ((nm === "Sucker Punch" || nm === "Thunderclap") && (foe.v.moved || !(this.foeMove && this.foeMove[1 - i] !== undefined && this.foeMove[1 - i] >= 0 && isDmg(foe.moves[this.foeMove[1 - i]])))) { this.msg(ev, "But it failed!"); return false; }
     if (nm === "Focus Punch" && me.v.hitBy && me.v.hitBy.turn === this.turnNo) { this.msg(ev, `${this.who(i)} lost its focus and couldn’t move!`); return false; }
     if (nm === "Burn Up" && !me.types.includes("Fire")) { this.msg(ev, "But it failed!"); return false; }
+    if (nm === "Belch" && !me.lastBerry) { this.msg(ev, "But it failed!"); return false; }
+    if (nm === "Spit Up" && !me.v.stockpile) { this.msg(ev, "But it failed!"); return false; }
+    if (nm === "Future Sight" || nm === "Doom Desire") {
+      if (FS.future) { this.msg(ev, "But it failed!"); return false; }
+      FS.future = {turn:this.turnNo + 2, a:me, mv, side:i, name:nm}; this.msg(ev, nm === "Future Sight" ? `${this.who(i)} foresaw an attack!` : `${this.who(i)} chose Doom Desire as its destiny!`); return true;
+    }
     if (nm === "Poltergeist" && !foe.item) { this.msg(ev, "But it failed!"); return false; }
     if (!this.lands(i, mv, ev)) { crash(); if (fx.sd && nm !== "Final Gambit") this.selfKO(i, ev); return false; }
     if ((nm === "Brick Break" || nm === "Psychic Fangs" || nm === "Raging Bull") && (FS.sc.reflect || FS.sc.lightscreen || FS.sc.auroraveil) && this.typeMul(me, foe, mv, this.moveType(me, mv)) > 0) { FS.sc.reflect = FS.sc.lightscreen = FS.sc.auroraveil = 0; this.msg(ev, "It shattered the barrier!"); }
+    if (nm === "Spit Up") { me.v.stockpile = 0; }
     const movedLast = foe.v.moved && !foe.v.switchedIn, lost = S.lostAllies;
-    const hits = this.numHits(me, mv), dSide = FS.sc, aSide = S.sc;
+    const pb = me.ability === "Parental Bond" && !fxOf(mv).mh && !fx.ohko && !fx.fd && !["Seismic Toss", "Night Shade", "Super Fang", "Final Gambit", "Endeavor", "Counter", "Mirror Coat", "Metal Burst", "Psywave"].includes(nm) && !fx.sd && !fl(mv, "2");
+    const hits = pb ? 2 : this.numHits(me, mv), dSide = FS.sc, aSide = S.sc;
     let total = 0, n = 0, eff = 1, lastCrit = false, anyHit = false, ohko = false;
     for (let h = 1; h <= hits; h++) {
       if (foe.hp <= 0 || me.hp <= 0) break;
       if (h > 1 && fx.ma && me.item !== "Loaded Dice" && !this.accuracy(i, mv)) break;
       const crit = this.rollCrit(me, foe, mv);
-      const r = this.calc(me, foe, mv, {crit, hit:h, dSide, aSide, movedLast, lostAllies:lost, prio:mv[6]});
+      const r = this.calc(me, foe, mv, {crit, hit:pb ? 1 : h, child:pb && h === 2, dSide, aSide, movedLast, lostAllies:lost, prio:mv[6], ppLeft:j >= 0 ? me.pp[j] : 4});
       if (h === 1) {
         if (r.immune) { this.immune(i, r, mv, ev); crash(); if (fx.sd && nm !== "Final Gambit") this.selfKO(i, ev); return false; }
         if (r.fail) { this.msg(ev, "But it failed!"); crash(); return false; }
@@ -875,7 +942,11 @@ class Battle {
         if (foe.v.sub <= 0) { foe.v.sub = 0; this.msg(ev, `${this.who(1 - i)}’s substitute faded!`); ev.push({k:"sub", side:1 - i, on:false}); }
         continue;
       }
-      const full = foe.hp === foe.max;
+      if (foe.ability === "Disguise" && !foe.disguised && !["Mold Breaker", "Teravolt", "Turboblaze"].includes(me.ability)) {
+        foe.disguised = true; this.msg(ev, "Its disguise served it as a decoy!"); this.msg(ev, `${this.who(1 - i)}’s disguise was busted!`);
+        n++; anyHit = true; this.hurt(1 - i, foe.max/8, ev); continue;
+      }
+      const full = foe.hp === foe.max, before = foe.hp;
       let endured = null;
       if (dmg >= foe.hp) {
         if (foe.v.endure) { dmg = foe.hp - 1; endured = "endure"; }
@@ -893,12 +964,14 @@ class Battle {
       else if (endured) this.msg(ev, `${this.who(1 - i)} hung on using its ${endured}!`);
       if (foe.item === "Air Balloon" && foe.hp > 0) { foe.item = ""; this.msg(ev, `${this.who(1 - i)}’s Air Balloon popped!`); }
       this.afterHit(i, mv, r, dmg, ev);
+      if (foe.hp <= 0 && foe.ability === "Innards Out" && me.hp > 0) { this.hurt(i, dmg, ev, `${this.who(i)} was hurt by ${this.who(1 - i)}’s Innards Out!`); }
+      if (foe.hp > 0 && (foe.ability === "Wimp Out" || foe.ability === "Emergency Exit") && before > foe.max/2 && foe.hp <= foe.max/2 && this.bench(1 - i).length && !fx.ss) { this.msg(ev, `${this.who(1 - i)}’s ${foe.ability} activated!`); this.selfSwitch(1 - i, ev); }
       if (foe.hp <= 0) { this.faint(1 - i, ev); if (foe.v.destinyBond && me.hp > 0) { this.msg(ev, `${this.who(1 - i)} took its attacker down with it!`); me.hp = 0; ev.push({k:"hp", side:i, hp:0, max:me.max}); this.faint(i, ev); } }
       else this.hpBerry(1 - i, ev);
     }
     if (!anyHit) return true;
     if (n && !ohko) { if (eff >= 2) this.msg(ev, "It’s super effective!", {se:true}); else if (eff < 1 && eff > 0) this.msg(ev, "It’s not very effective…"); }
-    if (hits > 1 && n) this.msg(ev, `The Pokémon was hit ${n} time${n === 1 ? "" : "s"}!`);
+    if (hits > 1 && n && !pb) this.msg(ev, `The Pokémon was hit ${n} time${n === 1 ? "" : "s"}!`);
     void lastCrit;
     // after the attack: drain, recoil, items, self-boosts, switching
     const mg = me.ability === "Magic Guard", sf = me.ability === "Sheer Force" && !!(fx.sf || fx.sec);
@@ -923,6 +996,7 @@ class Battle {
     if (nm === "Knock Off" && foe.hp > 0 && foe.item && me.hp > 0) { this.msg(ev, `${this.who(i)} knocked off ${this.who(1 - i)}’s ${foe.item}!`); foe.item = ""; foe.v.unburden = true; }
     if ((nm === "Thief" || nm === "Covet") && foe.item && !me.item && me.hp > 0) { me.item = foe.item; foe.item = ""; this.msg(ev, `${this.who(i)} stole ${this.who(1 - i)}’s ${me.item}!`); }
     if ((nm === "Rapid Spin" || nm === "Mortal Spin") && me.hp > 0) this.clearHazards(i, ev);
+    if (nm === "Spit Up" && me.v.stockDef) { this.boost(i, {def:-me.v.stockDef, spd:-me.v.stockDef}, ev); me.v.stockDef = 0; }
     if (nm === "Clear Smog" && foe.hp > 0) { foe.stages = {atk:0, def:0, spa:0, spd:0, spe:0, acc:0, eva:0}; this.msg(ev, `${this.who(1 - i)}’s stat changes were removed!`); }
     if (fx.dv === "partiallytrapped" && foe.hp > 0 && !foe.v.partial) { foe.v.partial = {from:i, left:me.item === "Grip Claw" ? 7 : 4 + this.r(2), band:me.item === "Binding Band", nm}; this.msg(ev, `${this.who(1 - i)} became trapped by ${nm}!`); }
     if (fx.dv === "smackdown" && foe.hp > 0 && !this.grounded(foe)) { foe.v.smackdown = true; if (foe.item === "Air Balloon") foe.item = ""; this.msg(ev, `${this.who(1 - i)} fell straight down!`); }
@@ -966,6 +1040,13 @@ class Battle {
       if (c && !(D === "Effect Spore" && (me.types.includes("Grass") || A === "Overcoat" || me.item === "Safety Goggles")) && this.canStatus(i, c, foe)) { this.msg(ev, `${this.who(1 - i)}’s ${D}!`); this.setStatus(i, c, ev, foe); }
     }
     if (foe.hp > 0 && contact && A === "Poison Touch" && this.chance(.3)) this.setStatus(1 - i, "psn", ev, me);
+    if (foe.hp > 0 && A === "Toxic Chain" && this.chance(.3)) this.setStatus(1 - i, "tox", ev, me);
+    if (me.hp > 0 && contact && (D === "Mummy" || D === "Lingering Aroma") && A !== D && !["Multitype", "Stance Change", "Schooling", "Comatose", "Disguise", "Zen Mode", "Power Construct", "RKS System", "Shields Down", "Ice Face"].includes(A)) { me.ability = D; this.msg(ev, `${this.who(i)}’s Ability became ${D}!`); }
+    if (me.hp > 0 && foe.hp > 0 && contact && D === "Wandering Spirit" && !["Multitype", "Stance Change", "Schooling", "Comatose", "Disguise", "Zen Mode", "Power Construct", "RKS System", "Shields Down", "Ice Face", "Wandering Spirit"].includes(A)) { [me.ability, foe.ability] = [foe.ability, me.ability]; this.msg(ev, `${this.who(i)} swapped Abilities with its target!`); }
+    if (A === "Magician" && !me.item && foe.item && foe.ability !== "Sticky Hold" && me.hp > 0) { me.item = foe.item; foe.item = ""; this.msg(ev, `${this.who(i)} stole ${this.who(1 - i)}’s ${me.item}!`); }
+    else if (D === "Pickpocket" && contact && !foe.item && me.item && foe.hp > 0 && me.ability !== "Sticky Hold") { foe.item = me.item; me.item = ""; this.msg(ev, `${this.who(1 - i)} stole ${this.who(i)}’s ${foe.item}!`); }
+    if (D === "Toxic Debris" && phys && (this.s[i].sc.tspikes || 0) < 2) { this.s[i].sc.tspikes = (this.s[i].sc.tspikes || 0) + 1; this.msg(ev, `Poison spikes were scattered on the ground all around ${this.s[i].human === false ? "the opposing team" : "your team"}!`); }
+    if (foe.hp > 0 && D === "Color Change" && type !== "???" && !foe.types.includes(type)) { foe.types = [type]; this.msg(ev, `${this.who(1 - i)} transformed into the ${type} type!`); }
     if (me.hp > 0 && contact && (D === "Gooey" || D === "Tangling Hair")) this.boost(i, {spe:-1}, ev, {foe:true});
     if (foe.hp > 0 && D === "Cotton Down") this.boost(i, {spe:-1}, ev, {foe:true});
     if (foe.hp <= 0 && contact && D === "Aftermath" && me.hp > 0 && A !== "Magic Guard") this.hurt(i, me.max/4, ev, `${this.who(i)} was caught in the aftermath!`);
@@ -998,14 +1079,14 @@ class Battle {
       else if (s.v === "confusion") this.confuse(1 - i, ev, true);
       if (s.b) this.boost(1 - i, s.b, ev, {foe:true});
     }
-    if (!flinched && !secs.some(s => s.v === "flinch") && (me.item === "King's Rock" || me.item === "Razor Fang") && foe.hp > 0 && !foe.v.moved && D !== "Inner Focus" && this.r(100) < 10*mul) foe.v.flinch = true;
+    if (!flinched && !secs.some(s => s.v === "flinch") && (me.item === "King's Rock" || me.item === "Razor Fang" || A === "Stench") && foe.hp > 0 && !foe.v.moved && D !== "Inner Focus" && this.r(100) < 10*mul) foe.v.flinch = true;
     if (foe.hp > 0 && foe.item === "Red Card" && me.hp > 0 && this.bench(i).length) { foe.item = ""; this.msg(ev, `${this.who(1 - i)} held up its Red Card against ${this.who(i)}!`); this.drag(i, ev); }
     if (foe.hp > 0 && foe.item === "Eject Button" && this.bench(1 - i).length) { foe.item = ""; this.msg(ev, `${this.who(1 - i)} is switched out with the Eject Button!`); this.selfSwitch(1 - i, ev); }
   }
   // Roar, Dragon Tail, Red Card: a random Pokémon is dragged out
   drag(i, ev){
     const m = this.get(i), b = this.bench(i);
-    if (!b.length || m.ability === "Suction Cups" || m.v.ingrain) return false;
+    if (!b.length || m.ability === "Suction Cups" || m.ability === "Guard Dog" || m.v.ingrain) return false;
     const k = b[this.r(b.length)], S = this.s[i];
     this.leave(i); S.act = k; this.msg(ev, `${this.get(i).name} was dragged out!`); this.enter(i, ev); this.get(i).v.switchedIn = true;
     return true;
@@ -1014,14 +1095,44 @@ class Battle {
   statusMove(i, mv, ev){
     const me = this.get(i), foe = this.get(1 - i), fx = fxOf(mv), nm = mv[0], S = this.s[i], FS = this.s[1 - i], fail = () => { this.msg(ev, "But it failed!"); return false; };
     const self = fx.t === "self" || fx.t === "allySide" || fx.t === "all" || fx.t === "allies" || fx.t === "allyTeam" || fx.t === "adjacentAllyOrSelf" || fx.t === "foeSide";
+    if (nm === "Splash" || nm === "Hold Hands" || nm === "Happy Hour") { this.msg(ev, "But nothing happened!"); return true; }
+    if (nm === "Celebrate") { this.msg(ev, `Congratulations, ${this.s[i].name}!`); return true; }
+    if (DOUBLES_ONLY.has(nm)) return fail();
     if (NO_EFFECT_MOVES.has(nm)) { this.msg(ev, "But nothing happened! (This move has no effect in these battles.)"); return false; }
+    if (nm === "Sleep Talk") {
+      if (me.status !== "slp" && me.ability !== "Comatose") return fail();
+      const pool = me.moves.filter(x => x[0] !== "Sleep Talk" && !fl(x, "2") && !["Bide", "Uproar", "Assist", "Copycat", "Me First", "Metronome", "Mirror Move", "Sketch", "Mimic"].includes(x[0]));
+      if (!pool.length) return fail(); const pick = pool[this.r(pool.length)];
+      ev.push({k:"move", side:i, t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
+      return isDmg(pick) ? this.attack(i, -1, pick, ev) : this.statusMove(i, pick, ev);
+    }
+    if (nm === "Metronome" || nm === "Copycat" || nm === "Mirror Move" || nm === "Nature Power") {
+      let pick = null;
+      if (nm === "Metronome") { const pool = MOVES.filter(x => !NO_EFFECT_MOVES.has(x[0]) && !DOUBLES_ONLY.has(x[0]) && !["Metronome", "Copycat", "Mirror Move", "Sleep Talk", "Struggle", "Nature Power", "Protect", "Detect", "Endure", "King's Shield", "Spiky Shield", "Baneful Bunker", "Silk Trap", "Obstruct", "Burning Bulwark", "Max Guard"].includes(x[0]) && !x[0].startsWith("G-Max")); pick = pool[this.r(pool.length)]; }
+      else if (nm === "Copycat") pick = this.lastMove && this.lastMove[0] !== "Copycat" ? this.lastMove : null;
+      else if (nm === "Mirror Move") { const l = foe && foe.v.lastName && MOVE_BY.get(foe.v.lastName); pick = l && l[0] !== "Mirror Move" ? l : null; }
+      else pick = MOVE_BY.get({electric:"Thunderbolt", grassy:"Energy Ball", misty:"Moonblast", psychic:"Psychic"}[this.terrain] || "Tri Attack");
+      if (!pick) return fail();
+      if (nm !== "Nature Power") this.msg(ev, `${nm === "Metronome" ? "Waggling a finger let it use" : "It copied"} ${pick[0]}!`); else this.msg(ev, `Nature Power turned into ${pick[0]}!`);
+      ev.push({k:"move", side:i, t:`${this.who(i)} used ${pick[0]}!`, type:this.moveType(me, pick)});
+      return isDmg(pick) ? this.attack(i, -1, pick, ev) : this.statusMove(i, pick, ev);
+    }
+    if (nm === "Magic Coat") { me.v.magicCoat = true; this.msg(ev, `${this.who(i)} shrouded itself with Magic Coat!`); return true; }
+    if (nm === "Quick Guard" || nm === "Crafty Shield" || nm === "Mat Block") {
+      if (nm === "Mat Block" && (me.v.acts || 0) > 1) return fail();
+      if (nm === "Quick Guard" && (me.v.stall || 0) > 0 && this.r(Math.min(729, 3 ** me.v.stall)) !== 0) { me.v.stall = 0; return fail(); }
+      if (nm === "Quick Guard") me.v.stall = (me.v.stall || 0) + 1;
+      S.guard = {turn:this.turnNo, kind:{"Quick Guard":"quick", "Crafty Shield":"crafty", "Mat Block":"mat"}[nm]}; this.msg(ev, `${nm} protected ${S.human === false ? "the opposing team" : "your team"}!`); return true;
+    }
     // moves aimed at the foe: Protect, accuracy, immunities, Magic Bounce, Substitute
     let tgt = 1 - i;
     if (!self) {
       if (!foe || foe.hp <= 0) return fail();
       if (fl(mv, "m") && foe.ability === "Magic Bounce" && !["Mold Breaker", "Teravolt", "Turboblaze"].includes(me.ability)) { this.msg(ev, `${this.who(1 - i)} bounced the ${nm} back!`); tgt = i; }
+      else if (fl(mv, "m") && foe.v.magicCoat) { this.msg(ev, `${this.who(1 - i)} bounced the ${nm} back!`); tgt = i; }
       else {
         if (me.ability === "Prankster" && foe.types.includes("Dark")) { this.msg(ev, `It doesn’t affect ${this.who(1 - i)}…`); return false; }
+        if (foe.ability === "Good as Gold" && !["Mold Breaker", "Teravolt", "Turboblaze"].includes(me.ability)) { this.msg(ev, `It doesn’t affect ${this.who(1 - i)}…`); return false; }
         if (!this.lands(i, mv, ev)) return false;
         if (foe.v.sub && !fl(mv, "o") && !fl(mv, "y") && me.ability !== "Infiltrator") return fail();
         if (fl(mv, "w") && (foe.types.includes("Grass") || foe.ability === "Overcoat" || foe.item === "Safety Goggles")) { this.msg(ev, `It doesn’t affect ${this.who(1 - i)}…`); return false; }
@@ -1059,7 +1170,54 @@ class Battle {
       case "Parting Shot": this.boost(tgt, {atk:-1, spa:-1}, ev, {foe:true}); this.selfSwitch(i, ev); return true;
       case "Chilly Reception": this.msg(ev, `${this.who(i)} is preparing to tell a chillingly bad joke!`); this.setWeather("snow", me, ev); this.selfSwitch(i, ev); return true;
       case "Mean Look": case "Block": case "Spider Web": if (T.v.trapped !== undefined && T.v.trapped !== null) return fail(); T.v.trapped = i; this.msg(ev, `${tw} can no longer escape!`); return true;
-      case "Sleep Talk": return fail();
+      case "Psych Up": me.stages = {...foe.stages}; this.msg(ev, `${this.who(i)} copied ${this.who(1 - i)}’s stat changes!`); return true;
+      case "Stockpile": if ((me.v.stockpile || 0) >= 3) return fail(); me.v.stockpile = (me.v.stockpile || 0) + 1; this.msg(ev, `${this.who(i)} stockpiled ${me.v.stockpile}!`); if (this.boost(i, {def:1, spd:1}, ev)) me.v.stockDef = (me.v.stockDef || 0) + 1; return true;
+      case "Swallow": { const n = me.v.stockpile || 0; if (!n || me.hp >= me.max) return fail(); this.heal(i, me.max*[0, .25, .5, 1][n], ev, `${this.who(i)} restored its HP.`); me.v.stockpile = 0; if (me.v.stockDef) { this.boost(i, {def:-me.v.stockDef, spd:-me.v.stockDef}, ev); me.v.stockDef = 0; } return true; }
+      case "Charge": me.v.charge = true; this.msg(ev, `${this.who(i)} began charging power!`); this.boost(i, {spd:1}, ev); return true;
+      case "Defense Curl": me.v.curled = true; this.boost(i, {def:1}, ev); return true;
+      case "Minimize": me.v.minimized = true; this.boost(i, {eva:2}, ev); return true;
+      case "Magnet Rise": if (me.v.magnetRise || this.gravity || me.v.ingrain) return fail(); me.v.magnetRise = 5; this.msg(ev, `${this.who(i)} levitated with electromagnetism!`); return true;
+      case "Lock-On": case "Mind Reader": me.v.lockOn = this.turnNo + 1; this.msg(ev, `${this.who(i)} took aim at ${tw}!`); return true;
+      case "Laser Focus": me.v.laserFocus = true; this.msg(ev, `${this.who(i)} concentrated intensely!`); return true;
+      case "Tar Shot": if (T.v.tarShot) { this.boost(tgt, {spe:-1}, ev, {foe:true}); return true; } T.v.tarShot = true; this.boost(tgt, {spe:-1}, ev, {foe:true}); this.msg(ev, `${tw} became weaker to fire!`); return true;
+      case "Power Trick": [me.stats.atk, me.stats.def] = [me.stats.def, me.stats.atk]; me.v.powerTrick = !me.v.powerTrick; this.msg(ev, `${this.who(i)} switched its Attack and Defense!`); return true;
+      case "Speed Swap": [me.stats.spe, T.stats.spe] = [T.stats.spe, me.stats.spe]; this.msg(ev, `${this.who(i)} switched Speed with its target!`); return true;
+      case "Power Split": case "Guard Split": { const K = nm === "Power Split" ? ["atk", "spa"] : ["def", "spd"]; for (const k of K) { const avg = Math.floor((me.stats[k] + T.stats[k])/2); me.stats[k] = T.stats[k] = avg; } this.msg(ev, `${this.who(i)} shared its ${nm === "Power Split" ? "power" : "guard"} with the target!`); return true; }
+      case "Heart Swap": case "Power Swap": case "Guard Swap": { const K = nm === "Heart Swap" ? Object.keys(me.stages) : nm === "Power Swap" ? ["atk", "spa"] : ["def", "spd"]; for (const k of K) [me.stages[k], T.stages[k]] = [T.stages[k], me.stages[k]]; this.msg(ev, `${this.who(i)} switched stat changes with its target!`); return true; }
+      case "Topsy-Turvy": if (!Object.values(T.stages).some(Boolean)) return fail(); for (const k in T.stages) T.stages[k] = -T.stages[k]; this.msg(ev, `${tw}’s stat changes were all reversed!`); return true;
+      case "Spite": { const lj = T.v.lastJ; if (lj === undefined || !T.pp[lj]) return fail(); const n = Math.min(4, T.pp[lj]); T.pp[lj] -= n; this.msg(ev, `It reduced the PP of ${tw}’s ${T.moves[lj][0]} by ${n}!`); return true; }
+      case "Perish Song": for (const k of [0, 1]) { const m = this.get(k); if (m && m.hp > 0 && m.ability !== "Soundproof" && !m.v.perish) m.v.perish = 4; } this.msg(ev, "All Pokémon that heard the song will faint in three turns!"); return true;
+      case "Healing Wish": case "Lunar Dance": if (!this.bench(i).length) return fail(); S.healWish = true; this.selfKO(i, ev); return true;
+      case "Revival Blessing": { const k = S.party.findIndex(m => m.hp <= 0); if (k < 0) return fail(); const m = S.party[k]; m.hp = Math.floor(m.max/2); m.status = null; m.v = {}; ev.push({k:"party", side:i, idx:k, hp:m.hp, max:m.max, revived:true}); this.msg(ev, `${m.name} was revived and is ready to fight again!`); return true; }
+      case "Shed Tail": { const c = Math.ceil(me.max/2); if (!this.bench(i).length || me.hp <= c || me.v.sub) return fail(); this.hurt(i, c, ev); this.msg(ev, `${this.who(i)} shed its tail to create a decoy!`); S.passing = null; this.selfSwitch(i, ev, "shedtail"); S.shedSub = Math.floor(me.max/4); return true; }
+      case "Disable": { const ln = T.v.lastName; if (!ln || T.v.disable || !T.moves.some(x => x[0] === ln)) return fail(); T.v.disable = {name:ln, left:4}; this.msg(ev, `${tw}’s ${ln} was disabled!`); if (T.item === "Mental Herb") { T.item = ""; T.v.disable = null; this.msg(ev, `${tw} used its Mental Herb to come back to its senses!`); } return true; }
+      case "Torment": if (T.v.torment) return fail(); T.v.torment = true; this.msg(ev, `${tw} was subjected to torment!`); return true;
+      case "Heal Block": if (T.v.healBlock) return fail(); T.v.healBlock = 5; this.msg(ev, `${tw} was prevented from healing!`); return true;
+      case "Gastro Acid": if (T.v.origAbility !== undefined) return fail(); T.v.origAbility = T.ability; T.ability = ""; this.msg(ev, `${tw}’s Ability was suppressed!`); return true;
+      case "Simple Beam": case "Worry Seed": case "Entrainment": { const na = nm === "Simple Beam" ? "Simple" : nm === "Worry Seed" ? "Insomnia" : me.ability; if (T.ability === na) return fail(); if (T.v.origAbility === undefined) T.v.origAbility = T.ability; T.ability = na; this.msg(ev, `${tw} acquired ${na}!`); if (na === "Insomnia" && T.status === "slp") this.cure(tgt, ev); return true; }
+      case "Skill Swap": if (me.v.origAbility === undefined) me.v.origAbility = me.ability; if (T.v.origAbility === undefined) T.v.origAbility = T.ability; [me.ability, T.ability] = [T.ability, me.ability]; this.msg(ev, `${this.who(i)} swapped Abilities with its target!`); return true;
+      case "Role Play": if (me.ability === T.ability) return fail(); if (me.v.origAbility === undefined) me.v.origAbility = me.ability; me.ability = T.ability; this.msg(ev, `${this.who(i)} copied ${tw}’s ${T.ability} Ability!`); return true;
+      case "Soak": case "Magic Powder": { const t = nm === "Soak" ? "Water" : "Psychic"; if (T.types.length === 1 && T.types[0] === t) return fail(); T.types = [t]; this.msg(ev, `${tw} transformed into the ${t} type!`); return true; }
+      case "Trick-or-Treat": case "Forest's Curse": { const t = nm === "Trick-or-Treat" ? "Ghost" : "Grass"; if (T.types.includes(t)) return fail(); T.types = [...T.types.slice(0, 2), t]; this.msg(ev, `${t} type was added to ${tw}!`); return true; }
+      case "Reflect Type": me.types = [...T.types]; this.msg(ev, `${this.who(i)}’s type became the same as ${tw}’s type!`); return true;
+      case "Conversion": { const t = me.moves[0][1]; if (me.types.length === 1 && me.types[0] === t) return fail(); me.types = [t]; this.msg(ev, `${this.who(i)}’s type changed to ${t}!`); return true; }
+      case "Camouflage": { const t = {electric:"Electric", grassy:"Grass", misty:"Fairy", psychic:"Psychic"}[this.terrain] || "Normal"; me.types = [t]; this.msg(ev, `${this.who(i)}’s type changed to ${t}!`); return true; }
+      case "Court Change": { const a = this.s[0].sc, b = this.s[1].sc; this.s[0].sc = b; this.s[1].sc = a; this.msg(ev, `${this.who(i)} swapped the battle effects affecting each side of the field!`); return true; }
+      case "Corrosive Gas": if (!T.item || T.ability === "Sticky Hold") return fail(); this.msg(ev, `${this.who(i)} corroded ${tw}’s ${T.item}!`); T.item = ""; return true;
+      case "Teatime": { let any = false; for (const k of [0, 1]) { const m = this.get(k); if (m && m.hp > 0 && /Berry$/.test(m.item)) { any = true; const it = m.item; this.msg(ev, `${this.who(k)} ate its ${it}!`); this.hpBerryForce(k, ev); } } return any || fail(); }
+      case "Stuff Cheeks": if (!/Berry$/.test(me.item)) return fail(); this.msg(ev, `${this.who(i)} ate its ${me.item}!`); this.hpBerryForce(i, ev); this.boost(i, {def:2}, ev); return true;
+      case "Recycle": if (me.item || !me.lastBerry) return fail(); me.item = me.lastBerry; me.lastBerry = null; this.msg(ev, `${this.who(i)} found one ${me.item}!`); return true;
+      case "Bestow": if (!me.item || T.item) return fail(); T.item = me.item; me.item = ""; this.msg(ev, `${tw} received ${T.item} from ${this.who(i)}!`); return true;
+      case "Purify": if (!T.status) return fail(); this.cure(tgt, ev); this.heal(i, me.max/2, ev); return true;
+      case "Heal Pulse": case "Floral Healing": if (T.hp >= T.max) return fail(); this.heal(tgt, T.max*(nm === "Floral Healing" && this.terrain === "grassy" ? 2/3 : 1/2), ev, `${tw}’s HP was restored.`); return true;
+      case "Life Dew": case "Jungle Healing": case "Lunar Blessing": if (me.hp >= me.max && !(nm !== "Life Dew" && me.status)) return fail(); this.heal(i, me.max/4, ev, `${this.who(i)} restored its HP.`); if (nm !== "Life Dew" && me.status) this.cure(i, ev); return true;
+      case "Gravity": if (this.gravity) return fail(); this.gravity = 5; this.msg(ev, "Gravity intensified!"); for (const k of [0, 1]) { const m = this.get(k); if (m) { m.v.magnetRise = 0; if (m.v.semi === "sky") { m.v.semi = null; m.v.charging = null; } } } return true;
+      case "Foresight": case "Odor Sleuth": T.v.foresight = true; T.stages.eva = Math.min(0, T.stages.eva); this.msg(ev, `${this.who(i)} identified ${tw}!`); return true;
+      case "Miracle Eye": T.v.miracleEye = true; T.stages.eva = Math.min(0, T.stages.eva); this.msg(ev, `${this.who(i)} identified ${tw}!`); return true;
+      case "Lucky Chant": if (S.sc.luckychant) return fail(); S.sc.luckychant = 5; this.msg(ev, `${S.human === false ? "The opposing team" : "Your team"} is shielded from critical hits!`); return true;
+      case "Mud Sport": case "Water Sport": { const k = nm === "Mud Sport" ? "mudSport" : "waterSport"; if (this[k]) return fail(); this[k] = 5; this.msg(ev, nm === "Mud Sport" ? "Electricity’s power was weakened!" : "Fire’s power was weakened!"); return true; }
+      case "Nightmare": if (T.status !== "slp" || T.v.nightmare) return fail(); T.v.nightmare = true; this.msg(ev, `${tw} began having a nightmare!`); return true;
+      case "Fairy Lock": this.fairyLock = this.turnNo + 1; this.msg(ev, "No one will be able to run away during the next turn!"); return true;
     }
     // volatile conditions
     if (fx.v) {
@@ -1133,6 +1291,7 @@ class Battle {
         if ((A === "Dry Skin" || A === "Solar Power") && w === "sun" && !mg) this.hurt(i, m.max/8, ev, `${this.who(i)} was hurt by its ${A}!`);
       }
     }
+    for (const i of [0, 1]) { const S = this.s[1 - i], f = S.future; if (f && f.turn <= this.turnNo) { S.future = null; if (alive(i)) { const d = this.get(i); this.msg(ev, `${this.who(i)} took the ${f.name} attack!`); const r = this.calc(f.a, d, f.mv, {dSide:this.s[i].sc}); if (r.immune || !r.rolls) this.msg(ev, `It doesn’t affect ${this.who(i)}…`); else this.hurt(i, r.rolls[this.r(16)], ev); } } }
     for (const i of [0, 1]) { const S = this.s[i]; if (S.wish && S.wish.turn <= this.turnNo) { const wi = S.wish; S.wish = null; if (alive(i)) this.heal(i, wi.hp, ev, `${wi.from}’s wish came true!`); } }
     if (this.terrain === "grassy") for (const i of this.order([0, 1])) if (alive(i) && this.grounded(this.get(i))) this.heal(i, this.get(i).max/16, ev, `${this.who(i)}’s HP was restored.`);
     for (const i of this.order([0, 1])) {
@@ -1150,23 +1309,33 @@ class Battle {
       if (alive(i) && m.v.curse && !mg) this.hurt(i, m.max/4, ev, `${this.who(i)} is afflicted by the curse!`);
       if (alive(i) && m.v.partial) { const p = m.v.partial; if (!mg) this.hurt(i, m.max/(p.band ? 6 : 8), ev, `${this.who(i)} is hurt by ${p.nm}!`); if (--p.left <= 0 && alive(i)) { m.v.partial = null; this.msg(ev, `${this.who(i)} was freed from ${p.nm}!`); } }
       if (alive(i) && m.v.taunt) { if (--m.v.taunt <= 0) { m.v.taunt = 0; this.msg(ev, `${this.who(i)} shook off the taunt!`); } }
+      if (alive(i) && m.v.nightmare && m.status === "slp" && !mg) this.hurt(i, m.max/4, ev, `${this.who(i)} is locked in a nightmare!`);
+      if (alive(i) && m.v.disable && --m.v.disable.left <= 0) { m.v.disable = null; this.msg(ev, `${this.who(i)}’s move is no longer disabled!`); }
+      if (alive(i) && m.v.healBlock && --m.v.healBlock <= 0) { m.v.healBlock = 0; this.msg(ev, `${this.who(i)}’s Heal Block wore off!`); }
+      if (alive(i) && m.v.magnetRise && --m.v.magnetRise <= 0) { m.v.magnetRise = 0; this.msg(ev, `${this.who(i)}’s electromagnetism wore off!`); }
+      if (alive(i) && m.v.perish) { m.v.perish--; this.msg(ev, `${this.who(i)}’s perish count fell to ${m.v.perish}.`); if (m.v.perish <= 0) { m.hp = 0; ev.push({k:"hp", side:i, hp:0, max:m.max}); this.faint(i, ev); } }
       if (alive(i) && m.v.yawn) { if (--m.v.yawn <= 0) { m.v.yawn = 0; this.setStatus(i, "slp", ev); } }
       if (alive(i) && m.ability === "Bad Dreams") { const f = this.get(1 - i); if (f && f.hp > 0 && f.status === "slp" && f.ability !== "Magic Guard") this.hurt(1 - i, f.max/8, ev, `${this.who(1 - i)} is tormented!`); }
     }
     for (const i of [0, 1]) {
       const sc = this.s[i].sc, who = this.s[i].human === false ? "the opposing team" : "your team";
-      for (const [k, t] of [["reflect", "Reflect"], ["lightscreen", "Light Screen"], ["auroraveil", "Aurora Veil"], ["tailwind", "Tailwind"], ["safeguard", "Safeguard"], ["mist", "Mist"]]) if (sc[k] && --sc[k] <= 0) { sc[k] = 0; this.msg(ev, `${who[0].toUpperCase() + who.slice(1)}’s ${t} wore off!`); }
+      for (const [k, t] of [["reflect", "Reflect"], ["lightscreen", "Light Screen"], ["auroraveil", "Aurora Veil"], ["tailwind", "Tailwind"], ["safeguard", "Safeguard"], ["mist", "Mist"], ["luckychant", "Lucky Chant"]]) if (sc[k] && --sc[k] <= 0) { sc[k] = 0; this.msg(ev, `${who[0].toUpperCase() + who.slice(1)}’s ${t} wore off!`); }
     }
     if (this.trickRoom && --this.trickRoom <= 0) { this.trickRoom = 0; this.msg(ev, "The twisted dimensions returned to normal!"); }
+    if (this.gravity && --this.gravity <= 0) { this.gravity = 0; this.msg(ev, "Gravity returned to normal!"); }
+    if (this.mudSport && --this.mudSport <= 0) { this.mudSport = 0; this.msg(ev, "The effects of Mud Sport have faded."); }
+    if (this.waterSport && --this.waterSport <= 0) { this.waterSport = 0; this.msg(ev, "The effects of Water Sport have faded."); }
     if (this.terrain && --this.tTurns <= 0) { this.msg(ev, TERRAIN_TXT[this.terrain][1], {ter:null}); this.terrain = null; }
     for (const i of this.order([0, 1])) {
       if (!alive(i)) continue; const m = this.get(i), A = m.ability;
       if (A === "Speed Boost" && (m.v.turns || 0) > 0) this.boost(i, {spe:1}, ev, {by:"Speed Boost"});
+      if (A === "Moody") { const K = ["atk", "def", "spa", "spd", "spe"], up = K.filter(k => m.stages[k] < 6), u = up.length ? up[this.r(up.length)] : null, dn = K.filter(k => k !== u && m.stages[k] > -6), d = dn.length ? dn[this.r(dn.length)] : null; const ch = {}; if (u) ch[u] = 2; if (d) ch[d] = -1; this.boost(i, ch, ev, {by:"Moody"}); }
+      if (A === "Harvest" && !m.item && m.lastBerry && (w === "sun" || this.chance(.5))) { m.item = m.lastBerry; this.msg(ev, `${this.who(i)} harvested one ${m.item}!`); this.hpBerry(i, ev); }
       if (m.status && ((A === "Shed Skin" && this.chance(1/3)) || (A === "Hydration" && w === "rain" && !this.umbrella(m)))) this.cure(i, ev, `${this.who(i)}’s ${A} cured its status!`);
       if (!m.status && (m.item === "Flame Orb" || m.item === "Toxic Orb")) this.setStatus(i, m.item === "Flame Orb" ? "brn" : "tox", ev);
       if (m.item === "Sticky Barb" && A !== "Magic Guard") this.hurt(i, m.max/8, ev, `${this.who(i)} is hurt by its Sticky Barb!`);
     }
-    for (const i of [0, 1]) { const m = this.get(i); if (m) { m.v.protect = null; m.v.endure = false; m.v.flinch = false; m.v.roost = false; m.v.switchedIn = false; m.v.turns = (m.v.turns || 0) + 1; if (m.v.charge && m.v.chargeUsed) m.v.charge = false; } }
+    for (const i of [0, 1]) { const m = this.get(i); if (m) { m.v.protect = null; m.v.magicCoat = false; m.v.endure = false; m.v.flinch = false; m.v.roost = false; m.v.switchedIn = false; if (m.v.charge && m.v.chargeUsed) m.v.charge = false; } }
   }
   check(ev, mid){
     for (const i of [0, 1]) if (!this.aliveIdx(i).length) { this.over = true; this.winner = this.aliveIdx(1 - i).length ? 1 - i : (this.lastMover === undefined ? 1 - i : this.lastMover); ev.push({k:"end", winner:this.winner}); this.queue = null; this.pend = null; return; }
@@ -1202,8 +1371,8 @@ class Battle {
       if (fx.sd) s = me.hp/me.max < .3 || pct >= 1 && L >= 3 ? s*.8 : s*.15;
       if (fx.sb && Object.values(fx.sb).some(v => v < 0) && pct < 1) s *= .9;
       if (fx.r && me.ability !== "Rock Head") s *= .95;
-      if ((nm === "Fake Out" || nm === "First Impression") && (me.v.turns || 0) > 0) s = 0;
-      if (nm === "Fake Out" && !(me.v.turns > 0)) s += 25;
+      if ((nm === "Fake Out" || nm === "First Impression") && (me.v.acts || 0) > 0) s = 0;
+      else if (nm === "Fake Out") s += 25;
       if (fx.ss && L >= 3 && this.threat(i) > .5 && this.bench(i).length) s += 15;
       if (nm === "Knock Off" && foe.item) s += 8;
       if (fx.sec && fx.sec.some(x => x.st && x.c >= 30) && !foe.status) s += 6;
