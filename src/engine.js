@@ -82,6 +82,9 @@ const EV_ITEMS = new Set(["Macho Brace","Power Anklet","Power Band","Power Belt"
 const STATUS_BERRY = {"Lum Berry":"all", "Cheri Berry":"par", "Chesto Berry":"slp", "Rawst Berry":"brn", "Pecha Berry":"psn", "Aspear Berry":"frz"};
 const PINCH_BERRY = {"Liechi Berry":"atk", "Ganlon Berry":"def", "Salac Berry":"spe", "Petaya Berry":"spa", "Apicot Berry":"spd"};
 const FLAVOR_BERRY = {"Figy Berry":"atk", "Wiki Berry":"spa", "Mago Berry":"spe", "Aguav Berry":"spd", "Iapapa Berry":"def"};
+// Gen 2 names of today's berries work like them (they're the same berries)
+const GEN2_BERRY = {"Berry":"Oran Berry", "Gold Berry":"Sitrus Berry", "PRZ Cure Berry":"Cheri Berry", "PSN Cure Berry":"Pecha Berry", "Burnt Berry":"Rawst Berry", "Ice Berry":"Aspear Berry", "Mint Berry":"Chesto Berry", "Bitter Berry":"Persim Berry", "Miracle Berry":"Lum Berry", "Mystery Berry":"Leppa Berry"};
+for (const k of Object.keys(GEN2_BERRY)) ITEM_WORKS.add(k);
 const itemWorks = name => !name || ITEM_WORKS.has(name);
 
 // ---- moves with special handling ----
@@ -151,7 +154,7 @@ function mkMon(n, o = {}){
   const moves = (o.moves || []).filter(Boolean).slice(0, 4), mv = (moves.length ? moves : autoMoves(n, sp.types, o.setup !== false)).slice(0, 4);
   return {n, name:o.nick || sp.name, species:sp.name, types:[...sp.types], level:L, nature, evs, ivs, stats, hp:stats.hp, max:stats.hp,
     stages:{atk:0, def:0, spa:0, spd:0, spe:0, acc:0, eva:0}, moves:mv, pp:mv.map(maxPP), ability:o.ability || defaultAbility(n),
-    item:isMega(n) ? "" : o.item || "", sh:!!o.sh, ball:o.ball || "poke", fe:isFE(n), status:null, sleep:0, toxN:0, v:{}, timesHit:0};
+    item:isMega(n) ? "" : GEN2_BERRY[o.item] || o.item || "", sh:!!o.sh, ball:o.ball || "poke", fe:isFE(n), status:null, sleep:0, toxN:0, v:{}, timesHit:0};
 }
 // a battler moved to a new level keeps its share of HP, its status and any item it has left
 function setLevel(m, L){

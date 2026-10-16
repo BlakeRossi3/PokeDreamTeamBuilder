@@ -22,6 +22,8 @@ TESTS = [  # (file, args)
     ("test_battle_engine.py", []),
     ("test_battle_ui.py", ["1280", "860", "3d"]),       # moves + PP, Bag, U-turn, Elite Four run bag
     ("test_battle_ui.py", ["390", "844", "2d"]),
+    ("test_sheet.py", ["1280", "860", "3d"]),           # Pokémon sheet: Battle tab, move picker, item picker
+    ("test_sheet.py", ["390", "844", "2d"]),
     ("test_engine.mjs", []),                            # engine rules: stats, crits, status, PP, items, Bag, AI (Node)
     ("test_damage.mjs", ["1500"]),                      # damage vs @smogon/calc (Node)
 ]
