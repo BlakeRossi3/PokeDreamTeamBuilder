@@ -21,7 +21,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 ## Commands
 - `python3 scripts/build.py` — build `dist/web/` (the website). `--artifact` also writes the single-page claude.ai version.
 - `python3 -m http.server 8765 --directory dist/web` — run it locally at http://localhost:8765/
-- `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once). Must be clean.
+- `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once), plus a CSS check for broken rules (a stray
+  declaration line silently kills the next rule; needs `pip install tinycss2`). Must be clean.
 - `node scripts/gen_data.mjs` — regenerate Pokémon/move/ability/item/learnset data from Pokémon Showdown (`@pkmn/dex`).
   Run by hand when data should change; the build itself never needs Node.
 - `node scripts/gen_families.mjs` — rebuild `data/families.json` (evolution families, for Home Pokémon that play together).
@@ -31,9 +32,11 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
-  (`pip install playwright && python3 -m playwright install chromium` once). Screenshots go to `tests/out/`;
+  (`pip install playwright && python3 -m playwright install chromium` once; `npm install` for axe-core). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
-- `sh supabase/tests/run.sh` — apply the Supabase migration to a throwaway local Postgres and check its rules.
+- `python3 tests/test_layout_lint.py [d t m]` — the layout checker (controls sticking out, clipped text, overlaps, uneven wraps,
+  jitter) on every screen; `python3 tests/test_a11y.py` — axe-core accessibility (contrast, labels, ARIA). Both must report 0.
+- `sh supabase/tests/run.sh` — apply the Supabase migrations to a throwaway local Postgres and check their rules.
 - `node tests/test_engine.mjs` (rules, items, Bag, AI, random-battle stress test) and `node tests/test_damage.mjs [n] [seed]`
   (damage vs `@smogon/calc`, all 16 rolls) — both also run from `run_all.py`.
 - No Python packages are needed to build; Playwright is only for tests. If the pre-installed browser doesn't match,

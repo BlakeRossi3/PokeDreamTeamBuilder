@@ -50,7 +50,7 @@
   --line:#28323f; --line-2:#a7bcb2; --fg:#1d2631; --muted:#4f5d6b;
   --accent:#d63a3a; --accent-b:#d63a3a; --accent-2:#3a68b8; --on-accent:#ffffff;
   --hi:#ffe9a8; --on-hi:#1d2631;
-  --good:#2b9348; --warn:#c98a00; --bad:#d63a3a; --fav:#d63a6a;
+  --good:#1f7a3a; --warn:#8a5d00; --bad:#b52a2a; --fav:#c22e5e;
   --platform:none;
   --medal-bg:transparent; --medal-r:0; --medal-ring:none;
   --slot-bg:#dcecf5; --hover-bg:#fff6cf; --sel-bg:#ffe9a8;
@@ -157,7 +157,7 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 .seg button{border:0; background:transparent; padding:6px 16px; border-radius:var(--pill); cursor:pointer; font-family:var(--font-d); font-weight:700; color:var(--muted); min-width:58px}
 .seg button[aria-pressed="true"]{background:var(--hi); color:var(--on-hi)}
 :root[data-mode="2d"] .seg button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
-.seg button .k{display:block; font-size:var(--fs-xs); font-weight:500; opacity:.8; font-family:var(--font-b)}
+.seg button .k{display:block; font-size:var(--fs-xs); font-weight:500; font-family:var(--font-b)}
 .toggle, .acct{display:inline-flex; align-items:center; gap:8px; padding:8px 16px; cursor:pointer; background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--pill); box-shadow:var(--shadow); font-family:var(--font-d); font-weight:700; color:var(--muted); min-height:44px}
 .toggle .spark{font-size:1.1em; color:var(--muted); transition:transform .3s}
 .toggle[aria-pressed="true"]{color:var(--fg); border-color:var(--warn)}
@@ -192,7 +192,7 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 :root[data-mode="2d"] .tab .dots i.on{background:var(--accent)}
 :root[data-mode="2d"] .tab:hover::before, :root[data-mode="2d"] .tab[aria-current="true"]::before{content:"▶"; position:absolute; left:6px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--fg)}
 :root[data-mode="2d"] .tab[aria-current="true"]{background:var(--sel-bg); box-shadow:var(--shadow)}
-:root[data-mode="2d"] .tab.theme .num{color:var(--accent)}
+:root[data-mode="2d"] .tab.theme .num{color:var(--accent-d)}
 .tab-edit{display:flex; align-items:center; gap:6px; padding:8px 16px; cursor:pointer; border:var(--bw) dashed var(--line-2); background:transparent; border-radius:var(--r-sm); color:var(--muted); font-family:var(--font-d); font-weight:700; white-space:nowrap}
 
 .layout{display:grid; gap:14px; grid-template-columns:minmax(0,440px) minmax(0,1fr); align-items:start}
@@ -215,6 +215,9 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 :root[data-mode="2d"] .btn{border-radius:var(--r-sm); border-color:var(--line)}
 :root[data-mode="2d"] .btn.primary{background:var(--accent); border-color:var(--line); box-shadow:none}
 :root[data-mode="2d"] .btn:hover::before{content:"▶"; font-size:.7em; display:inline-block; width:1.1em; margin-left:-1.1em; margin-right:-6px}   /* sits in the padding (the negative right margin cancels the flex gap), so hovering never changes the button's width */
+.btn:not(.primary):active:not(:disabled), .seg button:active, .chip:active, .tb:active, .hm-r:active, .tcard:active, .hub-tile:active, .bm-card:active{transform:translateY(1px) scale(.985)}
+:root[data-mode="2d"] .btn:not(.primary):active:not(:disabled), :root[data-mode="2d"] .hub-tile:active, :root[data-mode="2d"] .tcard:active{transform:translate(2px, 2px)}
+.card:active{transform:scale(.97)} :root[data-mode="2d"] .card:active{transform:translate(1px, 1px)}
 .btn.sm{min-height:var(--h-sm); padding:4px 12px; font-size:var(--fs-sm)}
 .btn svg, .btn .ic{flex:none; align-self:center} .btn > svg{width:1.1em; height:1.1em}
 .btn.plain{background:transparent}
@@ -377,7 +380,7 @@ img.spr:not([src]), img.tr:not([src]){visibility:hidden}
 :root[data-mode="2d"] .card.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; background:var(--sel-bg)}
 :root[data-mode="2d"] .card.sel .plate{background:none}
 :root[data-mode="2d"] .card.sel::after{border-radius:0; background:var(--accent); color:var(--on-accent)}
-.grid.full .card:not(.sel){opacity:.72}
+.grid.full .card:not(.sel) :is(.stage, .td){opacity:.55}   /* team full: the others fade back (the words stay readable) */
 .empty-grid{grid-column:1/-1; padding:var(--sp-6) var(--sp-5); text-align:center; color:var(--muted); border:2px dashed var(--line-2); border-radius:var(--r); line-height:1.5}
 
 /* overlays */
@@ -756,6 +759,7 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 :root[data-mode="2d"] .fchip{border-radius:var(--r-sm)}
 @media (max-width:560px){ .frow{grid-template-columns:1fr; gap:4px} }
 .empty-grid .btn{margin-top:10px}
+.empty-grid > .ic{width:44px; height:44px; margin:0 auto 6px; color:var(--accent)} .empty-grid h3{margin-bottom:6px; font-size:var(--fs-h2)} .empty-grid .actions{justify-content:center}
 
 /* Pokémon sheet: Battle tab, move picker, item picker */
 .modal.sheet .pk-head{display:flex; align-items:center; gap:10px; padding-right:44px; min-width:0} .modal.sheet .pk-head h3{min-width:0; overflow-wrap:anywhere; line-height:1.2; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden}
@@ -1109,7 +1113,7 @@ html[data-view="hub"] .start-bottom{display:none}
 html:not([data-view="hub"]) .hub{display:none}
 html[data-view="hub"] .logo{transform:scale(.72); transform-origin:50% 0; margin-bottom:-24px}
 html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), rgba(5,7,15,.25) 30%, rgba(5,7,15,.55) 60%, rgba(5,7,15,.88))}
-.hub-grid{display:grid; grid-template-columns:1.7fr repeat(7, minmax(0, 1fr)); gap:8px; width:100%}
+.hub-grid{display:grid; grid-template-columns:1.7fr repeat(var(--hub-n, 8), minmax(0, 1fr)); gap:8px; width:100%}
 .hub-tile{display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:8px; min-height:0; padding:12px; text-align:left; cursor:pointer; color:#fff; border:2px solid rgba(255,255,255,.18); border-radius:16px; background:rgba(11,18,34,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); transition:transform .12s, border-color .12s, background .12s}
 .hub-tile:hover, .hub-tile:focus-visible{transform:translateY(-2px); border-color:#ffd43b; background:rgba(22,32,60,.9)}
 .hub-tile .ic{width:34px; height:34px; padding:7px; border-radius:10px; background:rgba(255,255,255,.1); color:#ffd43b}
@@ -1118,7 +1122,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .hub-tile.big:hover{background:linear-gradient(100deg, var(--accent), var(--accent-b)); border-color:#fff}
 .ht{display:flex; flex-direction:column; gap:2px; min-width:0}
 .ht b{font-family:"Chakra Petch", sans-serif; font-style:italic; font-weight:700; font-size:16px; line-height:1.1}
-.ht .hm{font-size:12px; opacity:.85}
+.ht .hm{font-size:12px}
 .ht span{font-family:"Rubik", sans-serif; font-size:13px; color:rgba(255,255,255,.78); line-height:1.25}
 .hub-tile.big .ht b{font-size:22px} .hub-tile.big .ht span{color:#fff}
 :root[data-mode="2d"] .hub-tile{border-radius:0; background:var(--paper); color:var(--fg); border:3px solid var(--ink); backdrop-filter:none; box-shadow:4px 4px 0 var(--ink)}
@@ -1132,8 +1136,8 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 :root[data-mode="2d"] .hub-tile.big .ht span{color:var(--on-accent)}
 .hub-foot{display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap; font-family:"Rubik", sans-serif; font-size:13px; color:rgba(255,255,255,.85); text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .hub-foot .linkbtn{background:none; border:0; color:#ffd43b; text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:4px; font-weight:600; font-family:inherit; font-size:inherit}
-@media (max-width:1100px){ .hub-grid{grid-template-columns:repeat(4, minmax(0, 1fr))} .hub-tile.big{grid-column:1/-1} .hub-tile:last-child{grid-column:span 2} .hub-tile{flex-direction:row; align-items:center} }
-@media (max-width:640px){ .hub-grid{grid-template-columns:repeat(2, minmax(0, 1fr))} }
+@media (max-width:1100px){ .hub-grid{grid-template-columns:repeat(4, minmax(0, 1fr))} .hub-tile.big{grid-column:1/-1} .hub-tile{flex-direction:row; align-items:center} }
+@media (max-width:640px){ .hub-grid{grid-template-columns:repeat(2, minmax(0, 1fr))} .hub-tile:last-child:nth-child(even){grid-column:span 2} }   /* an odd tile out spans the row */
 @media (max-width:520px){ .corner-btns [data-gear]{display:none} }
 @media (max-width:420px){ .hub-tile{padding:10px} .hub-tile .ic{width:30px; height:30px; padding:6px} .ht b{font-size:15px} .ht span{font-size:12px} html[data-view="hub"] .logo{transform:scale(.6); margin-bottom:-36px} }
 
@@ -1175,7 +1179,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .acc-opt[aria-pressed="true"]{border-color:var(--fg); box-shadow:0 0 0 2px var(--hi)}
 :root[data-mode="2d"] .acc-opt{border-radius:0}
 /* achievements */
-.ach-sum{display:flex; align-items:center; gap:12px; font-family:var(--font-d); font-size:var(--fs-h2); margin-bottom:14px}
+.ach-sum{display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; font-family:var(--font-d); font-size:var(--fs-h2); margin-bottom:14px} .ach-sum > span:first-child{flex:0 1 auto} .ach-sum .ach-bar{flex:1 1 180px; min-width:180px}
 .ach-bar, .ach-prog{flex:1; display:block; height:10px; border-radius:999px; background:var(--raised-2); overflow:hidden; max-width:420px}
 .ach-bar i, .ach-prog i{display:block; height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-b))}
 .ach-prog{height:6px; margin:6px 0 2px}
@@ -1278,13 +1282,14 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 }
 @media (max-width:760px){ .bt-bottom{grid-template-columns:1fr} }
 .bt2 .bt-log{margin-top:0; min-height:84px; display:flex; flex-direction:column; justify-content:flex-end; gap:2px}
-.bt2 .bt-log p{opacity:.55; font-size:var(--fs-sm)} .bt2 .bt-log p:last-child{opacity:1; font-size:var(--fs)}
+.bt2 .bt-log p{opacity:.74; font-size:var(--fs-sm)} .bt2 .bt-log p:last-child{opacity:1; font-size:var(--fs)}
 .bt-cmd{min-height:96px; padding:10px; background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--r-sm); display:flex; flex-direction:column; gap:8px; justify-content:center}
 :root[data-mode="2d"] .bt-cmd{background:var(--paper); border:3px solid var(--ink); border-radius:0}
 .bt-q{margin:0; font-size:var(--fs-sm)}
 .bt-moves{display:grid; grid-template-columns:1fr 1fr; gap:6px}
 .bt-move{display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding:7px 10px; cursor:pointer; text-align:left; border:2px solid rgba(0,0,0,.25); border-radius:10px; background:var(--tc); color:var(--tt); font-family:var(--font-d)}
-.bt-move b{font-size:var(--fs)} .bt-move span{font-size:var(--fs-xs); opacity:.85} .bt-move em{font-style:normal; font-size:var(--fs-xs); font-weight:700; opacity:.95}
+.bt-move b{font-size:var(--fs)} .bt-move span{font-size:var(--fs-xs)}
+@media (max-width:480px){ :root[data-mode="2d"] .bt-move span, :root[data-mode="2d"] .bt-move em{font-size:15px; line-height:1.05} :root[data-mode="2d"] .bt-move b{font-size:18px} }   /* 2D phone: move cards stay compact */ .bt-move em{font-style:normal; font-size:var(--fs-xs); font-weight:700; opacity:.95}
 .bt-move:hover:not(:disabled){filter:brightness(1.08); transform:translateY(-1px)}
 .bt-move:disabled{opacity:.35; cursor:not-allowed}
 .bt-move .bt-pp{font-variant-numeric:tabular-nums; font-weight:700; opacity:.9} .bt-move .bt-pp.low{color:#7a1d00} .bt-move .bt-pp.none{text-decoration:line-through}
@@ -1430,7 +1435,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 .shop{display:grid; gap:14px}
 .shop-top{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
 .shop-bal{display:grid; gap:2px; padding:12px 20px; background:linear-gradient(120deg, var(--accent), var(--accent-b)); color:#fff; border-radius:var(--r)}
-.shop-bal .meta{color:rgba(255,255,255,.85)}
+.shop-bal .meta{color:#fff}
 .shop-bal b{font-family:var(--font-d); font-size:30px; line-height:1.1; font-variant-numeric:tabular-nums}
 :root[data-mode="2d"] .shop-bal{border-radius:0; background:var(--accent); color:var(--on-accent); border:3px solid var(--ink); box-shadow:4px 4px 0 var(--ink)}
 .shop-top .note{flex:1 1 260px; margin:0}
@@ -1498,19 +1503,21 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 .bm-main .ic{width:58px; height:58px; padding:12px; background:rgba(255,255,255,.2)}
 .bm-main b{font-size:clamp(28px, 3.6vw, 40px); line-height:1.05; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.22)}
 :root[data-mode="2d"] .bm-main b{color:var(--on-accent); text-shadow:none}
-.bm-main .bm-l > span:not(.ic):not(.bm-cta):not(.bm-prog){color:rgba(255,255,255,.92); font-size:var(--fs)}
-.bm-prog{display:grid; gap:6px; font-size:var(--fs-sm); color:rgba(255,255,255,.9)}
+.bm-main .bm-l > span:not(.ic):not(.bm-cta):not(.bm-prog){color:#fff; font-size:var(--fs)}
+.bm-prog{display:grid; gap:6px; font-size:var(--fs-sm); color:#fff}
 .bm-prog .ach-bar{background:rgba(0,0,0,.22); max-width:none}
 .bm-prog .ach-bar i{background:#ffd43b}
 .bm-cta{align-self:flex-start; margin-top:4px; padding:10px 18px; border-radius:999px; background:#fff; color:#1d2631; font-family:var(--font-d); font-weight:700; font-size:var(--fs-sm); box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.bm-rh{font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.85)}
+.bm-rh{font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.1em; text-transform:uppercase; color:#fff}
 .bm-leaders{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px 8px}
 .bm-ld{display:grid; justify-items:center; gap:3px; min-width:0}
 .bm-ld .stage, .bm-ld .emblem-tr{width:62px; height:62px}
 .bm-ld small{font-size:12px; color:#fff; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .bm-ld:not(.won) .stage{filter:grayscale(.5) brightness(.85)}
 .bm-ld.won small::before{content:"★ "; color:#ffd43b}
-.bm-rw{font-size:var(--fs-xs); color:rgba(255,255,255,.88)}
+.bm-rw{font-size:var(--fs-xs); color:#fff}
+/* small white text on the orange gradient: a soft shadow keeps it readable (3D) */
+:root:not([data-mode="2d"]) :is(.bm-main, .shop-bal, .hub-tile.big, .btn.primary){text-shadow:0 1px 2px rgba(0,0,0,.28)}
 :root[data-mode="2d"] .bm-main{background:var(--accent); color:var(--on-accent); border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink)}
 :root[data-mode="2d"] .bm-main .ic{background:var(--paper); color:var(--accent)}
 :root[data-mode="2d"] .bm-cta{border-radius:0; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink)}
@@ -2510,7 +2517,7 @@ function renderGrid(){
   const tot = T.mons.length;
   $("dexMeta").textContent = (T.kind === "gen" ? `${fmtNo(T.range[0])}–${fmtNo(T.range[1])} · ` : T.blurb ? T.blurb + " · " : "") + (list.length === tot ? `${tot} Pokémon` : `${list.length} of ${tot}`);
   const card = m => `
-    <div class="card${t.has(m.num)?" sel":""}" role="button" tabindex="0" data-num="${m.num}" aria-pressed="${t.has(m.num)}" aria-label="${esc(m.name)}, ${m.types.join(" and ")}">
+    <div class="card${t.has(m.num)?" sel":""}" role="group" aria-roledescription="Pokémon card" tabindex="0" data-num="${m.num}" data-al="${esc(m.name)}, ${m.types.join(" and ")}" aria-label="${esc(m.name)}, ${m.types.join(" and ")}${t.has(m.num) ? ", on your team" : ""}">
       <button class="fav" type="button" data-fav="${m.num}" aria-pressed="${isFav(m.num)}" aria-label="Favorite ${esc(m.name)}">${isFav(m.num) ? "♥" : "♡"}</button>
       <button class="info" type="button" data-info="${m.num}" aria-label="${esc(m.name)} stats">i</button>
       ${spr(m.num)}
@@ -2546,7 +2553,7 @@ function renderGrid(){
 }
 function syncSelection(){
   const t = new Set(team());
-  $("grid").querySelectorAll(".card").forEach(c => { const on = t.has(+c.dataset.num); c.classList.toggle("sel", on); c.setAttribute("aria-pressed", on); });
+  $("grid").querySelectorAll(".card").forEach(c => { const on = t.has(+c.dataset.num); c.classList.toggle("sel", on); c.setAttribute("aria-label", c.dataset.al + (on ? ", on your team" : "")); });
   $("grid").classList.toggle("full", t.size >= sizeOf(state.team));
 }
 function renderAll(){ renderMode(); renderAcct(); renderLayout(); renderTabs(); renderTeam(); renderChips(); renderGrid(); }
@@ -2625,7 +2632,7 @@ function openSheet(num, tab = "info"){
   const sh = inTeam && isShinyMember(state.team, num);
   const nick = inTeam ? memberOf(state.team, num).nick : "";
   const head = `<div class="hero">${spr(m.num, {sh, zoom:true})}<div><div class="meta">${fmtNo(m.num)} · Gen ${ROMAN[og]} ${REGION(og)}${nick ? " · " + esc(m.name) : ""}</div><h3 class="mt" id="modalTitle">${inTeam ? ballImg(ballOf(state.team, num), "ball-ic lg") : ""}${esc(nick || m.name)}</h3>${typeBadges(m.types)}</div></div>
-    ${inTeam ? `<div class="segrow sheet-tabs" role="tablist" aria-label="Sections">${[["battle", "Battle"], ["look", "Personalize"], ["info", "Info"]].map(([k, l]) => `<button type="button" role="tab" data-stab="${k}" aria-pressed="${tab === k}" aria-selected="${tab === k}">${l}</button>`).join("")}</div>` : ""}`;
+    ${inTeam ? `<div class="segrow sheet-tabs" role="group" aria-label="Sections">${[["battle", "Battle"], ["look", "Personalize"], ["info", "Info"]].map(([k, l]) => `<button type="button" data-stab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>` : ""}`;
   if (tab === "battle" || tab === "look") {
     const md = openModal(head + (tab === "battle" ? battleHTML(num) : personalHTML(num)), {wide:tab === "battle", sheet:true});
     md.querySelectorAll("[data-stab]").forEach(b => b.onclick = () => openSheet(num, b.dataset.stab));
@@ -3426,10 +3433,10 @@ function onlineCardHTML(){
   return `<section class="online" aria-labelledby="onT">
     <h3 id="onT">Play on any device</h3>
     <p class="meta">Sign in and your teams, badges and PokéPoints follow you to every browser. Free, and you can add friends.</p>
-    ${o.step === "code" ? `<form class="on-row" id="accCode" autocomplete="off"><input id="accCd" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code from the email" aria-label="Sign-in code" required><button class="btn primary" type="submit">Sign in</button></form>
-      <p class="note">We sent a code to <b>${esc(o.email)}</b>. Type it here, or tap the link in the email. <button class="linkbtn" type="button" data-acc="emailback">Use a different email</button></p>`
+    ${o.step === "code" ? `<form class="on-row" id="accCode" autocomplete="off"><input id="accCd" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code (if the email has one)" aria-label="Sign-in code" required><button class="btn primary" type="submit">Sign in</button></form>
+      <p class="note">We sent an email to <b>${esc(o.email)}</b>. Open it and tap <b>Sign in</b> (or type the code here if there is one). <button class="linkbtn" type="button" data-acc="emailback">Use a different email</button></p>`
     : `<div class="on-row"><button class="btn google" type="button" data-acc="google"><span class="g-logo" aria-hidden="true">G</span> Continue with Google</button></div>
-      <form class="on-row" id="accEmail"><input id="accEm" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" required value="${esc(o.email || "")}"><button class="btn" type="submit">Email me a code</button></form>`}
+      <form class="on-row" id="accEmail"><input id="accEm" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" required value="${esc(o.email || "")}"><button class="btn" type="submit">Email me a sign-in link</button></form>`}
     ${o.err ? `<p class="acc-err" role="alert">${esc(o.err)}</p>` : ""}
     <p class="note">No password needed. We never show your email to anyone.</p>
   </section>`;
@@ -5287,7 +5294,7 @@ function renderViewPanel(){
   const weak = T.types.map(a => ({a, e: eff(a, m.types, T.chart)})).filter(x => x.e >= 2), immune = T.types.filter(a => eff(a, m.types, T.chart) === 0), sh = isShinyMember(state.team, n);
   const head = `<button class="btn sm" type="button" data-vsel="">← Team stats</button>
     <div class="vp-mon"><div class="meta" id="vpMeta">${vpMeta(m)}</div><h3 id="vpName">${vpName(m)}</h3>${typeBadges(m.types)}</div>
-    <div class="segrow sheet-tabs" role="tablist" aria-label="Sections">${[["stats", "Info"], ["battle", "Battle"], ["build", "Personalize"]].map(([k, l]) => `<button type="button" role="tab" data-vtab="${k}" aria-pressed="${viewTab === k}" aria-selected="${viewTab === k}">${l}</button>`).join("")}</div>`;
+    <div class="segrow sheet-tabs" role="group" aria-label="Sections">${[["stats", "Info"], ["battle", "Battle"], ["build", "Personalize"]].map(([k, l]) => `<button type="button" data-vtab="${k}" aria-pressed="${viewTab === k}">${l}</button>`).join("")}</div>`;
   if (viewTab === "battle") {
     $("viewPanel").innerHTML = head + battleHTML(n);
     wireBattle($("viewPanel").querySelector("#bsRoot"), n, state.team, () => updateViewMon(n));
@@ -5844,7 +5851,7 @@ function openItemPicker(num, id = state.team){
   let sel = cur, q = "";
   const md = openModal(`<div class="ip"><div class="pk-head"><button class="btn sm" type="button" id="ipBack">← Back</button><h3 class="mt" id="modalTitle">Held item for ${esc(nickOf(id, num))}</h3></div>
     <input class="search tsearch" id="ipQ" type="search" placeholder="Search ${pool.length} items" autocomplete="off" aria-label="Search items">
-    <div class="segrow ip-tabs" id="ipTabs" role="tablist">${ITEM_TABS.map(([k, l]) => `<button type="button" role="tab" data-ipt="${k}" aria-pressed="${ipTab === k}" aria-selected="${ipTab === k}">${l}</button>`).join("")}</div>
+    <div class="segrow ip-tabs" id="ipTabs" role="group">${ITEM_TABS.map(([k, l]) => `<button type="button" data-ipt="${k}" aria-pressed="${ipTab === k}">${l}</button>`).join("")}</div>
     <div class="ip-body"><div class="ip-grid" id="ipGrid"></div><aside class="ip-detail" id="ipDet" aria-live="polite"></aside></div></div>`, {wide:true, sheet:true});
   const inTab = it => { const [nm, , cat] = it;
     switch (ipTab) {
@@ -6209,7 +6216,7 @@ function renderShop(){
   $("scBody").innerHTML = `<div class="shop">
     <div class="shop-top"><div class="shop-bal"><span class="meta">Your PokéPoints</span><b id="shopBal">${fmtPP(G.pp)}</b></div>
       <p class="note">Earn PokéPoints from quizzes, achievements, rivals, Versus and Gyms. Gym Leaders also give exclusive rewards you can’t buy here.</p></div>
-    <div class="segrow shop-tabs" role="tablist">${CAT_ORDER.map(c => `<button type="button" role="tab" data-scat="${c}" aria-pressed="${c === shopCat}">${CAT[c].name}</button>`).join("")}</div>
+    <div class="segrow shop-tabs" role="group">${CAT_ORDER.map(c => `<button type="button" data-scat="${c}" aria-pressed="${c === shopCat}">${CAT[c].name}</button>`).join("")}</div>
     ${ex.length ? `<p class="meta shop-ex">Exclusives found: ${exGot} / ${ex.length}</p>` : ""}
     <div class="shop-grid">${sorted.filter(it => !isExclusive(it) || owns(it.cat, it.id)).map(card).join("")}</div>
     ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four and Champions. They’re never sold here.</p>` : ""}
@@ -6766,6 +6773,7 @@ function drawHomeMon(c, m, now, pixel){
 // ---- little effects: heart bursts, sparkles, crumbs, berries flying to the pouch, gift confetti ----
 // positions are in tiles (x, floor y, height above the floor) so they stay put when the camera moves
 function fx(k, x, y, z, o = {}){
+  if (state.ui.motion === "reduced" && k !== "berry") return;   // Reduced motion: no bursts or confetti
   if (!HS.fx) HS.fx = []; if (HS.fx.length > 160) HS.fx.shift();
   const a = Math.random()*Math.PI*2, sp = o.sp ?? .8;
   HS.fx.push({k, x, y, z, vx:o.vx ?? Math.cos(a)*sp*.6, vz:o.vz ?? (1 + Math.random())*sp, t0:performance.now(), dur:o.dur || 900, col:o.col, to:o.to, rot:Math.random()*6, g:o.g ?? 2.2});
@@ -6998,7 +7006,7 @@ function homeMsg(html, o = {}){
 function typewriter(el){
   clearInterval(HS.tw); if (!el) return;
   const parts = []; (function walk(n){ for (const ch of n.childNodes) { if (ch.nodeType === 3) { parts.push([ch, ch.textContent]); ch.textContent = ""; } else walk(ch); } })(el);
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { for (const [n, t] of parts) n.textContent = t; return; }
+  if (state.ui.motion === "reduced") { for (const [n, t] of parts) n.textContent = t; return; }   // Reduced motion: the words appear at once
   let i = 0, j = 0; HS.tw = setInterval(() => {
     if (!el.isConnected || i >= parts.length) { clearInterval(HS.tw); for (const [n, t] of parts) n.textContent = t; return; }
     const [n, t] = parts[i]; j = Math.min(t.length, j + 2); n.textContent = t.slice(0, j); if (j >= t.length) { i++; j = 0; }
@@ -7493,7 +7501,7 @@ async function hofCardArt(cv, id, mode, tok){
 function renderHofGallery(){
   const mode = galMode || state.mode, two = mode === "2d", ts = nonEmptyTeams(), tok = ++galTok;
   $("scBody").innerHTML = `<div class="hgal">
-    <div class="hgal-top"><div class="segrow hgal-tabs" role="tablist" aria-label="Scene style">${[["3d", "3D cards"], ["2d", "2D pixel cards"]].map(([m, l]) => `<button type="button" role="tab" data-gm="${m}" aria-pressed="${m === mode}">${l}</button>`).join("")}</div>
+    <div class="hgal-top"><div class="segrow hgal-tabs" role="group" aria-label="Scene style">${[["3d", "3D cards"], ["2d", "2D pixel cards"]].map(([m, l]) => `<button type="button" data-gm="${m}" aria-pressed="${m === mode}">${l}</button>`).join("")}</div>
       <p class="note">Your ${two ? "2D" : "3D"} Hall of Fame scenes. 2D and 3D are staged separately, so each team can have a pixel card and a 3D card. Tap one to open it.</p></div>
     ${ts.length ? `<div class="hgal-grid">${ts.map(t => { const sc = sceneOf(t.id, mode), T = hofTitle(t.id, sc);
       return `<button class="hgal-card" type="button" data-hg="${t.id}"><span class="hgal-cv"><canvas data-hgcv="${t.id}" width="640" height="360" aria-hidden="true"></canvas><i class="hgal-mode">${two ? "2D" : "3D"}</i></span>
@@ -7563,6 +7571,7 @@ function showHub(){
 function renderHub(){
   const done = achDone();
   const meta = {battle:`${totalBadges()}/72 badges`, ach:`${done}/${ACH.length} unlocked`, home:`${homeMons().length}/${homeCap()} Pokémon`, shop:fmtPP(state.games.pp), hofgal:`${nonEmptyTeams().length} cards`, card:esc(profile && !profile.guest ? profile.name : "Guest"), friends:friendsOn() ? (FR.list ? `${FR.list.filter(f => f.status === "accepted").length} friends` : "Online") : "Sign in online", quiz:dailyState().i >= 10 ? `Daily done · ${dailyState().s}/10` : "Daily 10 ready"};
+  $("hubGrid").style.setProperty("--hub-n", HUB.filter(h => !h.big).length);
   $("hubGrid").innerHTML = HUB.map(h => `<button class="hub-tile${h.big ? " big" : ""}" type="button" data-go="${h.go}" title="${esc(h.sub || h.name)}">${ic(h.icon)}<span class="ht"><b>${h.name}</b>${h.big ? `<span>${state.sample ? h.sub : `Continue · ${esc(G().card)} team ${team().length}/${sizeOf(state.team)}`}</span>` : meta[h.go] ? `<span class="hm">${meta[h.go]}</span>` : ""}</span></button>`).join("");
   const ico = myIcon(); $("hubWho").innerHTML = profile ? `${ico ? iconHTML(ico, "sm") : ""}<span>${profile.guest ? "Playing as guest" : `Trainer ${esc(profile.name)}`}</span><span class="hub-pp">${fmtPP(state.games.pp)}</span>` : "";
   paintAll($("hubWho"));
@@ -7770,7 +7779,7 @@ function checkAch(silent){
 function renderAch(){
   const done = achDone();
   $("scBody").innerHTML = `<div class="ach-wrap">
-    <div class="ach-sum"><b>${done}</b> of ${ACH.length} unlocked · each one is worth ${fmtPP(100)}<span class="ach-bar"><i style="width:${done/ACH.length*100}%"></i></span></div>
+    <div class="ach-sum"><span><b>${done}</b> of ${ACH.length} unlocked · each one is worth ${fmtPP(100)}</span><span class="ach-bar"><i style="width:${done/ACH.length*100}%"></i></span></div>
     <div class="ach-grid">${ACH.map(a => { const at = state.games.ach[a.id], [c, m] = a.p();
       return `<div class="ach${at ? " on" : ""}"><span class="medal-ic" aria-hidden="true">${ICON.trophy}</span><div><b>${a.name}</b><p>${a.desc}</p>${at ? `<span class="meta">Unlocked ${new Date(at).toLocaleDateString()}</span>` : m > 1 ? `<span class="ach-prog"><i style="width:${Math.min(100, c/m*100)}%"></i></span><span class="meta">${Math.min(c, m)} / ${m}</span>` : `<span class="meta">Locked</span>`}</div></div>`; }).join("")}</div></div>`;
   setMusic("title");
@@ -7933,7 +7942,7 @@ function renderQuiz(){
   qz.streak = 0; qz.next = null;
   if (qz.mode === "daily") { const D = dailyState(); qz.dq = dailySet(D.d); if (D.i >= 10) return renderDailyDone(); }
   $("scBody").innerHTML = `<div class="qz-wrap">
-    <div class="segrow qz-modes" role="tablist">${Object.entries(QZ).map(([k, v]) => `<button type="button" role="tab" data-qm="${k}" aria-pressed="${qz.mode === k}">${v.label}</button>`).join("")}</div>
+    <div class="segrow qz-modes" role="group">${Object.entries(QZ).map(([k, v]) => `<button type="button" data-qm="${k}" aria-pressed="${qz.mode === k}">${v.label}</button>`).join("")}</div>
     ${qz.mode === "daily" ? `<div class="qz-bar"><span>Question <b id="qzStreak">${dailyState().i + 1}</b> of 10</span><span>Score <b id="qzBest">${dailyState().s}</b></span><span class="qz-dots" id="qzDots">${dailyDots()}</span></div>`
     : `<div class="qz-bar"><span>Streak <b id="qzStreak">0</b></span><span>Best <b id="qzBest">${state.games.qbest[qz.mode]}</b></span>
       <select class="select" id="qzGen" aria-label="Which Pokémon">${["All generations", ...GENS.map(g => `Gen ${ROMAN[g.g]} · ${g.region}`)].map((l, i) => `<option value="${i}" ${qz.gen === i ? "selected" : ""}>${l}</option>`).join("")}</select></div>`}
@@ -7990,7 +7999,7 @@ function renderDailyDone(){
   const D = dailyState(), msg = D.s === 10 ? "Perfect score!" : D.s >= 8 ? "Great job!" : D.s >= 5 ? "Nice work." : "Tomorrow’s another chance.";
   const t = new Date(); t.setHours(24, 0, 0, 0); const h = Math.floor((t - Date.now())/36e5), mn = Math.floor((t - Date.now())/6e4) % 60;
   $("scBody").innerHTML = `<div class="qz-wrap">
-    <div class="segrow qz-modes" role="tablist">${Object.entries(QZ).map(([k, v]) => `<button type="button" role="tab" data-qm="${k}" aria-pressed="${qz.mode === k}">${v.label}</button>`).join("")}</div>
+    <div class="segrow qz-modes" role="group">${Object.entries(QZ).map(([k, v]) => `<button type="button" data-qm="${k}" aria-pressed="${qz.mode === k}">${v.label}</button>`).join("")}</div>
     <div class="daily-done"><span class="k">Daily 10 · ${esc(D.d)}</span><b class="daily-score">${D.s}<small>/10</small></b><span class="qz-dots big">${dailyDots()}</span><p>${msg} New questions in ${h}h ${mn}m.</p>
       <div class="actions"><button class="btn primary" type="button" id="dlShare">Copy result</button><button class="btn" type="button" data-qm="sil">Keep playing</button></div>
       <p class="note">Everyone gets the same ten questions each day. Best daily score: ${state.games.dailyBest}/10 · Days played: ${state.games.dailyN}</p></div></div>`;
@@ -8092,7 +8101,7 @@ function renderGym(){
   gymTeam[g] = gymTeamFor(g);
   const lbl = L.label || "Gym challenge", e4l = L.e4label || "Elite Four", ok = teamOf(gymTeam[g]).length > 0;
   $("scBody").innerHTML = `<div class="sc-narrow wide">
-    <div class="segrow gym-tabs" role="tablist">${GENS.map(x => `<button type="button" role="tab" data-greg="${x.g}" aria-pressed="${x.g === g}" title="${x.region}">${ROMAN[x.g]} <span>${x.region}</span>${state.games.leagues[x.g] ? " ★" : ""}</button>`).join("")}</div>
+    <div class="segrow gym-tabs" role="group">${GENS.map(x => `<button type="button" data-greg="${x.g}" aria-pressed="${x.g === g}" title="${x.region}">${ROMAN[x.g]} <span>${x.region}</span>${state.games.leagues[x.g] ? " ★" : ""}</button>`).join("")}</div>
     <div class="gym-head"><h3>${R} ${lbl}</h3><span class="meta">${nb} / 8 ${L.badge === "stamp" ? "stamps" : "badges"}${state.games.leagues[g] ? " · League cleared ★" : ""}</span></div>
     <div class="gym-team"><div><b>Your ${R} team</b><span class="note" style="margin:0">${ok ? `Only ${R} Pokémon can take on the ${R} ${esc(lbl)}.` : `Build it first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span></div>
       ${ok ? `<div class="gt-mons">${teamOf(gymTeam[g]).map(n => spr(n)).join("")}</div>` : ""}
@@ -8220,7 +8229,7 @@ function readSave(id){ try { const raw = JSON.parse(ls.get(PKEY(id)) || "null");
 function renderVersus(){
   if (needTeam()) return;
   const others = accounts.list.filter(p => !profile || p.id !== profile.id);
-  if (!others.length) { $("scBody").innerHTML = `<div class="sc-narrow"><p>Versus needs a second save file on this device. Make one from the sign-in screen (Account &amp; save files → Switch save file → New save file), build a team there, then come back.</p></div>`; nav.onClick = null; return; }
+  if (!others.length) { $("scBody").innerHTML = `<div class="sc-narrow"><div class="empty-grid">${ic("card")}<h3>Versus needs two save files</h3><p>Pass the device and pick moves in secret against another save file on this device. Make a second save file, build a team there, then come back.</p><div class="actions"><button class="btn primary" type="button" id="vsNew">Account &amp; save files</button></div></div></div>`; nav.onClick = e => { if (e.target.closest("#vsNew")) openAccountMenu(); }; return; }
   if (!vsSel || !others.some(p => p.id === vsSel.id)) vsSel = {id:null, ok:false, mine:null, theirs:null, mode:state.ui.bmode};
   const opp = others.find(p => p.id === vsSel.id), data = opp && vsSel.ok ? readSave(opp.id) : null;
   const theirTeams = data ? data.defs.filter(t => (data.teams[t.id] || []).some(n => t.byNum.has(n))) : [];
