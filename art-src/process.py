@@ -79,7 +79,8 @@ for p in sorted((RAW / "hof").glob("*.png")):
 
 # ---------- furniture ----------
 REGION_COL = {1: ("#d8423a", "#7a1a14"), 2: ("#c9a227", "#6b5310"), 3: ("#2f9e62", "#164e33"), 4: ("#5b6fd6", "#25307a"),
-              5: ("#3a3a44", "#111116"), 6: ("#2f8fd6", "#174a7a"), 7: ("#ff8a3d", "#a23c16"), 8: ("#9c3fd6", "#4a1670"), 9: ("#e2413b", "#6a2bd6")}
+              5: ("#3a3a44", "#111116"), 6: ("#2f8fd6", "#174a7a"), 7: ("#ff8a3d", "#a23c16"), 8: ("#9c3fd6", "#4a1670"), 9: ("#e2413b", "#6a2bd6"),
+              "tower": ("#8a96ad", "#3e4656")}   # the Battle Tower trophy: steel
 for p in sorted((RAW / "furn").glob("*.png")):
     im = cutout(rgba(p))
     if p.stem != "trophy":
