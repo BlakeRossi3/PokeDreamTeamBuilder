@@ -1302,6 +1302,18 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 :root[data-mode="2d"] .gym-card.next{border-color:var(--accent); box-shadow:3px 3px 0 var(--ink)}
 .bdg{grid-row:1; grid-column:3; width:26px; height:26px; background:var(--raised-2); opacity:.45; filter:grayscale(1)}
 .gym-card.on .bdg{background:var(--bc); opacity:1; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+img.bdg, .gym-card.on img.bdg{background:none; box-shadow:none; clip-path:none; border-radius:0; object-fit:contain; width:30px; height:30px}
+/* a Badge Case up close (Pokémon Home) */
+.case-grid{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:12px 0}
+.case-b{margin:0; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 4px 8px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm); text-align:center; min-width:0}
+.case-b img{width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+.case-b .bdg{width:48px; height:48px; background:var(--bc); opacity:1; filter:none}
+.case-b.off img, .case-b.off .bdg{filter:brightness(0) opacity(.22)}
+.case-b figcaption{display:flex; flex-direction:column; gap:2px; min-width:0; max-width:100%}
+.case-b b{font-family:var(--font-d); font-size:var(--fs-sm); overflow-wrap:anywhere} .case-b span{color:var(--muted); font-size:var(--fs-xs)}
+:root[data-mode="2d"] .case-b{background:var(--paper)}
+:root[data-mode="2d"] .case-b img{image-rendering:auto}
+@media (max-width:520px){ .case-grid{grid-template-columns:repeat(2, minmax(0, 1fr))} }
 .bdg.b0{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)} .bdg.b1{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)} .bdg.b2{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)} .bdg.b3{border-radius:50%} .bdg.b4{clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)} .bdg.b5{clip-path:polygon(0 20%,50% 0,100% 20%,100% 70%,50% 100%,0 70%)} .bdg.b6{clip-path:polygon(50% 0,100% 100%,0 100%)} .bdg.b7{clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
 .e4-box{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:16px; padding:16px; border:var(--bw) solid var(--hi); border-radius:var(--r); background:linear-gradient(135deg, color-mix(in srgb, var(--accent-2) 22%, var(--panel)), var(--panel))}
 .e4-box.locked{border-color:var(--line); opacity:.75}
@@ -2049,8 +2061,8 @@ function cleanUI(u){
   return o;
 }
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
-const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
-const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}});
+const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[], house:[]});
+const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}, lay:"", house:"cottage"});
 const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}, missions:null, login:{last:"", cur:0, best:0, days:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
@@ -2068,7 +2080,7 @@ function cleanGames(g){
   for (const [k, v] of Object.entries(obj(g.e4))) if (/^[1-9]$/.test(k) && Number.isInteger(v)) o.e4[k] = v & 15;   // Elite Four members beaten (first wins)
   if (typeof g.title === "string" && /^champ[1-9]$/.test(g.title)) o.title = g.title;
   const own = obj(g.own);
-  for (const c of ["bg", "exp", "icon", "ball", "card"]) o.own[c] = Array.isArray(own[c]) ? [...new Set(own[c].filter(id => typeof id === "string" && unlockOf(c, id)))] : [];
+  for (const c of ["bg", "exp", "icon", "ball", "card", "house"]) o.own[c] = Array.isArray(own[c]) ? [...new Set(own[c].filter(id => typeof id === "string" && unlockOf(c, id)))] : [];
   for (const [k, v] of Object.entries(obj(own.furn))) if (unlockOf("furn", k) && int(v)) o.own.furn[k] = Math.min(99, v);
   if (typeof g.icon === "string" && unlockOf("icon", g.icon)) o.icon = g.icon;
   const h = obj(g.home), num = v => Number.isFinite(v) ? v : 0;
@@ -2086,6 +2098,8 @@ function cleanGames(g){
     const hg = obj(h.games); o.home.games = {d:day(hg.d) ? hg.d : "", catchN:Math.min(9, int(hg.catchN)), seekN:Math.min(9, int(hg.seekN)), catchBest:Math.min(999, int(hg.catchBest)), found:int(hg.found)};
     for (const [k, v] of Object.entries(obj(h.fr))) if (NAT_BY.has(+k) && int(v)) o.home.fr[k] = Math.min(100, v);
     for (const [k, v] of Object.entries(obj(h.pet))) if (NAT_BY.has(+k) && /^\d{4}-\d\d-\d\d$/.test(v)) o.home.pet[k] = v;
+    o.home.lay = typeof h.lay === "string" && h.lay.length < 200 && h.lay.split(",").every(id => ROOMS.some(r => r.id === id)) ? h.lay : "";   // the room order item positions refer to ("" = before the front yard)
+    o.home.house = typeof h.house === "string" && HOUSES.some(x => x.id === h.house) ? h.house : "cottage";
     for (const [k, v] of Object.entries(obj(h.gain))) if (NAT_BY.has(+k) && v && /^\d{4}-\d\d-\d\d$/.test(v.d)) o.home.gain[k] = {d:v.d, n:Math.min(25, int(v.n))};
   }
   o.dailyBest = Math.min(10, int(g.dailyBest));
@@ -3787,7 +3801,7 @@ function publicProfile(){
   return {
     card:{rows:cardStats(), ...(G.botw ? {botw:G.botw} : {})},
     showcase:{team:id, style:sc.style, save:{custom:state.custom.filter(c => ids.includes(c.id)), teams:pick(state.teams, ids), teamShiny:pick(state.teamShiny, ids), members:pick(state.members, ids), trainers:pick(state.trainers, ids), scenes:pick(state.scenes, [id, id + "~2d", "all", "all~2d"])}},
-    home:{games:{badges:G.badges, leagues:G.leagues, e4:G.e4, card:G.card, icon:G.icon, title:G.title, since:G.since, own:G.own, home:{mons:G.home.mons, items:G.home.items, fr:G.home.fr}}, nicks},
+    home:{games:{badges:G.badges, leagues:G.leagues, e4:G.e4, card:G.card, icon:G.icon, title:G.title, since:G.since, own:G.own, home:{mons:G.home.mons, items:G.home.items, fr:G.home.fr, lay:G.home.lay, house:G.home.house}}, nicks},
   };
 }
 async function friendsAfterSync(force){
@@ -4331,6 +4345,10 @@ const SCENES = [
   {id:"lavender", name:"Lavender Town", fx:{type:"wisp"}},
   {id:"spear", name:"Spear Pillar", fx:{type:"sparkle", y:[0,.55]}},
   {id:"tower", name:"Battle Tower", fx:{type:"confetti"}},
+  {id:"stadium", name:"Stadium lights", fx:{type:"confetti"}},
+  {id:"skypillar", name:"Sky Pillar", fx:{type:"dust"}},
+  {id:"blossom", name:"Blossom shrine", fx:{type:"petal"}},
+  {id:"reef", name:"Coral reef", fx:{type:"bubble"}},
   ...["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"].map((r, i) => ({id:"hall" + (i + 1), name:`${r} Champion’s Hall`, hall:i + 1, fx:{type:"confetti"}})),
 ];
 const SCENE_BY = new Map(SCENES.map(s => [s.id, s]));
@@ -4824,6 +4842,97 @@ function hallPaint(g){
 }
 for (let g = 1; g <= 9; g++) PAINT["hall" + g] = hallPaint(g);
 PAINT.tower = hallPaint(10);   // the Battle Tower's hall: steel and gold
+// a night stadium: floodlights, a packed crowd and a striped pitch
+PAINT.stadium = {
+  sky:(K) => {
+    K.vgrad(0, K.Y(.62), [[0,"#05070f"],[1,"#141c33"]]);
+    const R = rng(601); for (let i = 0; i < 60; i++) K.disc(R()*K.W, R()*K.Y(.14), K.u*(.05 + R()*.12), rgba("#ffffff", .3 + R()*.5));
+    for (let r = 0; r < 5; r++) {   // the stands, each row a band of little fans
+      const y0 = K.Y(.2 + r*.08); K.ctx.fillStyle = r % 2 ? "#1d2742" : "#232f50"; K.ctx.fillRect(0, y0, K.W, K.u*8);
+      const cols = ["#ff5d6c","#ffd43b","#5fa8ff","#f2f5ff","#46d996","#ff9f43"];
+      for (let x = R()*K.u; x < K.W; x += K.u*(1.1 + R()*.6)) { const c = cols[Math.floor(R()*6)]; K.disc(x, y0 + K.u*2.6, K.u*.62, rgba(c, .75)); K.ctx.fillStyle = rgba(c, .45); K.ctx.fillRect(x - K.u*.6, y0 + K.u*3.2, K.u*1.2, K.u*1.6); }
+    }
+    K.ctx.fillStyle = "#2c3758"; K.ctx.fillRect(0, K.Y(.6), K.W, K.u*2.4); K.ctx.fillStyle = "#ffd43b"; K.ctx.fillRect(0, K.Y(.6), K.W, Math.max(1, K.u*.4));
+    for (const fx of [.08, .3, .7, .92]) { const x = K.W*fx, y = K.Y(.06); K.ctx.fillStyle = "#3a4466"; K.ctx.fillRect(x - K.u*.4, y, K.u*.8, K.Y(.2) - y); K.ctx.fillStyle = "#cfd8ee"; K.ctx.fillRect(x - K.u*4, y - K.u*3, K.u*8, K.u*4); for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) K.disc(x - K.u*3 + i*K.u*2, y - K.u*2 + j*K.u*2, K.u*.75, "#ffffff"); }
+  },
+  land:(K) => {
+    const top = K.Y(.625); K.vgrad(top, K.H, [[0,"#4fae4f"],[1,"#22702c"]]);
+    for (let i = 0; i < 10; i += 2) { const a = top + (K.H - top)*Math.pow(i/10, 1.4), b = top + (K.H - top)*Math.pow((i + 1)/10, 1.4); K.ctx.fillStyle = "rgba(255,255,255,.06)"; K.ctx.fillRect(0, a, K.W, b - a); }
+    const cx = K.W/2, mid = K.Y(.76), ctx = K.ctx; ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = Math.max(1, K.u*.4);
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(K.W, mid); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, mid, K.u*14, K.u*3.6, 0, 0, 7); ctx.stroke();
+    pokeEmblem(K, cx, mid, K.u*2.2);
+  },
+  after:(K) => { for (const fx of [.08, .3, .7, .92]) K.glow(K.W*fx, K.Y(.04), K.u*9, "#ffffff", .45); },
+  anim:(K,tod,t) => {
+    const ctx = K.ctx; ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (const [i, fx] of [.08, .3, .7, .92].entries()) { const sx = K.W*fx, a = (fx < .5 ? -.5 : .5) + Math.sin(t/2200 + i*1.3)*.12, L = K.S.h*1.2; ctx.fillStyle = "rgba(220,232,255,.07)"; ctx.beginPath(); ctx.moveTo(sx, K.Y(.04)); ctx.lineTo(sx - Math.sin(a - .09)*L, K.Y(.04) + Math.cos(a - .09)*L); ctx.lineTo(sx - Math.sin(a + .09)*L, K.Y(.04) + Math.cos(a + .09)*L); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    const R = rng(603); for (let i = 0; i < 16; i++) { const x = R()*K.W, y = K.Y(.2 + R()*.38), al = Math.pow(Math.max(0, Math.sin(t/240 + R()*60)), 30); K.star4(x, y, K.u*1.4, "#ffffff", al); }   // camera flashes
+  },
+};
+// the top of Sky Pillar at dusk: a sea of clouds, mossy ruined columns
+PAINT.skypillar = {
+  sky:(K) => {
+    K.vgrad(0, K.Y(.62), [[0,"#2a2350"],[.5,"#7a4c78"],[.85,"#e2876a"],[1,"#f6c07a"]]);
+    K.glow(K.W*.5, K.Y(.6), K.u*36, "#ffcf8a", .45);
+    const R = rng(611); for (let i = 0; i < 70; i++) K.disc(R()*K.W, R()*K.Y(.3), K.u*(.05 + R()*.12), rgba("#ffffff", .25 + R()*.5));
+    for (let i = 0; i < 7; i++) { const x = K.W*(.08 + R()*.84), y = K.Y(.12 + R()*.3); K.glow(x, y, K.u*1.6, "#ffb35a", .6); K.disc(x, y, K.u*.4, "#ffe0a0"); }   // floating lanterns
+  },
+  land:(K) => {
+    K.ridge(K.Y(.6), K.u*3, 612, 3, "#b48aa8"); K.ridge(K.Y(.63), K.u*3, 613, 4, "#9a7398"); K.ridge(K.Y(.66), K.u*2.4, 614, 5, "#7e5f86");
+    const top = K.Y(.68); K.vgrad(top, K.H, [[0,"#6f7d5a"],[1,"#38452e"]]);
+    const cx = K.W/2; K.ctx.strokeStyle = "rgba(20,30,15,.35)"; K.ctx.lineWidth = Math.max(1, K.u*.2);
+    for (let i = -10; i <= 10; i++) { K.ctx.beginPath(); K.ctx.moveTo(cx + i*K.u*7, top); K.ctx.lineTo(cx + i*K.u*22, K.H); K.ctx.stroke(); }
+    for (let i = 1; i < 7; i++) { const y = top + (K.H - top)*Math.pow(i/7, 1.5); K.ctx.beginPath(); K.ctx.moveTo(0, y); K.ctx.lineTo(K.W, y); K.ctx.stroke(); }
+    const R = rng(615); for (let i = 0; i < 26; i++) K.disc(R()*K.W, top + R()*(K.H - top), K.u*(.6 + R()*1.4), rgba("#7fa04e", .55));
+    for (const [fx, base, h, w, broken] of [[.36,.67,12,2,1],[.64,.67,15,2,1],[.12,.78,60,5,0],[.88,.78,60,5,0]]) pillar(K, K.W*fx, K.Y(base), K.u*h, K.u*w, broken);
+    K.ctx.fillStyle = "rgba(90,120,60,.5)"; for (const fx of [.12, .88]) K.ctx.fillRect(K.W*fx - K.u*2.5, K.Y(.3), K.u*5, K.u*1.2);
+  },
+  anim:(K,tod,t) => {
+    const R = rng(616), ctx = K.ctx;
+    for (let i = 0; i < 8; i++) { const span = K.W + K.u*90, x = ((R()*span + t*K.u*.0015*(.4 + R())) % span) - K.u*45, y = K.Y(.6 + R()*.1); ctx.fillStyle = rgba("#ffe4d6", .1 + R()*.08); ctx.beginPath(); ctx.ellipse(x, y, K.u*(16 + R()*16), K.u*(1.4 + R()*1.2), 0, 0, 7); ctx.fill(); }
+  },
+};
+// a shrine path under cherry trees in full bloom
+PAINT.blossom = {
+  sky:(K) => { K.vgrad(0, K.Y(.6), [[0,"#7fc4f2"],[.7,"#c4e6fb"],[1,"#fbeef2"]]); },
+  land:(K) => {
+    K.ridge(K.Y(.55), K.u*8, 621, 1.6, "#b9c9de");
+    const R = rng(622), tree = (x, y, s) => { K.ctx.fillStyle = "#5a3a32"; K.ctx.fillRect(x - s*.08, y - s*.7, s*.16, s*.72); K.poly([[x, y - s*.5], [x - s*.4, y - s*.95], [x - s*.32, y - s], [x + s*.02, y - s*.62]], "#5a3a32"); for (let i = 0; i < 9; i++) { const a = R()*Math.PI*2, d = R()*s*.45; K.disc(x + Math.cos(a)*d*1.2, y - s*.95 + Math.sin(a)*d*.6, s*(.22 + R()*.12), i % 3 ? "#ffc4d8" : "#ff9fbf"); } };
+    for (let i = 0; i < 7; i++) tree(K.W*(i/6), K.Y(.62), K.u*(18 + R()*5));
+    const top = K.Y(.62); K.vgrad(top, K.H, [[0,"#9cc46a"],[1,"#5e8f3e"]]);
+    const cx = K.W/2; K.poly([[cx - K.u*5, top], [cx + K.u*5, top], [cx + K.u*34, K.H], [cx - K.u*34, K.H]], "#c9c2b6");
+    K.ctx.strokeStyle = "rgba(90,80,70,.35)"; K.ctx.lineWidth = Math.max(1, K.u*.2);
+    for (let i = 1; i < 9; i++) { const f = Math.pow(i/9, 1.4), y = top + (K.H - top)*f, hw = K.u*(5 + 29*f); K.ctx.beginPath(); K.ctx.moveTo(cx - hw, y); K.ctx.lineTo(cx + hw, y); K.ctx.stroke(); }
+    const g = K.u, tx = cx, ty = K.Y(.62);   // the torii gate
+    K.ctx.fillStyle = "#d8402e"; K.ctx.fillRect(tx - g*9, ty - g*22, g*2, g*22); K.ctx.fillRect(tx + g*7, ty - g*22, g*2, g*22); K.ctx.fillRect(tx - g*11, ty - g*18, g*22, g*1.6);
+    K.poly([[tx - g*14, ty - g*23.5], [tx + g*14, ty - g*23.5], [tx + g*12, ty - g*21.6], [tx - g*12, ty - g*21.6]], "#2b2024"); K.ctx.fillStyle = "#c4352a"; K.ctx.fillRect(tx - g*12, ty - g*21.6, g*24, g*1.4);
+    for (const s of [-1, 1]) { const lx = tx + s*g*16, ly = ty + g*4; K.ctx.fillStyle = "#a8a29a"; K.ctx.fillRect(lx - g*1, ly - g*7, g*2, g*7); K.ctx.fillRect(lx - g*2.2, ly - g*9.5, g*4.4, g*2.5); K.poly([[lx - g*3, ly - g*9.5], [lx + g*3, ly - g*9.5], [lx, ly - g*12]], "#8c867e"); }
+  },
+  after:(K) => { const tx = K.W/2, g = K.u, ly = K.Y(.62) + g*4; for (const s of [-1, 1]) K.glow(tx + s*g*16, ly - g*8.2, g*2.5, "#ffd98a", .5); },
+  anim:(K,tod,t) => { const R = rng(623); for (let i = 0; i < 6; i++) K.star4(K.W*(.05 + R()*.9), K.Y(.2 + R()*.3), K.u*1.1, "#ffffff", Math.pow(Math.max(0, Math.sin(t/700 + R()*40)), 12)); },
+};
+// a coral reef around a sunken arch, light rippling down from the surface
+PAINT.reef = {
+  sky:(K) => { K.vgrad(0, K.Y(.7), [[0,"#5ec4e8"],[.25,"#1f7fb8"],[1,"#0d3d6e"]]); K.ridge(K.Y(.6), K.u*10, 631, 1.2, "#164c78"); },
+  land:(K) => {
+    const top = K.Y(.68); K.ridge(top, K.u*2, 632, 3, "#d9c48f"); K.vgrad(top + K.u*2, K.H, [[0,"#d9c48f"],[1,"#a88f5c"]]);
+    const R = rng(633), coral = (x, y, s, c) => { for (let i = 0; i < 5; i++) { const a = -Math.PI/2 + (i - 2)*.38, L = s*(.6 + R()*.5); K.ctx.strokeStyle = c; K.ctx.lineWidth = Math.max(1, s*.13); K.ctx.lineCap = "round"; K.ctx.beginPath(); K.ctx.moveTo(x, y); K.ctx.quadraticCurveTo(x + Math.cos(a)*L*.3, y + Math.sin(a)*L*.6, x + Math.cos(a)*L, y + Math.sin(a)*L); K.ctx.stroke(); } };
+    const ax = K.W*.68, ay = K.Y(.74), g = K.u;   // the sunken arch
+    K.ctx.fillStyle = "#6d7f86"; K.ctx.fillRect(ax - g*10, ay - g*20, g*4, g*20); K.ctx.fillRect(ax + g*6, ay - g*16, g*4, g*16);
+    K.ctx.lineWidth = g*4; K.ctx.strokeStyle = "#6d7f86"; K.ctx.beginPath(); K.ctx.arc(ax, ay - g*18, g*8, Math.PI, Math.PI*1.75); K.ctx.stroke();
+    K.ctx.fillStyle = "rgba(90,140,90,.6)"; K.ctx.fillRect(ax - g*10, ay - g*6, g*4, g*6);
+    const cols = ["#ff7a59","#ff9fbf","#b07bff","#ffd166","#4fd1c5"];
+    for (let i = 0; i < 18; i++) { const side = i % 2, x = side ? K.W - K.u*(2 + R()*30) : K.u*(2 + R()*30), y = K.Y(.72) + R()*(K.H - K.Y(.72)); coral(x, y, K.u*(4 + R()*5), cols[i % 5]); }
+    for (let i = 0; i < 10; i++) { const x = R()*K.W, y = K.Y(.74) + R()*(K.H - K.Y(.74)); K.ctx.fillStyle = "#3f8f4e"; for (let k = 0; k < 3; k++) K.ctx.fillRect(x + k*K.u*.8, y - K.u*(4 + R()*5), Math.max(1, K.u*.35), K.u*(4 + R()*5)); }
+  },
+  anim:(K,tod,t) => {
+    const ctx = K.ctx; ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 5; i++) { const sx = K.W*(.1 + i*.2) + Math.sin(t/2600 + i)*K.u*4, w = K.u*(3 + i % 2*2); ctx.fillStyle = "rgba(200,240,255,.06)"; ctx.beginPath(); ctx.moveTo(sx - w, 0); ctx.lineTo(sx + w, 0); ctx.lineTo(sx + w*3 + K.u*6, K.Y(.75)); ctx.lineTo(sx - w + K.u*6, K.Y(.75)); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+  },
+};
 const CRYSTALS = [[.08,.86,9,"#5ff3ff"],[.14,.8,6,"#b07bff"],[.92,.84,9,"#b07bff"],[.86,.78,6,"#5ff3ff"],[.3,.69,4,"#5ff3ff"],[.72,.69,4,"#ff8fe0"]];
 const TERA = [[.06,.9,16],[.95,.88,14],[.22,.66,7],[.8,.65,8]];
 function crystal(K, x, y, s, c){
@@ -4901,7 +5010,7 @@ function drawFx(K, sc, t){
   const type = typeof def.fx.type === "string" ? def.fx.type : def.fx.type[tod];
   const [ya, yb] = def.fx.y || [0, 1];
   const R = rng(777), W = K.W, H = K.H, u = K.u, ctx = K.ctx, s = t/1000;
-  const n = {snow:110, confetti:70, ember:60, dust:50, petal:40, leaf:30, firefly:34, sparkle:42, wisp:16}[type] || 40;
+  const n = {snow:110, confetti:70, ember:60, dust:50, petal:40, leaf:30, firefly:34, sparkle:42, wisp:16, bubble:36}[type] || 40;
   const conf = ["#ff5d6c","#ffd43b","#46d996","#5fa8ff","#c98bff","#ffffff"];
   for (let i = 0; i < n; i++) {
     const a = R(), b = R(), c = R(), d = R();
@@ -4913,6 +5022,7 @@ function drawFx(K, sc, t){
     else if (type === "firefly") { const x = b*W + Math.sin(s*.8 + d*7)*4*u, y = K.Y(.35 + .6*a) + Math.cos(s*.6 + c*7)*3*u, al = .5 + .5*Math.sin(s*2.5 + d*9); K.glow(x, y, u*2.2, "#e8ff7a", .55*al); K.disc(x, y, u*.3, rgba("#f6ffb8", al)); }
     else if (type === "ember") { const ph = (a + s*(.07 + .07*c)) % 1, x = b*W + Math.sin(s*2 + d*6)*2*u, y = H - ph*H*.95; K.disc(x, y, (.2 + .3*c)*u, rgba(c > .5 ? "#ffb347" : "#ff6a1f", 1 - ph)); }
     else if (type === "wisp") { const ph = (a + s*(.025 + .025*c)) % 1, x = b*W + Math.sin(s*.9 + d*7)*5*u, y = K.Y(.98) - ph*K.S.h*.85, al = Math.sin(ph*Math.PI)*.75; K.glow(x, y, u*3.2, "#b38cff", .5*al); K.disc(x, y, u*.7, rgba("#efe4ff", al)); }
+    else if (type === "bubble") { const ph = (a + s*(.05 + .05*c)) % 1, x = b*W + Math.sin(s*2 + d*8)*1.5*u, y = H - ph*H*1.05, r = (.3 + .5*c)*u; ctx.strokeStyle = rgba("#e6fbff", .7*(1 - ph*.6)); ctx.lineWidth = Math.max(1, u*.18); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke(); K.disc(x - r*.35, y - r*.35, r*.25, rgba("#ffffff", .7)); }
     else if (type === "dust") { const x = (b*W + s*u*(.6 + c)) % W, y = K.Y(.1 + .8*a) + Math.sin(s*.5 + d*6)*u; K.disc(x, y, (.12 + .2*c)*u, rgba("#cfe0ff", .35 + .25*Math.sin(s + d*9))); }
     else if (type === "confetti") { const ph = (a + s*(.06 + .05*c)) % 1, x = (b*W + Math.sin(s*1.4 + d*6)*3*u + W) % W, y = ph*H; ctx.save(); ctx.translate(x, y); ctx.rotate(s*3 + d*7); ctx.scale(1, Math.cos(s*4 + d*5)); ctx.fillStyle = conf[i % conf.length]; ctx.fillRect(-u*.45, -u*.75, u*.9, u*1.5); ctx.restore(); }
     else { const x = b*W, y = K.Y(ya + (yb - ya)*a), al = Math.pow(Math.max(0, Math.sin(s*(1.2 + c*1.5) + d*12)), 4); K.star4(x, y, u*(.8 + c*1.2), "#ffffff", al); }
@@ -6189,18 +6299,19 @@ const CAT = {
   bg:{name:"Hall of Fame backgrounds", one:"background"},
   furn:{name:"Home furniture", one:"furniture"},
   exp:{name:"Home rooms", one:"room"},
+  house:{name:"Houses", one:"house"},
   icon:{name:"Profile icons", one:"profile icon"},
   ball:{name:"Poké Balls", one:"Poké Ball"},
   card:{name:"Trainer card designs", one:"card design"},
 };
-const CAT_ORDER = ["furn", "exp", "bg", "icon", "ball", "card"];
+const CAT_ORDER = ["furn", "exp", "house", "bg", "icon", "ball", "card"];
 const ITEMS_ALL = [];   // {cat, id, name, price?, free?, gym?:[g,k], champ?:g, ...extra}
 const ITEM_BY = new Map();
 const addItem = it => { ITEMS_ALL.push(it); ITEM_BY.set(it.cat + ":" + it.id, it); };
 const unlockOf = (cat, id) => ITEM_BY.get(cat + ":" + id);
 
 // --- Hall of Fame backgrounds ---
-[["route",0],["league",0],["pokecenter",0],["beach",0],["forest",400],["summit",500],["city",600],["safari",600],["gym",800],["cave",900],["volcano",1000],["lavender",1200]]
+[["route",0],["league",0],["pokecenter",0],["beach",0],["forest",400],["summit",500],["city",600],["safari",600],["gym",800],["cave",900],["volcano",1000],["blossom",1000],["reef",1100],["lavender",1200],["skypillar",1300],["stadium",1500]]
   .forEach(([id, p]) => addItem({cat:"bg", id, name:SCENE_BY.get(id).name, price:p, free:!p}));
 // --- Poké Balls ---
 const BALL_FREE = ["poke", "great", "ultra", "premier"];
@@ -6286,20 +6397,33 @@ const FURN = [
   ["tramp", "Trampoline", 1300, 2, 2, "tramp", ["#2f6fd6","#1d1f26"]], ["cushion", "Floor cushion", 200, 1, 1, "cushion", ["#ffd43b","#d9a412"]],
   ["globe", "Desk globe", 350, 1, 1, "globe", ["#3aa0d6","#c9a227"]], ["clock", "Grandfather clock", 750, 1, 1, "clock", ["#6b4226","#f6e7b4"]],
   ["hammock", "Hammock", 700, 3, 1, "hammock", ["#c9423a","#f3dfb0","#7a4a2a"]],
+  ["stove", "Kitchen stove", 900, 2, 1, "stove", ["#f1e6c8","#2a2a30","#e2413b"]], ["fridge", "Retro fridge", 800, 1, 1, "fridge", ["#a8dcc4","#d9dde2"]],
+  ["counter", "Kitchen counter", 600, 2, 1, "counter", ["#f4f1ea","#b9875a","#e2413b"]],
 ];
 FURN.forEach(([id, name, price, w, d, kind, col]) => addItem({cat:"furn", id, name, price, free:!price, w, d, kind, col}));
 // seasonal furniture: sold only while its event runs (see EVENTS); players keep what they bought
 [["pumpkin", "Jack-o’-lantern", 300, 1, 1, "pumpkin", ["#f08a24", "#3a7a2a"], "halloween"], ["cobweb", "Spooky cobweb", 150, 1, 1, "cobweb", ["#e8e8f0", "#5a5a6a"], "halloween"],
  ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"], ["giftpile", "Holiday gifts", 350, 1, 1, "giftpile", ["#e2413b", "#2f8a4a"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
 // --- Home rooms (each adds space and room for more Pokémon) ---
+// In house order: the front yard, the rooms inside, then the back garden and pond.
 const ROOMS = [
+  {id:"yard", name:"Front yard", free:true, w:9, floor:"grass", wall:null, cap:2},
   {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4},
   {id:"living", name:"Living room", price:1500, w:11, floor:"carpet", wall:"#cfe3f7", cap:4},
+  {id:"kitchen", name:"Kitchen", price:2500, w:10, floor:"tile", wall:"#d9efe4", cap:3},
+  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5},
   {id:"garden", name:"Garden", price:3000, w:12, floor:"grass", wall:null, cap:4},
   {id:"pond", name:"Pond", price:4000, w:11, floor:"grass", wall:null, cap:3, pond:true},
-  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5},
 ];
 ROOMS.forEach(r => addItem({cat:"exp", id:r.id, name:r.name, price:r.price || 0, free:!!r.free, room:r}));
+// --- house designs: how the house looks from the yard (roof, walls, windows) ---
+const HOUSES = [
+  {id:"cottage", name:"Cozy cottage", free:true, roof:"#c8553a", roof2:"#8e3524", wall:"#f1e6c8", trim:"#4f8a4a", base:"#9a9aa2"},
+  {id:"brick", name:"Brick townhouse", price:2500, roof:"#4f5f7d", roof2:"#2c3850", wall:"#a8442f", trim:"#f4f4f4", base:"#8a8a92"},
+  {id:"cabin", name:"Log cabin", price:3000, roof:"#4f6b3a", roof2:"#2f4424", wall:"#8a5a34", trim:"#c9423a", base:"#7a7a6a"},
+  {id:"villa", name:"Seaside villa", price:3500, roof:"#2f8fd6", roof2:"#1a5a96", wall:"#f6f4ee", trim:"#2ab0a8", base:"#d8c49a"},
+];
+HOUSES.forEach(h => addItem({cat:"house", id:h.id, name:h.name, price:h.price || 0, free:!!h.free, house:h}));
 
 // --- ownership ---
 const ownList = cat => state.games.own[cat] || (state.games.own[cat] = cat === "furn" ? {} : []);
@@ -6345,6 +6469,7 @@ function paintThumbs(root){
       else x.drawImage(paintBg(it.id, tod, {W:160, H:96}, {x:0, y:0, w:160, h:96}, false), 0, 0); }
     else if (it.cat === "furn") homeItemThumb(x, it, two);
     else if (it.cat === "exp") homeRoomThumb(x, it.room, two);
+    else if (it.cat === "house") houseThumb(x, it.house, two);
   });
   paintAll(root);
 }
@@ -6421,6 +6546,7 @@ function renderShop(){
       <b>${hidden ? (it.tower ? "Tower exclusive" : "Gym exclusive") : esc(it.name)}</b>
       <span class="meta">${it.event ? `<span class="pill ev">${esc((EVENTS.find(e => e.id === it.event) || {}).name || "Event")} · limited time</span> ` : ""}${hidden ? (it.tower ? "Win streaks in the Battle Tower" : "Beat Gym Leaders to find it") : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
       ${ex || it.free || (have && !multi) ? "" : `<button class="btn sm${G.pp >= it.price ? " primary" : ""}" type="button" data-buy="${it.id}">${fmtPP(it.price)}</button>`}
+      ${it.cat === "house" && have ? (houseOf().id === it.id ? `<span class="pill">Your house</span>` : `<button class="btn sm" type="button" data-house="${it.id}">Use</button>`) : ""}
     </div>`;
   };
   const ex = items.filter(isExclusive), exGot = ex.filter(it => owns(it.cat, it.id)).length;
@@ -6431,12 +6557,14 @@ function renderShop(){
     ${ex.length ? `<p class="meta shop-ex">Exclusives found: ${exGot} / ${ex.length}</p>` : ""}
     <div class="shop-grid">${sorted.filter(it => !isExclusive(it) || owns(it.cat, it.id)).map(card).join("")}</div>
     ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : it.tower ? "A Battle Tower reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four, Champions and the Battle Tower. They’re never sold here.</p>` : ""}
-    ${shopCat === "furn" || shopCat === "exp" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
+    ${shopCat === "house" ? `<p class="note">How your house looks from the front yard and the garden.</p>` : ""}
+    ${shopCat === "furn" || shopCat === "exp" || shopCat === "house" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
     ${shopCat === "icon" ? `<p class="note">Choose your profile icon on your Trainer card.</p>` : ""}</div>`;
   paintThumbs($("scBody"));
   nav.onClick = e => {
     const t = e.target.closest("[data-scat]"); if (t) { shopCat = t.dataset.scat; Sound.play("select"); renderShop(); return; }
-    const b = e.target.closest("[data-buy]"); if (b) { const it = unlockOf(shopCat, b.dataset.buy); if (it && buy(it)) renderShop(); return; }
+    const b = e.target.closest("[data-buy]"); if (b) { const it = unlockOf(shopCat, b.dataset.buy); if (it && buy(it)) { if (it.cat === "house") { G.home.house = it.id; save(); } renderShop(); } return; }
+    const hu = e.target.closest("[data-house]"); if (hu) { G.home.house = hu.dataset.house; save(); Sound.play("confirm"); toast(`Your house is now a ${unlockOf("house", hu.dataset.house).name.toLowerCase()}.`); renderShop(); return; }
     if (e.target.closest("[data-go-home]")) { Sound.play("select"); openScreen("home"); }
   };
   setMusic("field");
@@ -6449,6 +6577,7 @@ function renderShop(){
 const HM = {WALL:2.6, SQ:.58, D:7};
 const homeData = () => state.games.home;
 const homeRooms = () => ROOMS.filter(r => r.free || owns("exp", r.id));
+const houseOf = () => { const id = homeData().house; return HOUSES.find(h => h.id === id && owns("house", id)) || HOUSES[0]; };
 const homeCap = () => homeRooms().reduce((s, r) => s + r.cap, 0);
 const shadeHex = (hex, f) => { const [r, g, b] = hexRGB(hex); const m = v => Math.max(0, Math.min(255, Math.round(f < 1 ? v*f : v + (255 - v)*(f - 1)))); return "#" + [m(r), m(g), m(b)].map(v => v.toString(16).padStart(2, "0")).join(""); };
 const FLOOR_ITEMS = new Set(["rugr", "rug", "rugball", "rugt"]);
@@ -6473,6 +6602,7 @@ function fkit(c, ts, pixel){
     rect(x, y, w, h, col, z = 0){ c.fillStyle = col; c.fillRect(R(x*ts), R(y*ts*SQ - z*ts), Math.max(1, R(w*ts)), Math.max(1, R(h*ts))); },
     flat(x, y, w, d, col){ c.fillStyle = col; c.fillRect(R(x*ts), R(y*ts*SQ), R(w*ts), R(d*ts*SQ)); },
     poly(pts, col){ c.fillStyle = col; c.beginPath(); pts.forEach(([x, y, z = 0], i) => { const px = R(x*ts), py = R(y*ts*SQ - z*ts); i ? c.lineTo(px, py) : c.moveTo(px, py); }); c.closePath(); c.fill(); },
+    img(src, cx, cy, size, z = 0){ const f = size*ts/Math.max(src.width, src.height), w = src.width*f, h = src.height*f; c.save(); c.imageSmoothingEnabled = true; c.drawImage(src, R(cx*ts - w/2), R(cy*ts*SQ - z*ts - h/2), R(w), R(h)); c.restore(); },   // a picture standing upright, centred
   };
   return K;
 }
@@ -6522,6 +6652,12 @@ const HOUSE_DRAW = {
   bean(K, it){ K.oval(.5, .62, .46, .36, shadeHex(it.col[0], .8), .05); K.oval(.5, .52, .4, .36, it.col[0], .3); K.oval(.42, .45, .14, .1, "rgba(255,255,255,.35)", .45); },
   desk(K, it){ K.box(.05, .2, .12, .6, .72, it.col[1]); K.box(it.w - .17, .2, .12, .6, .72, it.col[1]); K.box(0, .15, it.w, .7, .1, it.col[0], .72); K.box(.55, .25, .9, .1, .62, "#22252e", .82); K.rect(.6, .35, .8, .48, "#59c2ff", 1.4); },
   tank(K, it){ K.box(0, .2, it.w, .7, .5, it.col[1]); K.box(.05, .25, it.w - .1, .6, .95, it.col[0], .5); K.rect(.05, .85, it.w - .1, .12, "#e7d7a6", .62); [[.5, 1.05, "#ff8a3d"], [1.2, 1.2, "#ffd43b"], [.9, .9, "#ff5a8a"]].forEach(([x, z, cc]) => K.oval(x, .85, .1, .05, cc, z)); },
+  stove(K, it){ K.box(.05, .2, it.w - .1, .7, 1.05, it.col[0]); K.rect(.35, .9, 1.3, .55, "#3a3a44", .35); K.rect(.45, .9, 1.1, .35, "#6a6a78", .45);
+    for (const [x, y] of [[.5, .4], [1.5, .4], [.5, .7], [1.5, .7]]) K.disc(x, y, .14, it.col[1], 1.05); K.disc(.5, .4, .16, it.col[2], 1.3); K.rect(.42, .4, .16, .1, it.col[2], 1.45); },
+  fridge(K, it){ K.box(.08, .25, .84, .6, 2.1, it.col[0]); K.rect(.12, .85, .76, .03, shadeHex(it.col[0], .7), 1.35); K.rect(.78, .85, .05, .45, it.col[1], 1.5); K.rect(.78, .85, .05, .3, it.col[1], .8);
+    K.disc(.3, .85, .05, "#e2413b", 1.15); K.disc(.45, .85, .05, "#ffd43b", 1.0); K.rect(.2, .85, .22, .25, "#ffffff", .45); },
+  counter(K, it){ K.box(0, .2, it.w, .7, .95, it.col[0]); K.box(-.03, .17, it.w + .06, .76, .1, it.col[1], .95); for (let i = 0; i < it.w*2; i++) K.rect(.08 + i*.5, .9, .38, .6, shadeHex(it.col[0], .93), .2);
+    K.oval(.6, .5, .26, .14, "#ffffff", 1.08); K.disc(.52, .48, .07, it.col[2], 1.14); K.disc(.66, .5, .07, it.col[2], 1.14); K.box(1.15, .35, .5, .3, .05, "#c9955a", 1.05); },
   fire(K, it){ K.box(0, .1, it.w, .55, 1.35, it.col[0]); K.rect(.45, .65, 1.1, .7, "#2a1a14", .95); K.box(-.05, .05, it.w + .1, .65, .12, shadeHex(it.col[0], .7), 1.35); },
   piano(K, it){ K.box(0, .1, it.w, .55, 1.25, it.col[0]); K.box(-.02, .5, it.w + .04, .3, .08, it.col[1], .72); for (let i = 0; i < 13; i++) K.rect(.08 + i*.145, .78, .05, .05, "#1d1f26", .82); },
   arcade(K, it){ K.box(.05, .2, .9, .65, 1.7, it.col[0]); K.rect(.18, .85, .64, .5, it.col[1], 1.5); K.box(.1, .7, .8, .2, .1, "#22252e", .85); K.disc(.35, .78, .06, "#ffd43b", .98); K.disc(.6, .78, .06, "#5af0ff", .98); },
@@ -6589,22 +6725,36 @@ const HOUSE_DRAW = {
     for (let i = 0; i < 9; i++) { const a = Math.PI*(.1 + .8*i/8), r = .78; K.poly([[1, .7, .4], [1 + Math.cos(a)*r, .7, .4 + Math.sin(a)*r*1.4], [1 + Math.cos(a + .09)*r, .7, .4 + Math.sin(a + .09)*r*1.4]], i % 2 ? "#ffd6c9" : "#ffb8a6"); }
     K.disc(1, .9, .12, "#ffffff", .62); [[.7, .55], [1.3, .62], [1, .8]].forEach(([x, z]) => K.disc(x, 1, .05, "rgba(255,255,255,.7)", z)); },
   badgecase(K, it){ const L = LEAGUES[it.region - 1], bits = badgeOf(it.region); K.box(0, .3, 2, .55, .5, "#6b4226"); K.box(.02, .32, 1.96, .5, .06, "#8a5a3c", .5); K.box(.1, .36, 1.8, .4, .62, "#2a2030", .56); K.box(.06, .34, 1.88, .44, .06, "#8a5a3c", 1.18);
-    L.gyms.forEach(([, ty], k) => { const x = .35 + (k % 4)*.43, z = k < 4 ? 1.02 : .74, on = bits & (1 << k); K.disc(x, .77, .1, on ? typeCol(ty.split("/")[0]) : "#4a3f55", z); if (on) K.disc(x - .03, .78, .04, "#ffffff", z + .03); });
+    L.gyms.forEach(([, ty], k) => { const x = .35 + (k % 4)*.43, z = k < 4 ? 1.02 : .74, on = bits & (1 << k), b = on && badgeArt(it.region, k); K.disc(x, .77, .11, on && !b ? typeCol(ty.split("/")[0]) : "#3a2f45", z); if (b) K.img(b, x, .77, .27, z); else if (on) K.disc(x - .03, .78, .04, "#ffffff", z + .03); });
     K.rect(.1, .77, 1.8, .05, "rgba(255,255,255,.18)", 1.15); },
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
 };
-const FURN_H = {hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
+const FURN_H = {stove:1.5, fridge:2.3, counter:1.3, hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
 // animated 2D furniture: art/2d/anim/<id>.png holds the frames side by side, each the size of art/2d/furn/<id>.png
 const FURN_FRAME_MS = 150;
+// shared 2D art: every Elite Four statue of a type uses that type's statue, and all nine Badge Cases one case
+const furnArtKey = it => it.kind === "statue" ? "furn/statue_" + it.var : it.kind === "badgecase" ? "furn/badgecase" : "furn/" + it.id;
+// the real badges sit in the case's eight velvet slots (centres on art/2d/furn/badgecase.png, see art-src/process.py)
+const BADGE_SLOTS = [[13.5,17.5],[26.5,17.5],[39.5,17.5],[13.5,30.5],[26.5,30.5],[39.5,30.5],[20,43.5],[33,43.5]];
+const badgeArt = (g, k) => artOf(`badge/${g}-${k}`);
+function drawCaseBadges(x, g, X0, Y0, s, flip){
+  const bits = badgeOf(g), W = x.canvas.width; x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+  BADGE_SLOTS.forEach(([cx, cy], k) => {
+    const b = badgeArt(g, k); if (!b || !(bits & (1 << k))) return;
+    const f = 11*s/Math.max(b.width, b.height), w = b.width*f, h = b.height*f, px = flip ? W - (X0 + cx*s) : X0 + cx*s;   // badges are never drawn mirrored
+    x.drawImage(b, Math.round(px - w/2), Math.round(Y0 + cy*s - h/2), Math.round(w), Math.round(h));
+  });
+  x.restore();
+}
 const furnAnim = id => { const sh = artOf("anim/" + id), st = artOf("furn/" + id); return sh && st && sh.width > st.width ? {sh, n:Math.round(sh.width/st.width), w:st.width} : null; };
 const furnFrame = (p, now) => state.ui.motion === "reduced" || !furnAnim(p.it.id) ? 0 : Math.floor((now + p.x*97 + p.y*53)/FURN_FRAME_MS) % furnAnim(p.it.id).n;
 function furnSprite(it, ts, pixel, flip, fi = 0){
   const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : "", it.rot ? "r" : "", fi].join("|"); if (furnCache.has(k)) return furnCache.get(k);
   const A = pixel && !it.rot && fi > 0 && furnAnim(it.id);
-  const img = pixel && !it.rot && artOf("furn/" + it.id);   // a turned rug is drawn from shapes
+  const img = pixel && !it.rot && artOf(furnArtKey(it));   // a turned rug is drawn from shapes
   if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
     const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
     const off = isFloorItem(it) ? (floorD - h)/2 : floorD - h;   // rugs sit in the middle of their footprint
@@ -6612,6 +6762,7 @@ function furnSprite(it, ts, pixel, flip, fi = 0){
     if (flip) { x.translate(c.width, 0); x.scale(-1, 1); }
     if (A) x.drawImage(A.sh, (fi % A.n)*A.w, 0, A.w, img.height, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
     else x.drawImage(img, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
+    if (it.kind === "badgecase") drawCaseBadges(x, it.region, Math.round(pad + (it.w*ts - w)/2), pad, s, flip);
     const out = {c, pad, h:-off/ts, art:true}; if (furnCache.size > 400) furnCache.clear(); furnCache.set(k, out); return out;
   }
   const h = isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + .3, pad = Math.ceil(ts*.25), W = Math.ceil(it.w*ts + pad*2), H = Math.ceil(it.d*ts*HM.SQ + h*ts + pad*2);
@@ -6633,7 +6784,7 @@ function trimmed(src){
 }
 function homeItemThumb(x, it, pixel){
   x.clearRect(0, 0, 160, 96);
-  const art = pixel && artOf("furn/" + it.id);
+  const art = pixel && artOf(furnArtKey(it));
   let img, k;
   if (art) { img = trimmed(art); k = Math.max(1, Math.floor(Math.min(150/img.width, 86/img.height))); }
   else {
@@ -6700,10 +6851,11 @@ function paintRoom(c, r, ts, pixel, tod, wTiles, head = 0){
     }
   }
   // floor
-  const fy = wallH, base = {wood:"#c8945e", carpet:"#7f9fd1", grass:"#7cc45a", marble:"#e9e6f2"}[r.floor];
+  const fy = wallH, base = {wood:"#c8945e", carpet:"#7f9fd1", grass:"#7cc45a", marble:"#e9e6f2", tile:"#f1ede2"}[r.floor];
   c.fillStyle = base; c.fillRect(R(X0), R(fy), R(W) + 1, R(floorH) + 1);
   if (r.floor === "wood") { for (let row = 0; row < HM.D*2; row++) { c.fillStyle = row % 2 ? "#bd8752" : "#c8945e"; c.fillRect(R(X0), R(fy + row*ts*SQ/2), R(W) + 1, R(ts*SQ/2) + 1); c.fillStyle = "rgba(0,0,0,.12)"; for (let i = (row % 3)*.7; i < W/ts; i += 2.1) c.fillRect(R(X0 + i*ts), R(fy + row*ts*SQ/2), 1, R(ts*SQ/2)); } }
   if (r.floor === "carpet") { c.fillStyle = "rgba(255,255,255,.08)"; for (let y = 0; y < HM.D; y++) for (let x = 0; x < W/ts; x++) if ((x + y) % 2) c.fillRect(R(X0 + x*ts), R(fy + y*ts*SQ), R(ts), R(ts*SQ)); }
+  if (r.floor === "tile") { for (let y = 0; y < HM.D*2; y++) for (let x = 0; x < W/ts*2; x++) if ((x + y) % 2) { c.fillStyle = "#c9d9cf"; c.fillRect(R(X0 + x*ts/2), R(fy + y*ts*SQ/2), R(ts/2) + 1, R(ts*SQ/2) + 1); } }
   if (r.floor === "marble") { for (let y = 0; y < HM.D; y++) for (let x = 0; x < W/ts; x++) { c.fillStyle = (x + y) % 2 ? "#d9d4e8" : "#f2f0f8"; c.fillRect(R(X0 + x*ts), R(fy + y*ts*SQ), R(ts) + 1, R(ts*SQ) + 1); } }
   if (r.floor === "grass") { const Rn = rng(r.x0*7 + 3); c.fillStyle = "#6ab64c"; for (let i = 0; i < W/ts*6; i++) { const x = X0 + Rn()*W, y = fy + Rn()*floorH; c.fillRect(R(x), R(y), Math.max(1, R(ts*.06)), Math.max(1, R(ts*.18))); } }
   if (r.pond) { const cx = X0 + W/2, cy = fy + floorH*.55; c.fillStyle = "#3f8f5a"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32 + ts*.15), R(floorH*.3 + ts*.12), 0, 0, 7); c.fill(); c.fillStyle = "#4aa8e0"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32), R(floorH*.3), 0, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.35)"; for (let i = 0; i < 6; i++) c.fillRect(R(cx - W*.2 + i*W*.07), R(cy - floorH*.1 + (i % 3)*floorH*.08), R(ts*.4), Math.max(1, R(ts*.04))); }
@@ -6733,7 +6885,7 @@ function paintDivider(c, d, ts, pixel, head){
     c.fillStyle = T.face; c.fillRect(R(X0), R(bot), R(ts), R(h)); c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(R(X0), R(bot), R(ts), Math.max(1, R(ts*.05)));
   }
   const y0 = fy(DOOR[0]), y1 = fy(DOOR[1]);   // the doorway: a mat, a step or stepping stones
-  if (door) c.drawImage(door, R(X0), R(y0), R(ts), R(y1 - y0));
+  if (door) { const w = door.width*k, hh = door.height*k; c.drawImage(door, R(d.x*ts - w/2), R((y0 + y1)/2 - hh/2), R(w), R(hh)); }   // the mat or step at its own size
   else { c.fillStyle = "rgba(0,0,0,.12)"; c.fillRect(R(X0 + ts*.1), R(y0 + ts*.05), R(ts*.8), R(y1 - y0 - ts*.1)); }
 }
 function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are drawn in depth order with everyone else
@@ -6741,11 +6893,83 @@ function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are draw
   if (img) { const w = img.width*ts/32, h = img.height*ts/32; c.drawImage(img, Math.round(X - w/2), Math.round(Y - h), Math.round(w), Math.round(h)); return; }
   const w = ts*.34, h = ts*1.25; c.fillStyle = T.face; c.fillRect(X - w/2, Y - h, w, h); c.fillStyle = T.cap; c.fillRect(X - w/2, Y - h, w, ts*.12);
 }
+// ---- the house from outside ----
+// Out in a yard you see the house as it really looks: its roof and front wall cover the rooms (and whoever is inside),
+// and fade away as you walk in through the door. The look comes from the house design (HOUSES, sold in the Shop).
+function houseSpans(){
+  const out = []; let s = null;
+  for (const r of HS.rooms) { if (roomKind(r) === "out") { s = null; continue; } if (s) s.x1 = r.x0 + r.w; else out.push(s = {x0:r.x0, x1:r.x0 + r.w}); }
+  return out;
+}
+function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){
+  const R = v => pixel ? Math.round(v) : v, wallTop = bot - HM.WALL*ts*.95, W = X1 - X0;
+  let g = c.createLinearGradient(0, top, 0, wallTop); g.addColorStop(0, H.roof2); g.addColorStop(1, H.roof);   // the roof, seen from above
+  c.fillStyle = g; c.fillRect(R(X0), R(top), R(W), R(wallTop - top));
+  const rowH = ts*.42;
+  for (let y = top + ts*.5, i = 0; y < wallTop - ts*.1; y += rowH, i++) {   // rows of tiles, staggered joints
+    c.fillStyle = "rgba(0,0,0,.2)"; c.fillRect(R(X0), R(y), R(W), Math.max(1, R(ts*.06)));
+    c.fillStyle = "rgba(255,255,255,.1)"; c.fillRect(R(X0), R(y + ts*.06), R(W), Math.max(1, R(ts*.03)));
+    c.fillStyle = "rgba(0,0,0,.12)"; for (let x = X0 + (i % 2)*ts*.3; x < X1; x += ts*.6) c.fillRect(R(x), R(y - rowH + ts*.06), Math.max(1, R(ts*.04)), R(rowH - ts*.06));
+  }
+  c.fillStyle = shadeHex(H.roof2, .8); c.fillRect(R(X0), R(top), R(W), R(ts*.5));   // ridge
+  c.fillStyle = "rgba(255,255,255,.18)"; c.fillRect(R(X0), R(top + ts*.08), R(W), Math.max(1, R(ts*.06)));
+  for (let x = X0 + ts*2.2; x < X1 - ts*1.5; x += ts*13) {   // chimneys
+    c.fillStyle = "#8a4a3a"; c.fillRect(R(x), R(top - ts*.4), R(ts*.8), R(ts*1.3)); c.fillStyle = "#5a3026"; c.fillRect(R(x - ts*.08), R(top - ts*.5), R(ts*.96), R(ts*.22));
+  }
+  c.fillStyle = H.wall; c.fillRect(R(X0), R(wallTop), R(W), R(bot - wallTop));   // the front wall
+  c.fillStyle = "rgba(0,0,0,.06)"; for (let y = wallTop + ts*.3; y < bot; y += ts*.3) c.fillRect(R(X0), R(y), R(W), Math.max(1, R(ts*.03)));
+  c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(R(X0), R(wallTop), R(W), R(ts*.16));   // shadow under the eaves
+  const wy = wallTop + ts*.45, wh = ts*1.1, ww = ts*1.2, glass = night > .3 ? "#ffd98a" : "#a9d4f5";
+  for (let x = X0 + ts*1.6; x < X1 - ts*1.6; x += ts*3.2) {   // windows with shutters and a flower box
+    c.fillStyle = H.trim; c.fillRect(R(x - ts*.5), R(wy), R(ts*.42), R(wh)); c.fillRect(R(x + ww + ts*.08), R(wy), R(ts*.42), R(wh));
+    c.fillStyle = "#ffffff"; c.fillRect(R(x - ts*.06), R(wy - ts*.06), R(ww + ts*.12), R(wh + ts*.12));
+    c.fillStyle = glass; c.fillRect(R(x), R(wy), R(ww), R(wh)); c.fillStyle = "#ffffff"; c.fillRect(R(x + ww/2 - ts*.03), R(wy), R(ts*.06), R(wh)); c.fillRect(R(x), R(wy + wh/2 - ts*.03), R(ww), R(ts*.06));
+    c.fillStyle = "#7a4a2a"; c.fillRect(R(x - ts*.1), R(wy + wh + ts*.04), R(ww + ts*.2), R(ts*.18));
+    c.fillStyle = "#e2413b"; for (let k = 0; k < 4; k++) c.fillRect(R(x + k*ww/4 + ts*.06), R(wy + wh - ts*.04), R(ts*.12), R(ts*.1));
+  }
+  c.fillStyle = H.base; c.fillRect(R(X0), R(bot - ts*.38), R(W), R(ts*.38));   // foundation
+  c.fillStyle = "rgba(0,0,0,.18)"; for (let x = X0 + ts*.2; x < X1; x += ts*.7) c.fillRect(R(x), R(bot - ts*.38), Math.max(1, R(ts*.04)), R(ts*.38));
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(R(X0), R(top), Math.max(1, R(ts*.06)), R(bot - top)); c.fillRect(R(X1 - ts*.06), R(top), Math.max(1, R(ts*.06)), R(bot - top));
+}
+function drawFacade(c, pixel, spans, a){
+  const ts = HS.ts, H = houseOf(), bot = Math.round(scrY(HM.D)), top = Math.round(scrY(0) - HM.WALL*ts), img = pixel && artOf("house/" + H.id), night = HS.light ? HS.light.night : 0;
+  c.save(); c.globalAlpha = a;
+  for (const s of spans) {
+    const X0 = Math.round(scrX(s.x0)), X1 = Math.round(scrX(s.x1)); if (X1 < 0 || X0 > HS.V.W) continue;
+    c.save(); c.beginPath(); c.rect(X0, top - ts, X1 - X0, bot - top + ts); c.clip();
+    if (img) for (let x = X0; x < X1; x += img.width) c.drawImage(img, x, bot - img.height);   // 2D: the house front repeats along the house
+    else facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night);
+    c.restore();
+  }
+  c.restore();
+}
+function houseThumb(x, H, pixel){
+  x.clearRect(0, 0, 160, 96);
+  const img = pixel && artOf("house/" + H.id);
+  if (img) { const k = 96/img.height; x.imageSmoothingEnabled = true; x.drawImage(img, 0, 0, img.width, img.height, (160 - img.width*k)/2, 0, img.width*k, 96); return; }
+  x.fillStyle = "#bfe3ff"; x.fillRect(0, 0, 160, 96); facadeShapes(x, H, 8, 152, 16, 92, 13, pixel, 0);
+}
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
 
 // ---- state of the running Home ----
 const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0};
+// Furniture, gifts and berry trees are saved at positions along the house, together with the room order they refer
+// to (home.lay). When the rooms change (one bought, or the order changed), everything moves along with its room.
+const LEGACY_ROOMS = ["bedroom", "living", "garden", "pond", "hall"];   // the order before the front yard and kitchen
+function homeRelayout(){
+  const D = homeData(), now = homeRooms().map(r => r.id), cur = now.join(",");
+  if (D.lay === cur) return;
+  const old = D.lay ? D.lay.split(",") : LEGACY_ROOMS.filter(id => now.includes(id));
+  const starts = ids => { const o = {}; let x = 0; for (const id of ids) { o[id] = x; x += ROOMS.find(r => r.id === id).w; } return o; };
+  const o0 = starts(old), o1 = starts(now);
+  const move = x => { const id = old.filter(i => x >= o0[i]).pop(); return id && id in o1 ? x - o0[id] + o1[id] : x; };
+  for (const p of D.items) p.x = move(p.x);
+  for (const g of D.gifts) g.x = move(g.x);
+  D.trees = Object.fromEntries(Object.entries(D.trees).map(([k, v]) => { const [x, y] = k.split(",").map(Number); return [`${move(x)},${y}`, v]; }));
+  D.lay = cur; save();
+}
 function homeLayout(){
+  homeRelayout();
   let x = 0; HS.rooms = homeRooms().map(r => { const o = {...r, x0:x}; x += r.w; return o; }); HS.W = x;
 }
 const roomAt = x => HS.rooms.find(r => x >= r.x0 && x < r.x0 + r.w) || HS.rooms[HS.rooms.length - 1];
@@ -6896,6 +7120,9 @@ function homeFrame(now){
   if (Math.abs(want - HS.cam) < .001 && Math.abs(HS.camV || 0) < .01) { HS.cam = want; HS.camV = 0; }
   HS.camPx = Math.round(HS.cam*ts);   // one rounded camera offset for the room, the furniture and the Pokémon, so nothing shimmers against the floor
   const L = HS.light = homeLight();
+  const outT = !HS.edit && !HS.intro && roomKind(roomAt(HS.me.x)) === "out" ? 1 : 0;   // out in a yard: the house shows its outside
+  HS.outA = HS.outA == null ? outT : HS.outA + (outT - HS.outA)*Math.min(1, dt*7);
+  const spans = HS.spans = HS.outA > .01 ? houseSpans() : null, inside = x => !!spans && spans.some(s => x > s.x0 && x < s.x1);
   c.imageSmoothingEnabled = !pixel;
   if (HS.cam < 0 || HS.cam + V.W/ts > HS.W) {   // a dim corridor either side of a small house
     const wy = Math.round(scrY(0)); c.fillStyle = "#3a2f2a"; c.fillRect(0, 0, V.W, wy); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, V.H - wy);
@@ -6909,23 +7136,26 @@ function homeFrame(now){
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
-  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
+  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, x:p.x + p.it.w/2, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
     if (!NO_SHADOW.has(p.it.kind)) furnShadow(c, p, pixel);
     c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
     if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
-  for (const d of dividers()) for (const y of DOOR) list.push({y, draw:() => drawDivPost(c, d, y, pixel)});
-  for (const m of HS.mons) list.push({y:m.depth || m.y, draw:() => drawHomeMon(c, m, now, pixel)});
-  for (const g of homeData().gifts) list.push({y:g.y, draw:() => drawGift(c, g, now, pixel)});
-  list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
-  list.sort((a, b) => a.y - b.y).forEach(d => d.draw());
+  for (const d of dividers()) for (const y of DOOR) list.push({y, x:d.x, draw:() => drawDivPost(c, d, y, pixel)});
+  for (const m of HS.mons) list.push({y:m.depth || m.y, x:m.x, draw:() => drawHomeMon(c, m, now, pixel)});
+  for (const g of homeData().gifts) list.push({y:g.y, x:g.x, draw:() => drawGift(c, g, now, pixel)});
+  list.push({y:HS.me.y + .01, x:HS.me.x, draw:() => drawHomeTrainer(c, now, pixel)});
+  list.sort((a, b) => a.y - b.y);
+  for (const d of list) if (inside(d.x)) d.draw();   // inside the house first, then its outside on top, then the yards
   drawHomeFx(c, now, pixel);
+  if (spans) drawFacade(c, pixel, spans, HS.outA);
+  for (const d of list) if (!inside(d.x)) d.draw();
   // prompts and emotes on top
   drawWeather(c, now, pixel, "out");
   if (HS.edit) drawDecoOverlay(c, pixel);
   // the light: a warm sunset tint and a night tint that fade in and out with the clock, then lamps and fires glowing
   if (L.dusk > .01) { c.fillStyle = `rgba(255,140,80,${(.1*L.dusk*(1 - L.night)).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); }
   if (L.night > .01) { const ev = eventOn(), n = ev && ev.night || [20, 30, 80, .32]; c.fillStyle = `rgba(${n[0]},${n[1]},${n[2]},${(n[3]*L.night).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); drawGlows(c, now, pixel, L.night); }
-  for (const m of HS.mons) drawEmote(c, m, now, pixel);   // emotes stay bright at night
+  for (const m of HS.mons) if (!(HS.outA > .5 && inside(m.x))) drawEmote(c, m, now, pixel);   // emotes stay bright at night
   if (pixel) { HS.ctx.imageSmoothingEnabled = false; HS.ctx.drawImage(HS.low, 0, 0, HS.low.width*HS.k, HS.low.height*HS.k); }
   homeOverlay(now, pixel);
   HS.raf = requestAnimationFrame(homeFrame);
@@ -6987,9 +7217,9 @@ function drawHomeMon(c, m, now, pixel){
   const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim, ft = footOf(sp), up = Math.max(0, lift - zl), lf = 1/(1 + up/(ts*.9)), sw = Math.max(ts*.2, ft.w*w*.62)*lf;   // the shadow shrinks and fades as it hops or floats
   if (swim) { c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = pixel ? 1 : Math.max(1, ts*.04); c.beginPath(); c.ellipse(Math.round(X), Math.round(Y - zl), Math.max(2, w*.36), Math.max(1, w*.09), 0, 0, 7); c.stroke(); }
-  else softShadow(c, X + ft.cx*w*m.dir + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
+  else softShadow(c, X + ft.cx*w*(bk ? m.dir : -m.dir) + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
-  c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
+  c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (bk ? m.dir < 0 : m.dir > 0) c.scale(-1, 1);   // front sprites face left (back sprites right): mirrored to face the other way
   if (m.act === "nap" && !zz) { c.rotate(.07); c.scale(1.08, .8 + .025*Math.sin(now/900 + m.n)); c.globalAlpha = .96; }   // no sleeping sprite: curled up a little, slow breathing
   if (zz && !pixel) { c.shadowColor = "rgba(20,24,40,.45)"; c.shadowBlur = Math.max(2, ts*.08); }   // 3D: pixel-art sleepers get a soft outline so they sit in the scene
   if (m.eatT > now) c.scale(1 + .03*Math.abs(Math.sin(now/85)), 1 - .07*Math.abs(Math.sin(now/85)));   // munching
@@ -7036,7 +7266,7 @@ function drawHomeTrainer(c, now, pixel){
   softShadow(c, X + ts*.04, Y + ts*.02, ts*.32, ts*.1, .34, pixel);
   if (!sp) return;
   const bb = sp.bb, h = pixel ? bb.h : ts*2.05, w = bb.w*h/bb.h, bob = me.walk ? Math.abs(Math.sin(now/120))*ts*.07 : 0, img = frameAt(sp, now);
-  c.save(); c.translate(Math.round(X), Math.round(Y - bob)); if (me.dir < 0) c.scale(-1, 1);
+  c.save(); c.translate(Math.round(X), Math.round(Y - bob)); if (me.dir > 0) c.scale(-1, 1);   // trainer sprites face left too
   if (me.walk && !pixel) c.rotate(Math.sin(now/120)*.025);
   c.drawImage(img, bb.x, bb.y, bb.w, bb.h, pixel ? Math.round(-w/2) : -w/2, -h, w, h); c.restore();
 }
@@ -7124,6 +7354,7 @@ function promptFor(c, t, pixel){
   if (t.k === "mon") { if (t.m.sp && t.m.box) keyChip(c, t.m.box.x + t.m.box.w/2, t.m.box.y, key, `${HS.hold && !t.m.visitor && !VISIT ? "Feed" : "Play with"} ${nickFor(t.m.n)}`, pixel); return; }
   if (t.k === "gift") { keyChip(c, scrX(t.x), scrY(t.y) - ts*.45, key, "Open gift", pixel); return; }
   if (t.k === "tree") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - 2.5*ts, key, treeLeft(p) > 0 ? "Pick a berry" : "No berries today", pixel); }
+  if (t.k === "case") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - (pixel ? 2.6 : 1.9)*ts, key, `Look at the ${LEAGUES[p.it.region - 1].badge === "stamp" ? "stamps" : "badges"}`, pixel); }
 }
 function nearestMon(r){ let best = null, bd = r; for (const m of HS.mons) { const d = Math.hypot(m.x - HS.me.x, (m.y - HS.me.y)*1.4); if (d < bd) { bd = d; best = m; } } return best; }
 function homeUpdate(dt, now){
@@ -7170,6 +7401,7 @@ function homeUpdate(dt, now){
       const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), last = !(m.path && m.path.length > 1);   // through the doorway when it needs another room
       m.v = Math.min(m.spd*(m.follow && me.walk ? 1.25 : 1), (m.v || 0) + m.spd*dt*3.5, last ? Math.max(.3, d*2.4) : 99);   // speeds up, and slows down as it arrives
       const sp = m.v*dt;
+      if (d <= sp && Math.abs(dx) > .01) m.dir = Math.sign(dx);   // the last little step still turns it the right way
       if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
       else if (d <= sp) { m.x = wp.x; m.y = wp.y; m.v = 0; if (m.plan) homeAct(m, m.plan, now); else if (m.follow) { m.follow = false; m.st = "idle"; m.t = 900; if (Math.abs(me.x - m.x) > .1) m.dir = Math.sign(me.x - m.x); } else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
       else {
@@ -7178,7 +7410,7 @@ function homeUpdate(dt, now){
         let nx = m.x + ux*sp, ny = m.y + uy*sp*.8;
         if (blocked(nx, ny, canSwim)) { nx = m.x + dx/d*sp; ny = m.y + dy/d*sp*.8; }   // steering would bump into something: go straight
         if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; m.plan = null; m.spot = null; m.follow = false; m.v = 0; }
-        else { m.x = nx; m.y = ny; if (Math.abs(ux) > .15) m.dir = Math.sign(ux); }   // faces the way it's going
+        else { const mx = nx - m.x; m.x = nx; m.y = ny; if (Math.abs(mx) > sp*.05) m.dir = Math.sign(mx); }   // always faces the way it's really moving (only straight up/down keeps its facing)
       }
     }
     m.swim = !m.fl && !m.z && inPond(roomAt(m.x), m.x, m.y);
@@ -7429,7 +7661,7 @@ function berryCatch(){
     const B = box(), sp = G.sp;
     c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.ellipse(Math.round(G.x), H - 10, B.w*.4, 3, 0, 0, 7); c.fill();
     if (sp) { const img = sp.frames[frameIdx(sp, now)].img, s = Math.min(1, 64/Math.max(sp.bb.w, sp.bb.h)), w = Math.round(sp.bb.w*s), h = Math.round(sp.bb.h*s);
-      c.save(); c.translate(Math.round(G.x), 0); if (G.v < 0) c.scale(-1, 1); c.drawImage(img, sp.bb.x, sp.bb.y, sp.bb.w, sp.bb.h, -Math.round(w/2), H - 10 - h, w, h); c.restore(); }
+      c.save(); c.translate(Math.round(G.x), 0); if (G.v > 0) c.scale(-1, 1); c.drawImage(img, sp.bb.x, sp.bb.y, sp.bb.w, sp.bb.h, -Math.round(w/2), H - 10 - h, w, h); c.restore(); }
     for (const q of G.pops) { const a = 1 - (now - q.t)/600; if (a <= 0) continue; c.globalAlpha = a; c.fillStyle = q.fav ? "#ffd43b" : "#ffffff"; c.font = "bold 12px monospace"; c.fillText(q.fav ? "+1 ♥" : "+1", Math.round(q.x - 8), Math.round(q.y - (1 - a)*16)); c.globalAlpha = 1; }
     G.pops = G.pops.filter(q => now - q.t < 600);
   }
@@ -7517,7 +7749,7 @@ const SPOT_OF = {
   hammock:{act:"nap", pts:[[1.5, .5]], z:.42},
   sofa:{act:"sit", pts:"row", z:.42}, chair:{act:"sit", pts:[[.5, .62]], z:.42}, bench:{act:"sit", pts:"row", z:.48},
   tv:{act:"watch", front:true}, arcade:{act:"watch", front:true}, desk:{act:"watch", front:true}, piano:{act:"watch", front:true},
-  fire:{act:"warm", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
+  fire:{act:"warm", front:true}, stove:{act:"warm", front:true}, fridge:{act:"sniff", front:true}, counter:{act:"sniff", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
   fountain:{act:"splash", front:true}, tank:{act:"splash", front:true}, shellfountain:{act:"splash", front:true},
   plant:{act:"sniff", front:true}, flowers:{act:"sniff", front:true}, tree:{act:"sniff", front:true}, palm:{act:"sniff", front:true}, flowerarch:{act:"sniff", front:true},
 };
@@ -7700,13 +7932,23 @@ function nearestThing(){
   for (let i = 0; i < D.gifts.length; i++) { const g = D.gifts[i]; if (!VISIT && Math.hypot(g.x - me.x, (g.y - me.y)*1.4) < 1.2) return {k:"gift", i, x:g.x, y:g.y}; }
   const m = nearestMon(1.7); if (m) return {k:"mon", m};
   for (const p of placedItems()) if (p.it.kind === "tree" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.8) return {k:"tree", p};
+  for (const p of placedItems()) if (p.it.kind === "badgecase" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.5) return {k:"case", p};
   return null;
 }
 function homeUseThing(t){
   if (!t) return;
   if (t.k === "gift") openGift(t.i);
   else if (t.k === "tree") pickBerry(t.p);
+  else if (t.k === "case") openBadgeCase(t.p.it.region);
   else if (t.k === "mon") { if (HS.hold && !VISIT && !t.m.visitor) feedMon(t.m, HS.hold); else homeInteract(t.m); }
+}
+// a Badge Case up close: each badge large, with its Gym Leader
+function openBadgeCase(g){
+  const L = LEAGUES[g - 1], bits = badgeOf(g), R = GENS.find(x => x.g === g).region, st = L.badge === "stamp";
+  openModal(`<h2>${esc(R)} ${st ? "stamps" : "badges"}</h2><p class="note">${VISIT ? "" : bits === 255 ? "The full set!" : `${L.gyms.filter((_, k) => bits & (1 << k)).length} of 8. Win more in the ${esc(L.label || "Gym challenge")}.`}</p>
+    <div class="case-grid">${L.gyms.map(([nm], k) => { const on = bits & (1 << k), b = badgeArt(g, k);
+      return `<figure class="case-b${on ? "" : " off"}">${b ? `<img src="${b.src}" alt="">` : `<span class="bdg b${k}" style="--bc:${TC[L.gyms[k][1].split("/")[0]]}"></span>`}<figcaption><b>${on ? esc(badgeName(g, k)) : "???"}</b><span>${esc(nm)}</span></figcaption></figure>`; }).join("")}</div>
+    <div class="actions"><button class="btn primary" type="button" data-close>OK</button></div>`);
 }
 // ---- weather and seasonal events ----
 // Events run every year between two dates (month, day); add more here. `furn` items are only sold while it runs.
@@ -7763,7 +8005,7 @@ const GLOW = {lamp:[.5, 1.75, 2.4, "255,214,140"], lamp2:[.5, 1.8, 2.4, "255,214
 function drawGlows(c, now, pixel, k){
   if (!(k > 0)) return;
   const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
-  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G) continue;
+  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.outA > .5 && HS.spans && HS.spans.some(s => p.x + p.it.w/2 > s.x0 && p.x + p.it.w/2 < s.x1)) continue;
     const fl = 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*fl;
     // a warm pool on the floor under the light, then the glow itself
     const fy = scrY(p.y + p.it.d) - ts*.1, pr = G[2]*ts*.85*fl;
@@ -8130,7 +8372,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Sleeping sprites</dt><dd>Pokémon napping in the Pokémon Home use the Sleep animations from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">PMD Sprite Collab</a> by its contributors, licensed <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>. Every artist is listed in <a href="https://github.com/BlakeRossi3/PokeDreamTeamBuilder/blob/main/docs/pmd-credits.md" target="_blank" rel="noopener">docs/pmd-credits.md</a>.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Sleeping sprites</dt><dd>Pokémon napping in the Pokémon Home use the Sleep animations from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">PMD Sprite Collab</a> by its contributors, licensed <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>. Every artist is listed in <a href="https://github.com/BlakeRossi3/PokeDreamTeamBuilder/blob/main/docs/pmd-credits.md" target="_blank" rel="noopener">docs/pmd-credits.md</a>.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Badges</dt><dd>Gym badges for Kanto to Kalos (Badge Cases and the Gym screen) from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>; the Alola, Galar and Paldea sets are pixel art made with Retro Diffusion.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture (and its animations), rooms, doorways and house fronts are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {
@@ -8960,7 +9202,7 @@ function renderGym(){
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small><small class="gc-rw">${on ? `★ ${esc(GYM_REWARD[g + "-" + k].name)}` : "Reward: ?"}</small></div>
-        <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
+        ${badgeArt(g, k) ? `<img class="bdg" src="${badgeArt(g, k).src}" title="${esc(badgeName(g, k))}" alt="${esc(badgeName(g, k))}${on ? " earned" : ""}">` : `<span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>`}
         <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
     <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="meta e4-rw">${L.e4.map(([x], k) => `<span class="${(state.games.e4[g] | 0) & (1 << k) ? "won" : ""}">${(state.games.e4[g] | 0) & (1 << k) ? "★" : "☆"} ${esc(x)}</span>`).join(" ")} <span class="${state.games.leagues[g] ? "won" : ""}">${state.games.leagues[g] ? "★" : "☆"} ${esc(L.champ[0])}</span> · Elite Four members give elite rewards; the Champion gives a full set.</p><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
