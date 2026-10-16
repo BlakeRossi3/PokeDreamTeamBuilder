@@ -64,7 +64,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
 `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
-`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
 
@@ -89,6 +89,12 @@ Boot code is at the very end of the script.
   it dirty and `sbQueue()` uploads via the `put_save` RPC with the version it builds on (conflict → `syncConflict`).
   Cloud data goes through `applySaved` like local saves. Schema, RLS and RPCs: `supabase/migrations/*.sql`; check them
   with `sh supabase/tests/run.sh`. `tests/test_online.py` uses a stand-in client. Never commit the service_role key.
+- **Friends** (`FRIENDS` section): a friend's card, showcased team, Hall of Fame card and Home are drawn by the normal code
+  inside a sandbox: `enterVisit(pub, who)` swaps `state` for one built from their `public_profile`, and while `VISIT` is set
+  `save()`, `checkAch()` and `earn()` do nothing and `persisted()` returns a snapshot of the player's own save. Always pair it
+  with `leaveVisit()` (screens do it in `nav.cleanup`). What friends see is built by `publicProfile()` and uploaded after a
+  sync (`friendsAfterSync`). New `state.games` fields: `showcase` {team, style}, `social` {vis, likes, friends, likeAt}.
+  `tests/test_friends.py` plays two players with `tests/fake_supabase.js`.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
 - **Size:** the site is ~417 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.

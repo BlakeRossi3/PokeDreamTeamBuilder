@@ -15,8 +15,8 @@ W, H = (int(sys.argv[1]), int(sys.argv[2])) if len(sys.argv) > 2 else (1280, 860
 TAG = str(W)
 
 CONFIG = 'window.DTD_CONFIG = {supabaseUrl:"https://fake.supabase.co", supabaseAnonKey:"anon"};'
-# an in-memory Supabase: just what the app calls. The data lives in localStorage so it survives reloads.
-FAKE = r'''
+# the stand-in Supabase client (shared with test_friends.py)
+FAKE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fake_supabase.js")).read()
 (() => {
   const K = "fakeSB", load = () => JSON.parse(localStorage.getItem(K) || '{"profiles":{},"saves":{},"session":null}'), store = d => localStorage.setItem(K, JSON.stringify(d));
   window.fakeSB = {get:load, set:store};

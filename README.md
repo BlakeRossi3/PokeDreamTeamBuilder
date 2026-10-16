@@ -25,7 +25,8 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 - **Earning:** quiz answers +3 (+23 on every 10th in a row) · Daily 10: +5 per correct, +25 for finishing, +50 more for 10/10 ·
   achievements +100 each · rivals 150 the first time, 40 after · Gym Leaders 200 + exclusive rewards the first time, 40 after ·
   Elite Four members 300 + elite rewards the first time · leagues 1,000 + the Champion's set the first time, 250 after · Versus wins 60 ·
-  +10 per Home Pokémon you play with each day.
+  +10 per Home Pokémon you play with each day · +20 for liking a friend's Home and +20 for each Like your Home gets
+  (once a day per Home) · friend battles are just for fun (no points).
 - **Exclusives** are never sold (the Shop shows them as "?" until earned). Every Gym Leader gives their badge, a themed
   exclusive (furniture or a rare Poké Ball that fits them) and an icon of their ace; the first badge of a region gives its
   Badge Case. Elite Four members give an elite profile icon and a signature statue; Champions give their card design,
@@ -42,6 +43,12 @@ devices with Account menu → **Download a backup** / **Restore a backup**.
 code. They get a username, a friend code and one cloud save that syncs local-first across devices; when two devices
 both changed, the player chooses which progress to keep. Without the config the app is exactly as above. Setup:
 [docs/supabase-setup.md](docs/supabase-setup.md); schema and privacy rules: `supabase/migrations/`.
+
+**Friends** (online accounts only): add friends by friend code, username or a share link (`?friend=CODE`). See their
+trainer card, the team they show off (Hall of Fame card + lineup with sprites, nicknames, Poké Balls, items and moves),
+copy that team, battle it against the computer, and visit their Pokémon Home. A Like on a friend's Home gives both
+players 20 PokéPoints, once a day. No chat or free text; blocking hides you completely. Choose what friends see on the
+Trainer card screen.
 
 ## Credits
 Full credits are in the app under Settings → Credits. The 2D Hall of Fame backgrounds and Pokémon Home art were made
