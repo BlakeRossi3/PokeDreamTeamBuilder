@@ -1302,6 +1302,18 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 :root[data-mode="2d"] .gym-card.next{border-color:var(--accent); box-shadow:3px 3px 0 var(--ink)}
 .bdg{grid-row:1; grid-column:3; width:26px; height:26px; background:var(--raised-2); opacity:.45; filter:grayscale(1)}
 .gym-card.on .bdg{background:var(--bc); opacity:1; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+img.bdg, .gym-card.on img.bdg{background:none; box-shadow:none; clip-path:none; border-radius:0; object-fit:contain; width:30px; height:30px}
+/* a Badge Case up close (Pokémon Home) */
+.case-grid{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:12px 0}
+.case-b{margin:0; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 4px 8px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm); text-align:center; min-width:0}
+.case-b img{width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+.case-b .bdg{width:48px; height:48px; background:var(--bc); opacity:1; filter:none}
+.case-b.off img, .case-b.off .bdg{filter:brightness(0) opacity(.22)}
+.case-b figcaption{display:flex; flex-direction:column; gap:2px; min-width:0; max-width:100%}
+.case-b b{font-family:var(--font-d); font-size:var(--fs-sm); overflow-wrap:anywhere} .case-b span{color:var(--muted); font-size:var(--fs-xs)}
+:root[data-mode="2d"] .case-b{background:var(--paper)}
+:root[data-mode="2d"] .case-b img{image-rendering:auto}
+@media (max-width:520px){ .case-grid{grid-template-columns:repeat(2, minmax(0, 1fr))} }
 .bdg.b0{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)} .bdg.b1{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)} .bdg.b2{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)} .bdg.b3{border-radius:50%} .bdg.b4{clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)} .bdg.b5{clip-path:polygon(0 20%,50% 0,100% 20%,100% 70%,50% 100%,0 70%)} .bdg.b6{clip-path:polygon(50% 0,100% 100%,0 100%)} .bdg.b7{clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
 .e4-box{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:16px; padding:16px; border:var(--bw) solid var(--hi); border-radius:var(--r); background:linear-gradient(135deg, color-mix(in srgb, var(--accent-2) 22%, var(--panel)), var(--panel))}
 .e4-box.locked{border-color:var(--line); opacity:.75}
@@ -4331,6 +4343,10 @@ const SCENES = [
   {id:"lavender", name:"Lavender Town", fx:{type:"wisp"}},
   {id:"spear", name:"Spear Pillar", fx:{type:"sparkle", y:[0,.55]}},
   {id:"tower", name:"Battle Tower", fx:{type:"confetti"}},
+  {id:"stadium", name:"Stadium lights", fx:{type:"confetti"}},
+  {id:"skypillar", name:"Sky Pillar", fx:{type:"dust"}},
+  {id:"blossom", name:"Blossom shrine", fx:{type:"petal"}},
+  {id:"reef", name:"Coral reef", fx:{type:"bubble"}},
   ...["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"].map((r, i) => ({id:"hall" + (i + 1), name:`${r} Champion’s Hall`, hall:i + 1, fx:{type:"confetti"}})),
 ];
 const SCENE_BY = new Map(SCENES.map(s => [s.id, s]));
@@ -4824,6 +4840,97 @@ function hallPaint(g){
 }
 for (let g = 1; g <= 9; g++) PAINT["hall" + g] = hallPaint(g);
 PAINT.tower = hallPaint(10);   // the Battle Tower's hall: steel and gold
+// a night stadium: floodlights, a packed crowd and a striped pitch
+PAINT.stadium = {
+  sky:(K) => {
+    K.vgrad(0, K.Y(.62), [[0,"#05070f"],[1,"#141c33"]]);
+    const R = rng(601); for (let i = 0; i < 60; i++) K.disc(R()*K.W, R()*K.Y(.14), K.u*(.05 + R()*.12), rgba("#ffffff", .3 + R()*.5));
+    for (let r = 0; r < 5; r++) {   // the stands, each row a band of little fans
+      const y0 = K.Y(.2 + r*.08); K.ctx.fillStyle = r % 2 ? "#1d2742" : "#232f50"; K.ctx.fillRect(0, y0, K.W, K.u*8);
+      const cols = ["#ff5d6c","#ffd43b","#5fa8ff","#f2f5ff","#46d996","#ff9f43"];
+      for (let x = R()*K.u; x < K.W; x += K.u*(1.1 + R()*.6)) { const c = cols[Math.floor(R()*6)]; K.disc(x, y0 + K.u*2.6, K.u*.62, rgba(c, .75)); K.ctx.fillStyle = rgba(c, .45); K.ctx.fillRect(x - K.u*.6, y0 + K.u*3.2, K.u*1.2, K.u*1.6); }
+    }
+    K.ctx.fillStyle = "#2c3758"; K.ctx.fillRect(0, K.Y(.6), K.W, K.u*2.4); K.ctx.fillStyle = "#ffd43b"; K.ctx.fillRect(0, K.Y(.6), K.W, Math.max(1, K.u*.4));
+    for (const fx of [.08, .3, .7, .92]) { const x = K.W*fx, y = K.Y(.06); K.ctx.fillStyle = "#3a4466"; K.ctx.fillRect(x - K.u*.4, y, K.u*.8, K.Y(.2) - y); K.ctx.fillStyle = "#cfd8ee"; K.ctx.fillRect(x - K.u*4, y - K.u*3, K.u*8, K.u*4); for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) K.disc(x - K.u*3 + i*K.u*2, y - K.u*2 + j*K.u*2, K.u*.75, "#ffffff"); }
+  },
+  land:(K) => {
+    const top = K.Y(.625); K.vgrad(top, K.H, [[0,"#4fae4f"],[1,"#22702c"]]);
+    for (let i = 0; i < 10; i += 2) { const a = top + (K.H - top)*Math.pow(i/10, 1.4), b = top + (K.H - top)*Math.pow((i + 1)/10, 1.4); K.ctx.fillStyle = "rgba(255,255,255,.06)"; K.ctx.fillRect(0, a, K.W, b - a); }
+    const cx = K.W/2, mid = K.Y(.76), ctx = K.ctx; ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = Math.max(1, K.u*.4);
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(K.W, mid); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, mid, K.u*14, K.u*3.6, 0, 0, 7); ctx.stroke();
+    pokeEmblem(K, cx, mid, K.u*2.2);
+  },
+  after:(K) => { for (const fx of [.08, .3, .7, .92]) K.glow(K.W*fx, K.Y(.04), K.u*9, "#ffffff", .45); },
+  anim:(K,tod,t) => {
+    const ctx = K.ctx; ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (const [i, fx] of [.08, .3, .7, .92].entries()) { const sx = K.W*fx, a = (fx < .5 ? -.5 : .5) + Math.sin(t/2200 + i*1.3)*.12, L = K.S.h*1.2; ctx.fillStyle = "rgba(220,232,255,.07)"; ctx.beginPath(); ctx.moveTo(sx, K.Y(.04)); ctx.lineTo(sx - Math.sin(a - .09)*L, K.Y(.04) + Math.cos(a - .09)*L); ctx.lineTo(sx - Math.sin(a + .09)*L, K.Y(.04) + Math.cos(a + .09)*L); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    const R = rng(603); for (let i = 0; i < 16; i++) { const x = R()*K.W, y = K.Y(.2 + R()*.38), al = Math.pow(Math.max(0, Math.sin(t/240 + R()*60)), 30); K.star4(x, y, K.u*1.4, "#ffffff", al); }   // camera flashes
+  },
+};
+// the top of Sky Pillar at dusk: a sea of clouds, mossy ruined columns
+PAINT.skypillar = {
+  sky:(K) => {
+    K.vgrad(0, K.Y(.62), [[0,"#2a2350"],[.5,"#7a4c78"],[.85,"#e2876a"],[1,"#f6c07a"]]);
+    K.glow(K.W*.5, K.Y(.6), K.u*36, "#ffcf8a", .45);
+    const R = rng(611); for (let i = 0; i < 70; i++) K.disc(R()*K.W, R()*K.Y(.3), K.u*(.05 + R()*.12), rgba("#ffffff", .25 + R()*.5));
+    for (let i = 0; i < 7; i++) { const x = K.W*(.08 + R()*.84), y = K.Y(.12 + R()*.3); K.glow(x, y, K.u*1.6, "#ffb35a", .6); K.disc(x, y, K.u*.4, "#ffe0a0"); }   // floating lanterns
+  },
+  land:(K) => {
+    K.ridge(K.Y(.6), K.u*3, 612, 3, "#b48aa8"); K.ridge(K.Y(.63), K.u*3, 613, 4, "#9a7398"); K.ridge(K.Y(.66), K.u*2.4, 614, 5, "#7e5f86");
+    const top = K.Y(.68); K.vgrad(top, K.H, [[0,"#6f7d5a"],[1,"#38452e"]]);
+    const cx = K.W/2; K.ctx.strokeStyle = "rgba(20,30,15,.35)"; K.ctx.lineWidth = Math.max(1, K.u*.2);
+    for (let i = -10; i <= 10; i++) { K.ctx.beginPath(); K.ctx.moveTo(cx + i*K.u*7, top); K.ctx.lineTo(cx + i*K.u*22, K.H); K.ctx.stroke(); }
+    for (let i = 1; i < 7; i++) { const y = top + (K.H - top)*Math.pow(i/7, 1.5); K.ctx.beginPath(); K.ctx.moveTo(0, y); K.ctx.lineTo(K.W, y); K.ctx.stroke(); }
+    const R = rng(615); for (let i = 0; i < 26; i++) K.disc(R()*K.W, top + R()*(K.H - top), K.u*(.6 + R()*1.4), rgba("#7fa04e", .55));
+    for (const [fx, base, h, w, broken] of [[.36,.67,12,2,1],[.64,.67,15,2,1],[.12,.78,60,5,0],[.88,.78,60,5,0]]) pillar(K, K.W*fx, K.Y(base), K.u*h, K.u*w, broken);
+    K.ctx.fillStyle = "rgba(90,120,60,.5)"; for (const fx of [.12, .88]) K.ctx.fillRect(K.W*fx - K.u*2.5, K.Y(.3), K.u*5, K.u*1.2);
+  },
+  anim:(K,tod,t) => {
+    const R = rng(616), ctx = K.ctx;
+    for (let i = 0; i < 8; i++) { const span = K.W + K.u*90, x = ((R()*span + t*K.u*.0015*(.4 + R())) % span) - K.u*45, y = K.Y(.6 + R()*.1); ctx.fillStyle = rgba("#ffe4d6", .1 + R()*.08); ctx.beginPath(); ctx.ellipse(x, y, K.u*(16 + R()*16), K.u*(1.4 + R()*1.2), 0, 0, 7); ctx.fill(); }
+  },
+};
+// a shrine path under cherry trees in full bloom
+PAINT.blossom = {
+  sky:(K) => { K.vgrad(0, K.Y(.6), [[0,"#7fc4f2"],[.7,"#c4e6fb"],[1,"#fbeef2"]]); },
+  land:(K) => {
+    K.ridge(K.Y(.55), K.u*8, 621, 1.6, "#b9c9de");
+    const R = rng(622), tree = (x, y, s) => { K.ctx.fillStyle = "#5a3a32"; K.ctx.fillRect(x - s*.08, y - s*.7, s*.16, s*.72); K.poly([[x, y - s*.5], [x - s*.4, y - s*.95], [x - s*.32, y - s], [x + s*.02, y - s*.62]], "#5a3a32"); for (let i = 0; i < 9; i++) { const a = R()*Math.PI*2, d = R()*s*.45; K.disc(x + Math.cos(a)*d*1.2, y - s*.95 + Math.sin(a)*d*.6, s*(.22 + R()*.12), i % 3 ? "#ffc4d8" : "#ff9fbf"); } };
+    for (let i = 0; i < 7; i++) tree(K.W*(i/6), K.Y(.62), K.u*(18 + R()*5));
+    const top = K.Y(.62); K.vgrad(top, K.H, [[0,"#9cc46a"],[1,"#5e8f3e"]]);
+    const cx = K.W/2; K.poly([[cx - K.u*5, top], [cx + K.u*5, top], [cx + K.u*34, K.H], [cx - K.u*34, K.H]], "#c9c2b6");
+    K.ctx.strokeStyle = "rgba(90,80,70,.35)"; K.ctx.lineWidth = Math.max(1, K.u*.2);
+    for (let i = 1; i < 9; i++) { const f = Math.pow(i/9, 1.4), y = top + (K.H - top)*f, hw = K.u*(5 + 29*f); K.ctx.beginPath(); K.ctx.moveTo(cx - hw, y); K.ctx.lineTo(cx + hw, y); K.ctx.stroke(); }
+    const g = K.u, tx = cx, ty = K.Y(.62);   // the torii gate
+    K.ctx.fillStyle = "#d8402e"; K.ctx.fillRect(tx - g*9, ty - g*22, g*2, g*22); K.ctx.fillRect(tx + g*7, ty - g*22, g*2, g*22); K.ctx.fillRect(tx - g*11, ty - g*18, g*22, g*1.6);
+    K.poly([[tx - g*14, ty - g*23.5], [tx + g*14, ty - g*23.5], [tx + g*12, ty - g*21.6], [tx - g*12, ty - g*21.6]], "#2b2024"); K.ctx.fillStyle = "#c4352a"; K.ctx.fillRect(tx - g*12, ty - g*21.6, g*24, g*1.4);
+    for (const s of [-1, 1]) { const lx = tx + s*g*16, ly = ty + g*4; K.ctx.fillStyle = "#a8a29a"; K.ctx.fillRect(lx - g*1, ly - g*7, g*2, g*7); K.ctx.fillRect(lx - g*2.2, ly - g*9.5, g*4.4, g*2.5); K.poly([[lx - g*3, ly - g*9.5], [lx + g*3, ly - g*9.5], [lx, ly - g*12]], "#8c867e"); }
+  },
+  after:(K) => { const tx = K.W/2, g = K.u, ly = K.Y(.62) + g*4; for (const s of [-1, 1]) K.glow(tx + s*g*16, ly - g*8.2, g*2.5, "#ffd98a", .5); },
+  anim:(K,tod,t) => { const R = rng(623); for (let i = 0; i < 6; i++) K.star4(K.W*(.05 + R()*.9), K.Y(.2 + R()*.3), K.u*1.1, "#ffffff", Math.pow(Math.max(0, Math.sin(t/700 + R()*40)), 12)); },
+};
+// a coral reef around a sunken arch, light rippling down from the surface
+PAINT.reef = {
+  sky:(K) => { K.vgrad(0, K.Y(.7), [[0,"#5ec4e8"],[.25,"#1f7fb8"],[1,"#0d3d6e"]]); K.ridge(K.Y(.6), K.u*10, 631, 1.2, "#164c78"); },
+  land:(K) => {
+    const top = K.Y(.68); K.ridge(top, K.u*2, 632, 3, "#d9c48f"); K.vgrad(top + K.u*2, K.H, [[0,"#d9c48f"],[1,"#a88f5c"]]);
+    const R = rng(633), coral = (x, y, s, c) => { for (let i = 0; i < 5; i++) { const a = -Math.PI/2 + (i - 2)*.38, L = s*(.6 + R()*.5); K.ctx.strokeStyle = c; K.ctx.lineWidth = Math.max(1, s*.13); K.ctx.lineCap = "round"; K.ctx.beginPath(); K.ctx.moveTo(x, y); K.ctx.quadraticCurveTo(x + Math.cos(a)*L*.3, y + Math.sin(a)*L*.6, x + Math.cos(a)*L, y + Math.sin(a)*L); K.ctx.stroke(); } };
+    const ax = K.W*.68, ay = K.Y(.74), g = K.u;   // the sunken arch
+    K.ctx.fillStyle = "#6d7f86"; K.ctx.fillRect(ax - g*10, ay - g*20, g*4, g*20); K.ctx.fillRect(ax + g*6, ay - g*16, g*4, g*16);
+    K.ctx.lineWidth = g*4; K.ctx.strokeStyle = "#6d7f86"; K.ctx.beginPath(); K.ctx.arc(ax, ay - g*18, g*8, Math.PI, Math.PI*1.75); K.ctx.stroke();
+    K.ctx.fillStyle = "rgba(90,140,90,.6)"; K.ctx.fillRect(ax - g*10, ay - g*6, g*4, g*6);
+    const cols = ["#ff7a59","#ff9fbf","#b07bff","#ffd166","#4fd1c5"];
+    for (let i = 0; i < 18; i++) { const side = i % 2, x = side ? K.W - K.u*(2 + R()*30) : K.u*(2 + R()*30), y = K.Y(.72) + R()*(K.H - K.Y(.72)); coral(x, y, K.u*(4 + R()*5), cols[i % 5]); }
+    for (let i = 0; i < 10; i++) { const x = R()*K.W, y = K.Y(.74) + R()*(K.H - K.Y(.74)); K.ctx.fillStyle = "#3f8f4e"; for (let k = 0; k < 3; k++) K.ctx.fillRect(x + k*K.u*.8, y - K.u*(4 + R()*5), Math.max(1, K.u*.35), K.u*(4 + R()*5)); }
+  },
+  anim:(K,tod,t) => {
+    const ctx = K.ctx; ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 5; i++) { const sx = K.W*(.1 + i*.2) + Math.sin(t/2600 + i)*K.u*4, w = K.u*(3 + i % 2*2); ctx.fillStyle = "rgba(200,240,255,.06)"; ctx.beginPath(); ctx.moveTo(sx - w, 0); ctx.lineTo(sx + w, 0); ctx.lineTo(sx + w*3 + K.u*6, K.Y(.75)); ctx.lineTo(sx - w + K.u*6, K.Y(.75)); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+  },
+};
 const CRYSTALS = [[.08,.86,9,"#5ff3ff"],[.14,.8,6,"#b07bff"],[.92,.84,9,"#b07bff"],[.86,.78,6,"#5ff3ff"],[.3,.69,4,"#5ff3ff"],[.72,.69,4,"#ff8fe0"]];
 const TERA = [[.06,.9,16],[.95,.88,14],[.22,.66,7],[.8,.65,8]];
 function crystal(K, x, y, s, c){
@@ -4901,7 +5008,7 @@ function drawFx(K, sc, t){
   const type = typeof def.fx.type === "string" ? def.fx.type : def.fx.type[tod];
   const [ya, yb] = def.fx.y || [0, 1];
   const R = rng(777), W = K.W, H = K.H, u = K.u, ctx = K.ctx, s = t/1000;
-  const n = {snow:110, confetti:70, ember:60, dust:50, petal:40, leaf:30, firefly:34, sparkle:42, wisp:16}[type] || 40;
+  const n = {snow:110, confetti:70, ember:60, dust:50, petal:40, leaf:30, firefly:34, sparkle:42, wisp:16, bubble:36}[type] || 40;
   const conf = ["#ff5d6c","#ffd43b","#46d996","#5fa8ff","#c98bff","#ffffff"];
   for (let i = 0; i < n; i++) {
     const a = R(), b = R(), c = R(), d = R();
@@ -4913,6 +5020,7 @@ function drawFx(K, sc, t){
     else if (type === "firefly") { const x = b*W + Math.sin(s*.8 + d*7)*4*u, y = K.Y(.35 + .6*a) + Math.cos(s*.6 + c*7)*3*u, al = .5 + .5*Math.sin(s*2.5 + d*9); K.glow(x, y, u*2.2, "#e8ff7a", .55*al); K.disc(x, y, u*.3, rgba("#f6ffb8", al)); }
     else if (type === "ember") { const ph = (a + s*(.07 + .07*c)) % 1, x = b*W + Math.sin(s*2 + d*6)*2*u, y = H - ph*H*.95; K.disc(x, y, (.2 + .3*c)*u, rgba(c > .5 ? "#ffb347" : "#ff6a1f", 1 - ph)); }
     else if (type === "wisp") { const ph = (a + s*(.025 + .025*c)) % 1, x = b*W + Math.sin(s*.9 + d*7)*5*u, y = K.Y(.98) - ph*K.S.h*.85, al = Math.sin(ph*Math.PI)*.75; K.glow(x, y, u*3.2, "#b38cff", .5*al); K.disc(x, y, u*.7, rgba("#efe4ff", al)); }
+    else if (type === "bubble") { const ph = (a + s*(.05 + .05*c)) % 1, x = b*W + Math.sin(s*2 + d*8)*1.5*u, y = H - ph*H*1.05, r = (.3 + .5*c)*u; ctx.strokeStyle = rgba("#e6fbff", .7*(1 - ph*.6)); ctx.lineWidth = Math.max(1, u*.18); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke(); K.disc(x - r*.35, y - r*.35, r*.25, rgba("#ffffff", .7)); }
     else if (type === "dust") { const x = (b*W + s*u*(.6 + c)) % W, y = K.Y(.1 + .8*a) + Math.sin(s*.5 + d*6)*u; K.disc(x, y, (.12 + .2*c)*u, rgba("#cfe0ff", .35 + .25*Math.sin(s + d*9))); }
     else if (type === "confetti") { const ph = (a + s*(.06 + .05*c)) % 1, x = (b*W + Math.sin(s*1.4 + d*6)*3*u + W) % W, y = ph*H; ctx.save(); ctx.translate(x, y); ctx.rotate(s*3 + d*7); ctx.scale(1, Math.cos(s*4 + d*5)); ctx.fillStyle = conf[i % conf.length]; ctx.fillRect(-u*.45, -u*.75, u*.9, u*1.5); ctx.restore(); }
     else { const x = b*W, y = K.Y(ya + (yb - ya)*a), al = Math.pow(Math.max(0, Math.sin(s*(1.2 + c*1.5) + d*12)), 4); K.star4(x, y, u*(.8 + c*1.2), "#ffffff", al); }
@@ -6200,7 +6308,7 @@ const addItem = it => { ITEMS_ALL.push(it); ITEM_BY.set(it.cat + ":" + it.id, it
 const unlockOf = (cat, id) => ITEM_BY.get(cat + ":" + id);
 
 // --- Hall of Fame backgrounds ---
-[["route",0],["league",0],["pokecenter",0],["beach",0],["forest",400],["summit",500],["city",600],["safari",600],["gym",800],["cave",900],["volcano",1000],["lavender",1200]]
+[["route",0],["league",0],["pokecenter",0],["beach",0],["forest",400],["summit",500],["city",600],["safari",600],["gym",800],["cave",900],["volcano",1000],["blossom",1000],["reef",1100],["lavender",1200],["skypillar",1300],["stadium",1500]]
   .forEach(([id, p]) => addItem({cat:"bg", id, name:SCENE_BY.get(id).name, price:p, free:!p}));
 // --- Poké Balls ---
 const BALL_FREE = ["poke", "great", "ultra", "premier"];
@@ -6473,6 +6581,7 @@ function fkit(c, ts, pixel){
     rect(x, y, w, h, col, z = 0){ c.fillStyle = col; c.fillRect(R(x*ts), R(y*ts*SQ - z*ts), Math.max(1, R(w*ts)), Math.max(1, R(h*ts))); },
     flat(x, y, w, d, col){ c.fillStyle = col; c.fillRect(R(x*ts), R(y*ts*SQ), R(w*ts), R(d*ts*SQ)); },
     poly(pts, col){ c.fillStyle = col; c.beginPath(); pts.forEach(([x, y, z = 0], i) => { const px = R(x*ts), py = R(y*ts*SQ - z*ts); i ? c.lineTo(px, py) : c.moveTo(px, py); }); c.closePath(); c.fill(); },
+    img(src, cx, cy, size, z = 0){ const f = size*ts/Math.max(src.width, src.height), w = src.width*f, h = src.height*f; c.save(); c.imageSmoothingEnabled = true; c.drawImage(src, R(cx*ts - w/2), R(cy*ts*SQ - z*ts - h/2), R(w), R(h)); c.restore(); },   // a picture standing upright, centred
   };
   return K;
 }
@@ -6589,7 +6698,7 @@ const HOUSE_DRAW = {
     for (let i = 0; i < 9; i++) { const a = Math.PI*(.1 + .8*i/8), r = .78; K.poly([[1, .7, .4], [1 + Math.cos(a)*r, .7, .4 + Math.sin(a)*r*1.4], [1 + Math.cos(a + .09)*r, .7, .4 + Math.sin(a + .09)*r*1.4]], i % 2 ? "#ffd6c9" : "#ffb8a6"); }
     K.disc(1, .9, .12, "#ffffff", .62); [[.7, .55], [1.3, .62], [1, .8]].forEach(([x, z]) => K.disc(x, 1, .05, "rgba(255,255,255,.7)", z)); },
   badgecase(K, it){ const L = LEAGUES[it.region - 1], bits = badgeOf(it.region); K.box(0, .3, 2, .55, .5, "#6b4226"); K.box(.02, .32, 1.96, .5, .06, "#8a5a3c", .5); K.box(.1, .36, 1.8, .4, .62, "#2a2030", .56); K.box(.06, .34, 1.88, .44, .06, "#8a5a3c", 1.18);
-    L.gyms.forEach(([, ty], k) => { const x = .35 + (k % 4)*.43, z = k < 4 ? 1.02 : .74, on = bits & (1 << k); K.disc(x, .77, .1, on ? typeCol(ty.split("/")[0]) : "#4a3f55", z); if (on) K.disc(x - .03, .78, .04, "#ffffff", z + .03); });
+    L.gyms.forEach(([, ty], k) => { const x = .35 + (k % 4)*.43, z = k < 4 ? 1.02 : .74, on = bits & (1 << k), b = on && badgeArt(it.region, k); K.disc(x, .77, .11, on && !b ? typeCol(ty.split("/")[0]) : "#3a2f45", z); if (b) K.img(b, x, .77, .27, z); else if (on) K.disc(x - .03, .78, .04, "#ffffff", z + .03); });
     K.rect(.1, .77, 1.8, .05, "rgba(255,255,255,.18)", 1.15); },
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
@@ -6599,12 +6708,26 @@ const FURN_H = {hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4,
 const furnCache = new Map();
 // animated 2D furniture: art/2d/anim/<id>.png holds the frames side by side, each the size of art/2d/furn/<id>.png
 const FURN_FRAME_MS = 150;
+// shared 2D art: every Elite Four statue of a type uses that type's statue, and all nine Badge Cases one case
+const furnArtKey = it => it.kind === "statue" ? "furn/statue_" + it.var : it.kind === "badgecase" ? "furn/badgecase" : "furn/" + it.id;
+// the real badges sit in the case's eight velvet slots (centres on art/2d/furn/badgecase.png, see art-src/process.py)
+const BADGE_SLOTS = [[13.5,17.5],[26.5,17.5],[39.5,17.5],[13.5,30.5],[26.5,30.5],[39.5,30.5],[20,43.5],[33,43.5]];
+const badgeArt = (g, k) => artOf(`badge/${g}-${k}`);
+function drawCaseBadges(x, g, X0, Y0, s, flip){
+  const bits = badgeOf(g), W = x.canvas.width; x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+  BADGE_SLOTS.forEach(([cx, cy], k) => {
+    const b = badgeArt(g, k); if (!b || !(bits & (1 << k))) return;
+    const f = 11*s/Math.max(b.width, b.height), w = b.width*f, h = b.height*f, px = flip ? W - (X0 + cx*s) : X0 + cx*s;   // badges are never drawn mirrored
+    x.drawImage(b, Math.round(px - w/2), Math.round(Y0 + cy*s - h/2), Math.round(w), Math.round(h));
+  });
+  x.restore();
+}
 const furnAnim = id => { const sh = artOf("anim/" + id), st = artOf("furn/" + id); return sh && st && sh.width > st.width ? {sh, n:Math.round(sh.width/st.width), w:st.width} : null; };
 const furnFrame = (p, now) => state.ui.motion === "reduced" || !furnAnim(p.it.id) ? 0 : Math.floor((now + p.x*97 + p.y*53)/FURN_FRAME_MS) % furnAnim(p.it.id).n;
 function furnSprite(it, ts, pixel, flip, fi = 0){
   const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : "", it.rot ? "r" : "", fi].join("|"); if (furnCache.has(k)) return furnCache.get(k);
   const A = pixel && !it.rot && fi > 0 && furnAnim(it.id);
-  const img = pixel && !it.rot && artOf("furn/" + it.id);   // a turned rug is drawn from shapes
+  const img = pixel && !it.rot && artOf(furnArtKey(it));   // a turned rug is drawn from shapes
   if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
     const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
     const off = isFloorItem(it) ? (floorD - h)/2 : floorD - h;   // rugs sit in the middle of their footprint
@@ -6612,6 +6735,7 @@ function furnSprite(it, ts, pixel, flip, fi = 0){
     if (flip) { x.translate(c.width, 0); x.scale(-1, 1); }
     if (A) x.drawImage(A.sh, (fi % A.n)*A.w, 0, A.w, img.height, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
     else x.drawImage(img, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
+    if (it.kind === "badgecase") drawCaseBadges(x, it.region, Math.round(pad + (it.w*ts - w)/2), pad, s, flip);
     const out = {c, pad, h:-off/ts, art:true}; if (furnCache.size > 400) furnCache.clear(); furnCache.set(k, out); return out;
   }
   const h = isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + .3, pad = Math.ceil(ts*.25), W = Math.ceil(it.w*ts + pad*2), H = Math.ceil(it.d*ts*HM.SQ + h*ts + pad*2);
@@ -6633,7 +6757,7 @@ function trimmed(src){
 }
 function homeItemThumb(x, it, pixel){
   x.clearRect(0, 0, 160, 96);
-  const art = pixel && artOf("furn/" + it.id);
+  const art = pixel && artOf(furnArtKey(it));
   let img, k;
   if (art) { img = trimmed(art); k = Math.max(1, Math.floor(Math.min(150/img.width, 86/img.height))); }
   else {
@@ -7124,6 +7248,7 @@ function promptFor(c, t, pixel){
   if (t.k === "mon") { if (t.m.sp && t.m.box) keyChip(c, t.m.box.x + t.m.box.w/2, t.m.box.y, key, `${HS.hold && !t.m.visitor && !VISIT ? "Feed" : "Play with"} ${nickFor(t.m.n)}`, pixel); return; }
   if (t.k === "gift") { keyChip(c, scrX(t.x), scrY(t.y) - ts*.45, key, "Open gift", pixel); return; }
   if (t.k === "tree") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - 2.5*ts, key, treeLeft(p) > 0 ? "Pick a berry" : "No berries today", pixel); }
+  if (t.k === "case") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - (pixel ? 2.6 : 1.9)*ts, key, `Look at the ${LEAGUES[p.it.region - 1].badge === "stamp" ? "stamps" : "badges"}`, pixel); }
 }
 function nearestMon(r){ let best = null, bd = r; for (const m of HS.mons) { const d = Math.hypot(m.x - HS.me.x, (m.y - HS.me.y)*1.4); if (d < bd) { bd = d; best = m; } } return best; }
 function homeUpdate(dt, now){
@@ -7701,13 +7826,23 @@ function nearestThing(){
   for (let i = 0; i < D.gifts.length; i++) { const g = D.gifts[i]; if (!VISIT && Math.hypot(g.x - me.x, (g.y - me.y)*1.4) < 1.2) return {k:"gift", i, x:g.x, y:g.y}; }
   const m = nearestMon(1.7); if (m) return {k:"mon", m};
   for (const p of placedItems()) if (p.it.kind === "tree" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.8) return {k:"tree", p};
+  for (const p of placedItems()) if (p.it.kind === "badgecase" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.5) return {k:"case", p};
   return null;
 }
 function homeUseThing(t){
   if (!t) return;
   if (t.k === "gift") openGift(t.i);
   else if (t.k === "tree") pickBerry(t.p);
+  else if (t.k === "case") openBadgeCase(t.p.it.region);
   else if (t.k === "mon") { if (HS.hold && !VISIT && !t.m.visitor) feedMon(t.m, HS.hold); else homeInteract(t.m); }
+}
+// a Badge Case up close: each badge large, with its Gym Leader
+function openBadgeCase(g){
+  const L = LEAGUES[g - 1], bits = badgeOf(g), R = GENS.find(x => x.g === g).region, st = L.badge === "stamp";
+  openModal(`<h2>${esc(R)} ${st ? "stamps" : "badges"}</h2><p class="note">${VISIT ? "" : bits === 255 ? "The full set!" : `${L.gyms.filter((_, k) => bits & (1 << k)).length} of 8. Win more in the ${esc(L.label || "Gym challenge")}.`}</p>
+    <div class="case-grid">${L.gyms.map(([nm], k) => { const on = bits & (1 << k), b = badgeArt(g, k);
+      return `<figure class="case-b${on ? "" : " off"}">${b ? `<img src="${b.src}" alt="">` : `<span class="bdg b${k}" style="--bc:${TC[L.gyms[k][1].split("/")[0]]}"></span>`}<figcaption><b>${on ? esc(badgeName(g, k)) : "???"}</b><span>${esc(nm)}</span></figcaption></figure>`; }).join("")}</div>
+    <div class="actions"><button class="btn primary" type="button" data-close>OK</button></div>`);
 }
 // ---- weather and seasonal events ----
 // Events run every year between two dates (month, day); add more here. `furn` items are only sold while it runs.
@@ -8961,7 +9096,7 @@ function renderGym(){
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small><small class="gc-rw">${on ? `★ ${esc(GYM_REWARD[g + "-" + k].name)}` : "Reward: ?"}</small></div>
-        <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
+        ${badgeArt(g, k) ? `<img class="bdg" src="${badgeArt(g, k).src}" title="${esc(badgeName(g, k))}" alt="${esc(badgeName(g, k))}${on ? " earned" : ""}">` : `<span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>`}
         <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
     <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="meta e4-rw">${L.e4.map(([x], k) => `<span class="${(state.games.e4[g] | 0) & (1 << k) ? "won" : ""}">${(state.games.e4[g] | 0) & (1 << k) ? "★" : "☆"} ${esc(x)}</span>`).join(" ")} <span class="${state.games.leagues[g] ? "won" : ""}">${state.games.leagues[g] ? "★" : "☆"} ${esc(L.champ[0])}</span> · Elite Four members give elite rewards; the Champion gives a full set.</p><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;

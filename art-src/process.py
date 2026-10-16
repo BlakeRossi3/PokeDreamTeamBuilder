@@ -52,7 +52,37 @@ def cutout(im, tol=48, passes=2):
     for _ in range(passes):
         im = flood_clear(im, border(im), tol)
     bb = im.getbbox()
-    return im.crop(bb) if bb else im
+    im = im.crop(bb) if bb else im
+    # a backdrop box that didn't reach the edge of the picture now does: clear it too (only if it's near-white)
+    W, H = im.size
+    if Counter(im.getpixel(q)[:3] for q in border(im) if im.getpixel(q)[3]).most_common(1)[:1] and min(Counter(im.getpixel(q)[:3] for q in border(im) if im.getpixel(q)[3]).most_common(1)[0][0]) > 235:
+        im = flood_clear(im, border(im), tol)
+        bb = im.getbbox()
+        im = im.crop(bb) if bb else im
+    return im
+
+
+def keep_main(im):
+    """Keep only the largest connected piece (drops detached stray bits), then trim."""
+    W, H = im.size
+    px, seen, blobs = im.load(), set(), []
+    for y in range(H):
+        for x in range(W):
+            if (x, y) in seen or not px[x, y][3]:
+                continue
+            blob, q = [], deque([(x, y)])
+            while q:
+                cx, cy = q.popleft()
+                if (cx, cy) in seen or not (0 <= cx < W and 0 <= cy < H) or not px[cx, cy][3]:
+                    continue
+                seen.add((cx, cy)); blob.append((cx, cy))
+                q.extend([(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1), (cx + 1, cy + 1), (cx - 1, cy - 1), (cx + 1, cy - 1), (cx - 1, cy + 1)])
+            blobs.append(blob)
+    blobs.sort(key=len)
+    for b in blobs[:-1]:
+        for q in b:
+            px[q] = (0, 0, 0, 0)
+    return im.crop(im.getbbox())
 
 
 def save(im, rel):
@@ -81,8 +111,41 @@ for p in sorted((RAW / "hof").glob("*.png")):
 REGION_COL = {1: ("#d8423a", "#7a1a14"), 2: ("#c9a227", "#6b5310"), 3: ("#2f9e62", "#164e33"), 4: ("#5b6fd6", "#25307a"),
               5: ("#3a3a44", "#111116"), 6: ("#2f8fd6", "#174a7a"), 7: ("#ff8a3d", "#a23c16"), 8: ("#9c3fd6", "#4a1670"), 9: ("#e2413b", "#6a2bd6"),
               "tower": ("#8a96ad", "#3e4656")}   # the Battle Tower trophy: steel
+KEEP_MAIN = {"plant"}   # a stray tuft of grass came along under the pot
+HANG = {"cobweb": 56}   # hangs high on the wall: transparent space below it (art pixels)
+# The Badge Case came with made-up badges: repaint the velvet with eight empty slots (3 + 3 + 2). The app draws the
+# real badges into them; BADGE_SLOTS in src/app.html are these centres after trimming (here minus the 7, 6 margin).
+BADGE_SLOTS = [(20, 23), (33, 23), (46, 23), (20, 36), (33, 36), (46, 36), (26.5, 49), (39.5, 49)]
+
+
+def badge_case(im):
+    px = im.load()
+    for y in range(16, 56):
+        for x in range(14, 52):
+            px[x, y] = (142, 4, 28, 255) if (x + y) % 7 or y > 52 else (150, 10, 34, 255)   # a little velvet sheen
+    for cx, cy in BADGE_SLOTS:
+        for y in range(16, 56):
+            for x in range(14, 52):
+                d = ((x + .5 - cx - .5) ** 2 + (y + .5 - cy - .5) ** 2) ** .5
+                if d <= 5.6:
+                    px[x, y] = (96, 0, 18, 255) if d <= 4.6 or y < cy else (184, 40, 64, 255)   # a pressed-in hollow, lit from below
+    return im
+
+
 for p in sorted((RAW / "furn").glob("*.png")):
-    im = cutout(rgba(p))
+    im = rgba(p)
+    if p.stem == "badgecase":
+        im = badge_case(im)
+    im = cutout(im)
+    if p.stem in KEEP_MAIN:
+        im = keep_main(im)
+    if p.stem == "cobweb" and im.width > 32:   # one tile wide: trim the outer threads
+        x0 = (im.width - 32)//2
+        im = im.crop((x0, 0, x0 + 32, im.height))
+    if p.stem in HANG:
+        c = Image.new("RGBA", (im.width, im.height + HANG[p.stem]), (0, 0, 0, 0))
+        c.paste(im, (0, 0))
+        im = c
     if p.stem != "trophy":
         save(im, f"furn/{p.stem}.png")
         continue
@@ -150,6 +213,20 @@ for p in sorted((RAW / "anim").glob("*.gif")):
         sheet.paste(f, (i * w, 0))
     save(frames[0], f"furn/{p.stem}.png")
     save(sheet, f"anim/{p.stem}.png")
+
+# ---------- badges (for the Badge Cases) ----------
+# raw/badge/<g>-<k>.png: the games' badges from PokéAPI's sprite collection (Kanto–Kalos), shrunk to 48 px.
+# raw/badge/sheet<g>.png: Retro Diffusion sheets of eight 32 px badges in Gym order for Alola, Galar and Paldea.
+for p in sorted((RAW / "badge").glob("*-*.png")):
+    im = rgba(p)
+    im = im.crop(im.getbbox())
+    im.thumbnail((48, 48), Image.LANCZOS)
+    save(im, f"badge/{p.stem}.png")
+for p in sorted((RAW / "badge").glob("sheet*.png")):
+    g, sh = p.stem[5:], rgba(p)
+    for k in range(8):
+        cell = cutout(sh.crop((k*32, 0, k*32 + 32, 32)))
+        save(cell, f"badge/{g}-{k}.png")
 
 # ---------- rooms ----------
 R = RAW / "room"
