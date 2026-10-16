@@ -30,7 +30,7 @@ async def main():
         # day: Pokémon pick spots by type
         await pg.evaluate('window.DTD_TOD = "day"; openScreen("home")'); await pg.wait_for_timeout(9000)
         st = await pg.evaluate('JSON.stringify(HS.mons.map(m => [m.n, m.st, m.act || (m.plan && m.plan.act) || null]))'); print('day', st)
-        assert await pg.evaluate('HS.mons.some(m => m.act || m.plan)'), 'nobody used furniture or played'
+        assert await pg.evaluate('HS.acts > 0 || HS.mons.some(m => m.act || m.plan)'), 'nobody used furniture or played'   # someone did, at some point (a short play may already be over)
         await pg.screenshot(path=OUT + f'hl_day_{TAG}.png')
         # night: most go to sleep, lights glow
         await pg.evaluate('window.DTD_TOD = "night"; HS.mons.forEach(m => { homeActEnd(m); m.t = 0; })'); await pg.wait_for_timeout(9000)
