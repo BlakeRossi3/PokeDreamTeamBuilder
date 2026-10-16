@@ -111,7 +111,7 @@ Boot code is at the very end of the script.
   `state.games.social.fbN/fbW`. `tests/test_friend_battle.py` runs two browser contexts joined by a stand-in server.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
-- **Size:** the site is ~417 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
+- **Size:** the site is ~420 MB (608 files; the sleeping-sprite packs add 2.8 MB). GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
   outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
   everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
