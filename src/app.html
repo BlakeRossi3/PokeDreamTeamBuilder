@@ -2061,8 +2061,8 @@ function cleanUI(u){
   return o;
 }
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
-const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
-const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}});
+const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[], house:[]});
+const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}, lay:"", house:"cottage"});
 const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}, missions:null, login:{last:"", cur:0, best:0, days:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
@@ -2080,7 +2080,7 @@ function cleanGames(g){
   for (const [k, v] of Object.entries(obj(g.e4))) if (/^[1-9]$/.test(k) && Number.isInteger(v)) o.e4[k] = v & 15;   // Elite Four members beaten (first wins)
   if (typeof g.title === "string" && /^champ[1-9]$/.test(g.title)) o.title = g.title;
   const own = obj(g.own);
-  for (const c of ["bg", "exp", "icon", "ball", "card"]) o.own[c] = Array.isArray(own[c]) ? [...new Set(own[c].filter(id => typeof id === "string" && unlockOf(c, id)))] : [];
+  for (const c of ["bg", "exp", "icon", "ball", "card", "house"]) o.own[c] = Array.isArray(own[c]) ? [...new Set(own[c].filter(id => typeof id === "string" && unlockOf(c, id)))] : [];
   for (const [k, v] of Object.entries(obj(own.furn))) if (unlockOf("furn", k) && int(v)) o.own.furn[k] = Math.min(99, v);
   if (typeof g.icon === "string" && unlockOf("icon", g.icon)) o.icon = g.icon;
   const h = obj(g.home), num = v => Number.isFinite(v) ? v : 0;
@@ -2098,6 +2098,8 @@ function cleanGames(g){
     const hg = obj(h.games); o.home.games = {d:day(hg.d) ? hg.d : "", catchN:Math.min(9, int(hg.catchN)), seekN:Math.min(9, int(hg.seekN)), catchBest:Math.min(999, int(hg.catchBest)), found:int(hg.found)};
     for (const [k, v] of Object.entries(obj(h.fr))) if (NAT_BY.has(+k) && int(v)) o.home.fr[k] = Math.min(100, v);
     for (const [k, v] of Object.entries(obj(h.pet))) if (NAT_BY.has(+k) && /^\d{4}-\d\d-\d\d$/.test(v)) o.home.pet[k] = v;
+    o.home.lay = typeof h.lay === "string" && h.lay.length < 200 && h.lay.split(",").every(id => ROOMS.some(r => r.id === id)) ? h.lay : "";   // the room order item positions refer to ("" = before the front yard)
+    o.home.house = typeof h.house === "string" && HOUSES.some(x => x.id === h.house) ? h.house : "cottage";
     for (const [k, v] of Object.entries(obj(h.gain))) if (NAT_BY.has(+k) && v && /^\d{4}-\d\d-\d\d$/.test(v.d)) o.home.gain[k] = {d:v.d, n:Math.min(25, int(v.n))};
   }
   o.dailyBest = Math.min(10, int(g.dailyBest));
@@ -3799,7 +3801,7 @@ function publicProfile(){
   return {
     card:{rows:cardStats(), ...(G.botw ? {botw:G.botw} : {})},
     showcase:{team:id, style:sc.style, save:{custom:state.custom.filter(c => ids.includes(c.id)), teams:pick(state.teams, ids), teamShiny:pick(state.teamShiny, ids), members:pick(state.members, ids), trainers:pick(state.trainers, ids), scenes:pick(state.scenes, [id, id + "~2d", "all", "all~2d"])}},
-    home:{games:{badges:G.badges, leagues:G.leagues, e4:G.e4, card:G.card, icon:G.icon, title:G.title, since:G.since, own:G.own, home:{mons:G.home.mons, items:G.home.items, fr:G.home.fr}}, nicks},
+    home:{games:{badges:G.badges, leagues:G.leagues, e4:G.e4, card:G.card, icon:G.icon, title:G.title, since:G.since, own:G.own, home:{mons:G.home.mons, items:G.home.items, fr:G.home.fr, lay:G.home.lay, house:G.home.house}}, nicks},
   };
 }
 async function friendsAfterSync(force){
@@ -6297,11 +6299,12 @@ const CAT = {
   bg:{name:"Hall of Fame backgrounds", one:"background"},
   furn:{name:"Home furniture", one:"furniture"},
   exp:{name:"Home rooms", one:"room"},
+  house:{name:"Houses", one:"house"},
   icon:{name:"Profile icons", one:"profile icon"},
   ball:{name:"Poké Balls", one:"Poké Ball"},
   card:{name:"Trainer card designs", one:"card design"},
 };
-const CAT_ORDER = ["furn", "exp", "bg", "icon", "ball", "card"];
+const CAT_ORDER = ["furn", "exp", "house", "bg", "icon", "ball", "card"];
 const ITEMS_ALL = [];   // {cat, id, name, price?, free?, gym?:[g,k], champ?:g, ...extra}
 const ITEM_BY = new Map();
 const addItem = it => { ITEMS_ALL.push(it); ITEM_BY.set(it.cat + ":" + it.id, it); };
@@ -6394,20 +6397,33 @@ const FURN = [
   ["tramp", "Trampoline", 1300, 2, 2, "tramp", ["#2f6fd6","#1d1f26"]], ["cushion", "Floor cushion", 200, 1, 1, "cushion", ["#ffd43b","#d9a412"]],
   ["globe", "Desk globe", 350, 1, 1, "globe", ["#3aa0d6","#c9a227"]], ["clock", "Grandfather clock", 750, 1, 1, "clock", ["#6b4226","#f6e7b4"]],
   ["hammock", "Hammock", 700, 3, 1, "hammock", ["#c9423a","#f3dfb0","#7a4a2a"]],
+  ["stove", "Kitchen stove", 900, 2, 1, "stove", ["#f1e6c8","#2a2a30","#e2413b"]], ["fridge", "Retro fridge", 800, 1, 1, "fridge", ["#a8dcc4","#d9dde2"]],
+  ["counter", "Kitchen counter", 600, 2, 1, "counter", ["#f4f1ea","#b9875a","#e2413b"]],
 ];
 FURN.forEach(([id, name, price, w, d, kind, col]) => addItem({cat:"furn", id, name, price, free:!price, w, d, kind, col}));
 // seasonal furniture: sold only while its event runs (see EVENTS); players keep what they bought
 [["pumpkin", "Jack-o’-lantern", 300, 1, 1, "pumpkin", ["#f08a24", "#3a7a2a"], "halloween"], ["cobweb", "Spooky cobweb", 150, 1, 1, "cobweb", ["#e8e8f0", "#5a5a6a"], "halloween"],
  ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"], ["giftpile", "Holiday gifts", 350, 1, 1, "giftpile", ["#e2413b", "#2f8a4a"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
 // --- Home rooms (each adds space and room for more Pokémon) ---
+// In house order: the front yard, the rooms inside, then the back garden and pond.
 const ROOMS = [
+  {id:"yard", name:"Front yard", free:true, w:9, floor:"grass", wall:null, cap:2},
   {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4},
   {id:"living", name:"Living room", price:1500, w:11, floor:"carpet", wall:"#cfe3f7", cap:4},
+  {id:"kitchen", name:"Kitchen", price:2500, w:10, floor:"tile", wall:"#d9efe4", cap:3},
+  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5},
   {id:"garden", name:"Garden", price:3000, w:12, floor:"grass", wall:null, cap:4},
   {id:"pond", name:"Pond", price:4000, w:11, floor:"grass", wall:null, cap:3, pond:true},
-  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5},
 ];
 ROOMS.forEach(r => addItem({cat:"exp", id:r.id, name:r.name, price:r.price || 0, free:!!r.free, room:r}));
+// --- house designs: how the house looks from the yard (roof, walls, windows) ---
+const HOUSES = [
+  {id:"cottage", name:"Cozy cottage", free:true, roof:"#c8553a", roof2:"#8e3524", wall:"#f1e6c8", trim:"#4f8a4a", base:"#9a9aa2"},
+  {id:"brick", name:"Brick townhouse", price:2500, roof:"#4f5f7d", roof2:"#2c3850", wall:"#a8442f", trim:"#f4f4f4", base:"#8a8a92"},
+  {id:"cabin", name:"Log cabin", price:3000, roof:"#4f6b3a", roof2:"#2f4424", wall:"#8a5a34", trim:"#c9423a", base:"#7a7a6a"},
+  {id:"villa", name:"Seaside villa", price:3500, roof:"#2f8fd6", roof2:"#1a5a96", wall:"#f6f4ee", trim:"#2ab0a8", base:"#d8c49a"},
+];
+HOUSES.forEach(h => addItem({cat:"house", id:h.id, name:h.name, price:h.price || 0, free:!!h.free, house:h}));
 
 // --- ownership ---
 const ownList = cat => state.games.own[cat] || (state.games.own[cat] = cat === "furn" ? {} : []);
@@ -6453,6 +6469,7 @@ function paintThumbs(root){
       else x.drawImage(paintBg(it.id, tod, {W:160, H:96}, {x:0, y:0, w:160, h:96}, false), 0, 0); }
     else if (it.cat === "furn") homeItemThumb(x, it, two);
     else if (it.cat === "exp") homeRoomThumb(x, it.room, two);
+    else if (it.cat === "house") houseThumb(x, it.house, two);
   });
   paintAll(root);
 }
@@ -6529,6 +6546,7 @@ function renderShop(){
       <b>${hidden ? (it.tower ? "Tower exclusive" : "Gym exclusive") : esc(it.name)}</b>
       <span class="meta">${it.event ? `<span class="pill ev">${esc((EVENTS.find(e => e.id === it.event) || {}).name || "Event")} · limited time</span> ` : ""}${hidden ? (it.tower ? "Win streaks in the Battle Tower" : "Beat Gym Leaders to find it") : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
       ${ex || it.free || (have && !multi) ? "" : `<button class="btn sm${G.pp >= it.price ? " primary" : ""}" type="button" data-buy="${it.id}">${fmtPP(it.price)}</button>`}
+      ${it.cat === "house" && have ? (houseOf().id === it.id ? `<span class="pill">Your house</span>` : `<button class="btn sm" type="button" data-house="${it.id}">Use</button>`) : ""}
     </div>`;
   };
   const ex = items.filter(isExclusive), exGot = ex.filter(it => owns(it.cat, it.id)).length;
@@ -6539,12 +6557,14 @@ function renderShop(){
     ${ex.length ? `<p class="meta shop-ex">Exclusives found: ${exGot} / ${ex.length}</p>` : ""}
     <div class="shop-grid">${sorted.filter(it => !isExclusive(it) || owns(it.cat, it.id)).map(card).join("")}</div>
     ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : it.tower ? "A Battle Tower reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four, Champions and the Battle Tower. They’re never sold here.</p>` : ""}
-    ${shopCat === "furn" || shopCat === "exp" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
+    ${shopCat === "house" ? `<p class="note">How your house looks from the front yard and the garden.</p>` : ""}
+    ${shopCat === "furn" || shopCat === "exp" || shopCat === "house" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
     ${shopCat === "icon" ? `<p class="note">Choose your profile icon on your Trainer card.</p>` : ""}</div>`;
   paintThumbs($("scBody"));
   nav.onClick = e => {
     const t = e.target.closest("[data-scat]"); if (t) { shopCat = t.dataset.scat; Sound.play("select"); renderShop(); return; }
-    const b = e.target.closest("[data-buy]"); if (b) { const it = unlockOf(shopCat, b.dataset.buy); if (it && buy(it)) renderShop(); return; }
+    const b = e.target.closest("[data-buy]"); if (b) { const it = unlockOf(shopCat, b.dataset.buy); if (it && buy(it)) { if (it.cat === "house") { G.home.house = it.id; save(); } renderShop(); } return; }
+    const hu = e.target.closest("[data-house]"); if (hu) { G.home.house = hu.dataset.house; save(); Sound.play("confirm"); toast(`Your house is now a ${unlockOf("house", hu.dataset.house).name.toLowerCase()}.`); renderShop(); return; }
     if (e.target.closest("[data-go-home]")) { Sound.play("select"); openScreen("home"); }
   };
   setMusic("field");
@@ -6557,6 +6577,7 @@ function renderShop(){
 const HM = {WALL:2.6, SQ:.58, D:7};
 const homeData = () => state.games.home;
 const homeRooms = () => ROOMS.filter(r => r.free || owns("exp", r.id));
+const houseOf = () => { const id = homeData().house; return HOUSES.find(h => h.id === id && owns("house", id)) || HOUSES[0]; };
 const homeCap = () => homeRooms().reduce((s, r) => s + r.cap, 0);
 const shadeHex = (hex, f) => { const [r, g, b] = hexRGB(hex); const m = v => Math.max(0, Math.min(255, Math.round(f < 1 ? v*f : v + (255 - v)*(f - 1)))); return "#" + [m(r), m(g), m(b)].map(v => v.toString(16).padStart(2, "0")).join(""); };
 const FLOOR_ITEMS = new Set(["rugr", "rug", "rugball", "rugt"]);
@@ -6631,6 +6652,12 @@ const HOUSE_DRAW = {
   bean(K, it){ K.oval(.5, .62, .46, .36, shadeHex(it.col[0], .8), .05); K.oval(.5, .52, .4, .36, it.col[0], .3); K.oval(.42, .45, .14, .1, "rgba(255,255,255,.35)", .45); },
   desk(K, it){ K.box(.05, .2, .12, .6, .72, it.col[1]); K.box(it.w - .17, .2, .12, .6, .72, it.col[1]); K.box(0, .15, it.w, .7, .1, it.col[0], .72); K.box(.55, .25, .9, .1, .62, "#22252e", .82); K.rect(.6, .35, .8, .48, "#59c2ff", 1.4); },
   tank(K, it){ K.box(0, .2, it.w, .7, .5, it.col[1]); K.box(.05, .25, it.w - .1, .6, .95, it.col[0], .5); K.rect(.05, .85, it.w - .1, .12, "#e7d7a6", .62); [[.5, 1.05, "#ff8a3d"], [1.2, 1.2, "#ffd43b"], [.9, .9, "#ff5a8a"]].forEach(([x, z, cc]) => K.oval(x, .85, .1, .05, cc, z)); },
+  stove(K, it){ K.box(.05, .2, it.w - .1, .7, 1.05, it.col[0]); K.rect(.35, .9, 1.3, .55, "#3a3a44", .35); K.rect(.45, .9, 1.1, .35, "#6a6a78", .45);
+    for (const [x, y] of [[.5, .4], [1.5, .4], [.5, .7], [1.5, .7]]) K.disc(x, y, .14, it.col[1], 1.05); K.disc(.5, .4, .16, it.col[2], 1.3); K.rect(.42, .4, .16, .1, it.col[2], 1.45); },
+  fridge(K, it){ K.box(.08, .25, .84, .6, 2.1, it.col[0]); K.rect(.12, .85, .76, .03, shadeHex(it.col[0], .7), 1.35); K.rect(.78, .85, .05, .45, it.col[1], 1.5); K.rect(.78, .85, .05, .3, it.col[1], .8);
+    K.disc(.3, .85, .05, "#e2413b", 1.15); K.disc(.45, .85, .05, "#ffd43b", 1.0); K.rect(.2, .85, .22, .25, "#ffffff", .45); },
+  counter(K, it){ K.box(0, .2, it.w, .7, .95, it.col[0]); K.box(-.03, .17, it.w + .06, .76, .1, it.col[1], .95); for (let i = 0; i < it.w*2; i++) K.rect(.08 + i*.5, .9, .38, .6, shadeHex(it.col[0], .93), .2);
+    K.oval(.6, .5, .26, .14, "#ffffff", 1.08); K.disc(.52, .48, .07, it.col[2], 1.14); K.disc(.66, .5, .07, it.col[2], 1.14); K.box(1.15, .35, .5, .3, .05, "#c9955a", 1.05); },
   fire(K, it){ K.box(0, .1, it.w, .55, 1.35, it.col[0]); K.rect(.45, .65, 1.1, .7, "#2a1a14", .95); K.box(-.05, .05, it.w + .1, .65, .12, shadeHex(it.col[0], .7), 1.35); },
   piano(K, it){ K.box(0, .1, it.w, .55, 1.25, it.col[0]); K.box(-.02, .5, it.w + .04, .3, .08, it.col[1], .72); for (let i = 0; i < 13; i++) K.rect(.08 + i*.145, .78, .05, .05, "#1d1f26", .82); },
   arcade(K, it){ K.box(.05, .2, .9, .65, 1.7, it.col[0]); K.rect(.18, .85, .64, .5, it.col[1], 1.5); K.box(.1, .7, .8, .2, .1, "#22252e", .85); K.disc(.35, .78, .06, "#ffd43b", .98); K.disc(.6, .78, .06, "#5af0ff", .98); },
@@ -6703,7 +6730,7 @@ const HOUSE_DRAW = {
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
 };
-const FURN_H = {hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
+const FURN_H = {stove:1.5, fridge:2.3, counter:1.3, hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
 // animated 2D furniture: art/2d/anim/<id>.png holds the frames side by side, each the size of art/2d/furn/<id>.png
@@ -6824,10 +6851,11 @@ function paintRoom(c, r, ts, pixel, tod, wTiles, head = 0){
     }
   }
   // floor
-  const fy = wallH, base = {wood:"#c8945e", carpet:"#7f9fd1", grass:"#7cc45a", marble:"#e9e6f2"}[r.floor];
+  const fy = wallH, base = {wood:"#c8945e", carpet:"#7f9fd1", grass:"#7cc45a", marble:"#e9e6f2", tile:"#f1ede2"}[r.floor];
   c.fillStyle = base; c.fillRect(R(X0), R(fy), R(W) + 1, R(floorH) + 1);
   if (r.floor === "wood") { for (let row = 0; row < HM.D*2; row++) { c.fillStyle = row % 2 ? "#bd8752" : "#c8945e"; c.fillRect(R(X0), R(fy + row*ts*SQ/2), R(W) + 1, R(ts*SQ/2) + 1); c.fillStyle = "rgba(0,0,0,.12)"; for (let i = (row % 3)*.7; i < W/ts; i += 2.1) c.fillRect(R(X0 + i*ts), R(fy + row*ts*SQ/2), 1, R(ts*SQ/2)); } }
   if (r.floor === "carpet") { c.fillStyle = "rgba(255,255,255,.08)"; for (let y = 0; y < HM.D; y++) for (let x = 0; x < W/ts; x++) if ((x + y) % 2) c.fillRect(R(X0 + x*ts), R(fy + y*ts*SQ), R(ts), R(ts*SQ)); }
+  if (r.floor === "tile") { for (let y = 0; y < HM.D*2; y++) for (let x = 0; x < W/ts*2; x++) if ((x + y) % 2) { c.fillStyle = "#c9d9cf"; c.fillRect(R(X0 + x*ts/2), R(fy + y*ts*SQ/2), R(ts/2) + 1, R(ts*SQ/2) + 1); } }
   if (r.floor === "marble") { for (let y = 0; y < HM.D; y++) for (let x = 0; x < W/ts; x++) { c.fillStyle = (x + y) % 2 ? "#d9d4e8" : "#f2f0f8"; c.fillRect(R(X0 + x*ts), R(fy + y*ts*SQ), R(ts) + 1, R(ts*SQ) + 1); } }
   if (r.floor === "grass") { const Rn = rng(r.x0*7 + 3); c.fillStyle = "#6ab64c"; for (let i = 0; i < W/ts*6; i++) { const x = X0 + Rn()*W, y = fy + Rn()*floorH; c.fillRect(R(x), R(y), Math.max(1, R(ts*.06)), Math.max(1, R(ts*.18))); } }
   if (r.pond) { const cx = X0 + W/2, cy = fy + floorH*.55; c.fillStyle = "#3f8f5a"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32 + ts*.15), R(floorH*.3 + ts*.12), 0, 0, 7); c.fill(); c.fillStyle = "#4aa8e0"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32), R(floorH*.3), 0, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.35)"; for (let i = 0; i < 6; i++) c.fillRect(R(cx - W*.2 + i*W*.07), R(cy - floorH*.1 + (i % 3)*floorH*.08), R(ts*.4), Math.max(1, R(ts*.04))); }
@@ -6857,7 +6885,7 @@ function paintDivider(c, d, ts, pixel, head){
     c.fillStyle = T.face; c.fillRect(R(X0), R(bot), R(ts), R(h)); c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(R(X0), R(bot), R(ts), Math.max(1, R(ts*.05)));
   }
   const y0 = fy(DOOR[0]), y1 = fy(DOOR[1]);   // the doorway: a mat, a step or stepping stones
-  if (door) c.drawImage(door, R(X0), R(y0), R(ts), R(y1 - y0));
+  if (door) { const w = door.width*k, hh = door.height*k; c.drawImage(door, R(d.x*ts - w/2), R((y0 + y1)/2 - hh/2), R(w), R(hh)); }   // the mat or step at its own size
   else { c.fillStyle = "rgba(0,0,0,.12)"; c.fillRect(R(X0 + ts*.1), R(y0 + ts*.05), R(ts*.8), R(y1 - y0 - ts*.1)); }
 }
 function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are drawn in depth order with everyone else
@@ -6865,11 +6893,83 @@ function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are draw
   if (img) { const w = img.width*ts/32, h = img.height*ts/32; c.drawImage(img, Math.round(X - w/2), Math.round(Y - h), Math.round(w), Math.round(h)); return; }
   const w = ts*.34, h = ts*1.25; c.fillStyle = T.face; c.fillRect(X - w/2, Y - h, w, h); c.fillStyle = T.cap; c.fillRect(X - w/2, Y - h, w, ts*.12);
 }
+// ---- the house from outside ----
+// Out in a yard you see the house as it really looks: its roof and front wall cover the rooms (and whoever is inside),
+// and fade away as you walk in through the door. The look comes from the house design (HOUSES, sold in the Shop).
+function houseSpans(){
+  const out = []; let s = null;
+  for (const r of HS.rooms) { if (roomKind(r) === "out") { s = null; continue; } if (s) s.x1 = r.x0 + r.w; else out.push(s = {x0:r.x0, x1:r.x0 + r.w}); }
+  return out;
+}
+function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){
+  const R = v => pixel ? Math.round(v) : v, wallTop = bot - HM.WALL*ts*.95, W = X1 - X0;
+  let g = c.createLinearGradient(0, top, 0, wallTop); g.addColorStop(0, H.roof2); g.addColorStop(1, H.roof);   // the roof, seen from above
+  c.fillStyle = g; c.fillRect(R(X0), R(top), R(W), R(wallTop - top));
+  const rowH = ts*.42;
+  for (let y = top + ts*.5, i = 0; y < wallTop - ts*.1; y += rowH, i++) {   // rows of tiles, staggered joints
+    c.fillStyle = "rgba(0,0,0,.2)"; c.fillRect(R(X0), R(y), R(W), Math.max(1, R(ts*.06)));
+    c.fillStyle = "rgba(255,255,255,.1)"; c.fillRect(R(X0), R(y + ts*.06), R(W), Math.max(1, R(ts*.03)));
+    c.fillStyle = "rgba(0,0,0,.12)"; for (let x = X0 + (i % 2)*ts*.3; x < X1; x += ts*.6) c.fillRect(R(x), R(y - rowH + ts*.06), Math.max(1, R(ts*.04)), R(rowH - ts*.06));
+  }
+  c.fillStyle = shadeHex(H.roof2, .8); c.fillRect(R(X0), R(top), R(W), R(ts*.5));   // ridge
+  c.fillStyle = "rgba(255,255,255,.18)"; c.fillRect(R(X0), R(top + ts*.08), R(W), Math.max(1, R(ts*.06)));
+  for (let x = X0 + ts*2.2; x < X1 - ts*1.5; x += ts*13) {   // chimneys
+    c.fillStyle = "#8a4a3a"; c.fillRect(R(x), R(top - ts*.4), R(ts*.8), R(ts*1.3)); c.fillStyle = "#5a3026"; c.fillRect(R(x - ts*.08), R(top - ts*.5), R(ts*.96), R(ts*.22));
+  }
+  c.fillStyle = H.wall; c.fillRect(R(X0), R(wallTop), R(W), R(bot - wallTop));   // the front wall
+  c.fillStyle = "rgba(0,0,0,.06)"; for (let y = wallTop + ts*.3; y < bot; y += ts*.3) c.fillRect(R(X0), R(y), R(W), Math.max(1, R(ts*.03)));
+  c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(R(X0), R(wallTop), R(W), R(ts*.16));   // shadow under the eaves
+  const wy = wallTop + ts*.45, wh = ts*1.1, ww = ts*1.2, glass = night > .3 ? "#ffd98a" : "#a9d4f5";
+  for (let x = X0 + ts*1.6; x < X1 - ts*1.6; x += ts*3.2) {   // windows with shutters and a flower box
+    c.fillStyle = H.trim; c.fillRect(R(x - ts*.5), R(wy), R(ts*.42), R(wh)); c.fillRect(R(x + ww + ts*.08), R(wy), R(ts*.42), R(wh));
+    c.fillStyle = "#ffffff"; c.fillRect(R(x - ts*.06), R(wy - ts*.06), R(ww + ts*.12), R(wh + ts*.12));
+    c.fillStyle = glass; c.fillRect(R(x), R(wy), R(ww), R(wh)); c.fillStyle = "#ffffff"; c.fillRect(R(x + ww/2 - ts*.03), R(wy), R(ts*.06), R(wh)); c.fillRect(R(x), R(wy + wh/2 - ts*.03), R(ww), R(ts*.06));
+    c.fillStyle = "#7a4a2a"; c.fillRect(R(x - ts*.1), R(wy + wh + ts*.04), R(ww + ts*.2), R(ts*.18));
+    c.fillStyle = "#e2413b"; for (let k = 0; k < 4; k++) c.fillRect(R(x + k*ww/4 + ts*.06), R(wy + wh - ts*.04), R(ts*.12), R(ts*.1));
+  }
+  c.fillStyle = H.base; c.fillRect(R(X0), R(bot - ts*.38), R(W), R(ts*.38));   // foundation
+  c.fillStyle = "rgba(0,0,0,.18)"; for (let x = X0 + ts*.2; x < X1; x += ts*.7) c.fillRect(R(x), R(bot - ts*.38), Math.max(1, R(ts*.04)), R(ts*.38));
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(R(X0), R(top), Math.max(1, R(ts*.06)), R(bot - top)); c.fillRect(R(X1 - ts*.06), R(top), Math.max(1, R(ts*.06)), R(bot - top));
+}
+function drawFacade(c, pixel, spans, a){
+  const ts = HS.ts, H = houseOf(), bot = Math.round(scrY(HM.D)), top = Math.round(scrY(0) - HM.WALL*ts), img = pixel && artOf("house/" + H.id), night = HS.light ? HS.light.night : 0;
+  c.save(); c.globalAlpha = a;
+  for (const s of spans) {
+    const X0 = Math.round(scrX(s.x0)), X1 = Math.round(scrX(s.x1)); if (X1 < 0 || X0 > HS.V.W) continue;
+    c.save(); c.beginPath(); c.rect(X0, top - ts, X1 - X0, bot - top + ts); c.clip();
+    if (img) for (let x = X0; x < X1; x += img.width) c.drawImage(img, x, bot - img.height);   // 2D: the house front repeats along the house
+    else facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night);
+    c.restore();
+  }
+  c.restore();
+}
+function houseThumb(x, H, pixel){
+  x.clearRect(0, 0, 160, 96);
+  const img = pixel && artOf("house/" + H.id);
+  if (img) { const k = 96/img.height; x.imageSmoothingEnabled = true; x.drawImage(img, 0, 0, img.width, img.height, (160 - img.width*k)/2, 0, img.width*k, 96); return; }
+  x.fillStyle = "#bfe3ff"; x.fillRect(0, 0, 160, 96); facadeShapes(x, H, 8, 152, 16, 92, 13, pixel, 0);
+}
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
 
 // ---- state of the running Home ----
 const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0};
+// Furniture, gifts and berry trees are saved at positions along the house, together with the room order they refer
+// to (home.lay). When the rooms change (one bought, or the order changed), everything moves along with its room.
+const LEGACY_ROOMS = ["bedroom", "living", "garden", "pond", "hall"];   // the order before the front yard and kitchen
+function homeRelayout(){
+  const D = homeData(), now = homeRooms().map(r => r.id), cur = now.join(",");
+  if (D.lay === cur) return;
+  const old = D.lay ? D.lay.split(",") : LEGACY_ROOMS.filter(id => now.includes(id));
+  const starts = ids => { const o = {}; let x = 0; for (const id of ids) { o[id] = x; x += ROOMS.find(r => r.id === id).w; } return o; };
+  const o0 = starts(old), o1 = starts(now);
+  const move = x => { const id = old.filter(i => x >= o0[i]).pop(); return id && id in o1 ? x - o0[id] + o1[id] : x; };
+  for (const p of D.items) p.x = move(p.x);
+  for (const g of D.gifts) g.x = move(g.x);
+  D.trees = Object.fromEntries(Object.entries(D.trees).map(([k, v]) => { const [x, y] = k.split(",").map(Number); return [`${move(x)},${y}`, v]; }));
+  D.lay = cur; save();
+}
 function homeLayout(){
+  homeRelayout();
   let x = 0; HS.rooms = homeRooms().map(r => { const o = {...r, x0:x}; x += r.w; return o; }); HS.W = x;
 }
 const roomAt = x => HS.rooms.find(r => x >= r.x0 && x < r.x0 + r.w) || HS.rooms[HS.rooms.length - 1];
@@ -7020,6 +7120,9 @@ function homeFrame(now){
   if (Math.abs(want - HS.cam) < .001 && Math.abs(HS.camV || 0) < .01) { HS.cam = want; HS.camV = 0; }
   HS.camPx = Math.round(HS.cam*ts);   // one rounded camera offset for the room, the furniture and the Pokémon, so nothing shimmers against the floor
   const L = HS.light = homeLight();
+  const outT = !HS.edit && !HS.intro && roomKind(roomAt(HS.me.x)) === "out" ? 1 : 0;   // out in a yard: the house shows its outside
+  HS.outA = HS.outA == null ? outT : HS.outA + (outT - HS.outA)*Math.min(1, dt*7);
+  const spans = HS.spans = HS.outA > .01 ? houseSpans() : null, inside = x => !!spans && spans.some(s => x > s.x0 && x < s.x1);
   c.imageSmoothingEnabled = !pixel;
   if (HS.cam < 0 || HS.cam + V.W/ts > HS.W) {   // a dim corridor either side of a small house
     const wy = Math.round(scrY(0)); c.fillStyle = "#3a2f2a"; c.fillRect(0, 0, V.W, wy); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, V.H - wy);
@@ -7033,23 +7136,26 @@ function homeFrame(now){
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
-  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
+  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, x:p.x + p.it.w/2, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
     if (!NO_SHADOW.has(p.it.kind)) furnShadow(c, p, pixel);
     c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
     if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
-  for (const d of dividers()) for (const y of DOOR) list.push({y, draw:() => drawDivPost(c, d, y, pixel)});
-  for (const m of HS.mons) list.push({y:m.depth || m.y, draw:() => drawHomeMon(c, m, now, pixel)});
-  for (const g of homeData().gifts) list.push({y:g.y, draw:() => drawGift(c, g, now, pixel)});
-  list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
-  list.sort((a, b) => a.y - b.y).forEach(d => d.draw());
+  for (const d of dividers()) for (const y of DOOR) list.push({y, x:d.x, draw:() => drawDivPost(c, d, y, pixel)});
+  for (const m of HS.mons) list.push({y:m.depth || m.y, x:m.x, draw:() => drawHomeMon(c, m, now, pixel)});
+  for (const g of homeData().gifts) list.push({y:g.y, x:g.x, draw:() => drawGift(c, g, now, pixel)});
+  list.push({y:HS.me.y + .01, x:HS.me.x, draw:() => drawHomeTrainer(c, now, pixel)});
+  list.sort((a, b) => a.y - b.y);
+  for (const d of list) if (inside(d.x)) d.draw();   // inside the house first, then its outside on top, then the yards
   drawHomeFx(c, now, pixel);
+  if (spans) drawFacade(c, pixel, spans, HS.outA);
+  for (const d of list) if (!inside(d.x)) d.draw();
   // prompts and emotes on top
   drawWeather(c, now, pixel, "out");
   if (HS.edit) drawDecoOverlay(c, pixel);
   // the light: a warm sunset tint and a night tint that fade in and out with the clock, then lamps and fires glowing
   if (L.dusk > .01) { c.fillStyle = `rgba(255,140,80,${(.1*L.dusk*(1 - L.night)).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); }
   if (L.night > .01) { const ev = eventOn(), n = ev && ev.night || [20, 30, 80, .32]; c.fillStyle = `rgba(${n[0]},${n[1]},${n[2]},${(n[3]*L.night).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); drawGlows(c, now, pixel, L.night); }
-  for (const m of HS.mons) drawEmote(c, m, now, pixel);   // emotes stay bright at night
+  for (const m of HS.mons) if (!(HS.outA > .5 && inside(m.x))) drawEmote(c, m, now, pixel);   // emotes stay bright at night
   if (pixel) { HS.ctx.imageSmoothingEnabled = false; HS.ctx.drawImage(HS.low, 0, 0, HS.low.width*HS.k, HS.low.height*HS.k); }
   homeOverlay(now, pixel);
   HS.raf = requestAnimationFrame(homeFrame);
@@ -7643,7 +7749,7 @@ const SPOT_OF = {
   hammock:{act:"nap", pts:[[1.5, .5]], z:.42},
   sofa:{act:"sit", pts:"row", z:.42}, chair:{act:"sit", pts:[[.5, .62]], z:.42}, bench:{act:"sit", pts:"row", z:.48},
   tv:{act:"watch", front:true}, arcade:{act:"watch", front:true}, desk:{act:"watch", front:true}, piano:{act:"watch", front:true},
-  fire:{act:"warm", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
+  fire:{act:"warm", front:true}, stove:{act:"warm", front:true}, fridge:{act:"sniff", front:true}, counter:{act:"sniff", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
   fountain:{act:"splash", front:true}, tank:{act:"splash", front:true}, shellfountain:{act:"splash", front:true},
   plant:{act:"sniff", front:true}, flowers:{act:"sniff", front:true}, tree:{act:"sniff", front:true}, palm:{act:"sniff", front:true}, flowerarch:{act:"sniff", front:true},
 };
@@ -7899,7 +8005,7 @@ const GLOW = {lamp:[.5, 1.75, 2.4, "255,214,140"], lamp2:[.5, 1.8, 2.4, "255,214
 function drawGlows(c, now, pixel, k){
   if (!(k > 0)) return;
   const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
-  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G) continue;
+  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.outA > .5 && HS.spans && HS.spans.some(s => p.x + p.it.w/2 > s.x0 && p.x + p.it.w/2 < s.x1)) continue;
     const fl = 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*fl;
     // a warm pool on the floor under the light, then the glow itself
     const fy = scrY(p.y + p.it.d) - ts*.1, pr = G[2]*ts*.85*fl;
@@ -8266,7 +8372,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Sleeping sprites</dt><dd>Pokémon napping in the Pokémon Home use the Sleep animations from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">PMD Sprite Collab</a> by its contributors, licensed <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>. Every artist is listed in <a href="https://github.com/BlakeRossi3/PokeDreamTeamBuilder/blob/main/docs/pmd-credits.md" target="_blank" rel="noopener">docs/pmd-credits.md</a>.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Sleeping sprites</dt><dd>Pokémon napping in the Pokémon Home use the Sleep animations from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">PMD Sprite Collab</a> by its contributors, licensed <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>. Every artist is listed in <a href="https://github.com/BlakeRossi3/PokeDreamTeamBuilder/blob/main/docs/pmd-credits.md" target="_blank" rel="noopener">docs/pmd-credits.md</a>.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Badges</dt><dd>Gym badges for Kanto to Kalos (Badge Cases and the Gym screen) from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>; the Alola, Galar and Paldea sets are pixel art made with Retro Diffusion.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture (and its animations), rooms, doorways and house fronts are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {

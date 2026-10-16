@@ -228,9 +228,50 @@ for p in sorted((RAW / "badge").glob("sheet*.png")):
         cell = cutout(sh.crop((k*32, 0, k*32 + 32, 32)))
         save(cell, f"badge/{g}-{k}.png")
 
+# ---------- house fronts (seen from the yards) ----------
+# Each raw picture is a repeating piece of roof + front wall. Keep the rows from the ridge to the foundation and make the
+# roof taller by repeating one band of tiles, so the house front is exactly as tall as a room (wall + floor, 213 px)
+# plus 10 px of roof above. HOUSE_ROWS: ridge row, bottom row, the band of roof rows to repeat, columns to keep.
+HOUSE_H = 223
+# The cottage was made to repeat; the others are cut where the left and right columns match best (seam()).
+HOUSE_ROWS = {"cottage": (47, 210, (110, 130), (0, 256)), "brick": (53, 224, (64, 86), (0, 256)),
+              "villa": (33, 224, (54, 86), (0, 256)), "cabin": (50, 208, (62, 82), (62, 226))}
+
+
+def seam(im, x0, x1, top, bot, min_w=128):
+    """The columns a < b (b - a >= min_w) whose pixels match best, so [a, b) repeats with no visible join."""
+    px, best = im.load(), None
+    for a in range(x0, x1 - min_w):
+        for b in range(a + min_w, x1):
+            d = sum(abs(px[a, y][i] - px[b, y][i]) for y in range(top, bot, 2) for i in range(3))
+            if best is None or d < best[0]:
+                best = (d, a, b)
+    return best[1], best[2]
+
+
+for p in sorted((RAW / "house").glob("*.png")):
+    top, bot, (b0, b1), (x0, x1) = HOUSE_ROWS[p.stem]
+    if p.stem != "cottage":
+        x0, x1 = seam(rgba(p), x0, x1, top, bot)
+    im = rgba(p).crop((x0, 0, x1, 224))
+    parts = [im.crop((0, top, im.width, b1))]
+    n = HOUSE_H - (bot - top)
+    while n > 0:
+        band = im.crop((0, b0, im.width, b0 + min(n, b1 - b0)))
+        parts.append(band)
+        n -= band.height
+    parts.append(im.crop((0, b1, im.width, bot)))
+    out = Image.new("RGBA", (im.width, sum(q.height for q in parts)))
+    y = 0
+    for q in parts:
+        out.paste(q, (0, y))
+        y += q.height
+    save(out, f"house/{p.stem}.png")
+
 # ---------- rooms ----------
 R = RAW / "room"
 save(rgba(R / "wall_hall.png"), "room/wall_hall.png")
+save(rgba(R / "wall_kitchen.png"), "room/wall_kitchen.png")
 save(rgba(R / "wall_bedroom.png"), "room/wall_bedroom.png")
 # the living-room wall came with a strip of floor at the bottom: keep the wall, rebuild the baseboard
 lv = rgba(R / "wall_living.png")
@@ -247,7 +288,7 @@ for x in range(128):
         wpx[x, y] = (246, 248, 250, 255) if y < 82 else (150, 160, 172, 255)
 save(wall, "room/wall_living.png")
 
-for n in ["win_bedroom", "win_living", "win_hall"]:
+for n in ["win_bedroom", "win_living", "win_hall", "win_kitchen"]:
     im = cutout(rgba(R / f"{n}.png"))
     px = im.load()
     for y in range(im.height):
@@ -257,7 +298,7 @@ for n in ["win_bedroom", "win_living", "win_hall"]:
                 px[x, y] = (0, 0, 0, 0)
     save(im, f"room/{n}.png")
 
-for n in ["back_garden", "back_pond"]:
+for n in ["back_garden", "back_pond", "back_yard"]:
     im = rgba(R / f"{n}.png")
     W = im.width
     im = flood_clear(im, [(x, 0) for x in range(W)], 40)   # the sky above the hedge/reeds is see-through
@@ -299,6 +340,17 @@ for y in range(40):
             c = (156, 186, 232)                       # small light diamond
         cp[x, y] = c
 save(carpet, "room/floor_carpet.png")
+tile = Image.new("RGB", (64, 40))   # the kitchen: cream and sage checks with grout lines
+tp = tile.load()
+for y in range(40):
+    for x in range(64):
+        c = (231, 226, 210) if ((x // 16) + (y // 10)) % 2 == 0 else (184, 206, 192)
+        if x % 16 == 15 or y % 10 == 9:
+            c = (150, 146, 134)                       # grout
+        elif x % 16 == 0 or y % 10 == 0:
+            c = tuple(min(255, v + 12) for v in c)    # bevel highlight
+        tp[x, y] = c
+save(tile, "room/floor_tile.png")
 
 # ---------- room dividers ----------
 for p in sorted((RAW / "div").glob("*.png")):
