@@ -38,12 +38,20 @@ def assemble() -> str:
            for p in sorted(ART.rglob("*.png"))}
     assert art, "art/2d is empty"
     assert page.count("/*ART2D*/") == 1, "/*ART2D*/ must appear once in src/app.html"
-    page = page.replace("/*ART2D*/", json.dumps(art, separators=(",", ":")))
-    return page
+    return page.replace("/*ART2D*/", json.dumps(art, separators=(",", ":")))
+
+
+def split_art(page: str):
+    """The website loads the 2D art as its own cached file (art2d.json) after the first screen: it's ~850 KB of PNGs
+    that don't compress, so keeping it out of the page makes the first visit much smaller. Returns (page, art json)."""
+    i = page.index("const ART_SRC = ") + len("const ART_SRC = ")
+    j = page.index(";\n", i)
+    return page[:i] + "null" + page[j:], page[i:j]
 
 
 def build_web(page: str) -> None:
     W = DIST / "web"
+    page, art_json = split_art(page)
     h = hashlib.sha1()
     for f in ["index.json", "learnsets.json", "gifkit.js", "items.png"]:
         h.update((PACKS / f).read_bytes())
@@ -51,6 +59,16 @@ def build_web(page: str) -> None:
     build = h.hexdigest()[:10]
     assert page.count('"/*BUILD*/"') == 1
     page = page.replace('"/*BUILD*/"', f'"{build}"')
+    # each pack is versioned by its own contents, so a new deploy only re-downloads the packs that changed
+    packv = {}
+    for k in json.loads((PACKS / "index.json").read_text()):
+        rel = ("t/" + k[1:] if k[0] == "t" else "s/" + k) + ".wasm"
+        packv[rel] = hashlib.sha1((PACKS / rel).read_bytes()).hexdigest()[:8]
+    for f in ["learnsets.json", "items.png"]:
+        packv[f] = hashlib.sha1((PACKS / f).read_bytes()).hexdigest()[:8]
+    packv["art2d.json"] = hashlib.sha1(art_json.encode()).hexdigest()[:8]
+    assert page.count("{}/*PACKV*/") == 1
+    page = page.replace("{}/*PACKV*/", json.dumps(packv, separators=(",", ":")))
     head = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -86,6 +104,7 @@ def build_web(page: str) -> None:
         shutil.rmtree(W)
     W.mkdir(parents=True)
     (W / "index.html").write_text(page, encoding="utf-8")
+    (W / "art2d.json").write_text(art_json, encoding="utf-8")
     for f in ["gifkit.js", "learnsets.json", "items.png"]:
         shutil.copy(PACKS / f, W / f)
     index = json.loads((PACKS / "index.json").read_text())
@@ -113,6 +132,8 @@ def build_web(page: str) -> None:
   Cache-Control: public, max-age=31536000, immutable
   Content-Type: application/wasm
 /learnsets.json
+  Cache-Control: public, max-age=31536000, immutable
+/art2d.json
   Cache-Control: public, max-age=31536000, immutable
 /index.html
   Cache-Control: no-cache
