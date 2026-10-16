@@ -26,6 +26,15 @@ async def main():
         await pg.screenshot(path=OUT+'migration_ball.png')
         await pg.click('[data-ballbuy]'); await pg.wait_for_timeout(400)
         print("ball", await pg.evaluate('[ballOf("all",6), JSON.stringify(state.games.own.ball), state.games.pp]'))
+        # battle fields: nature/EVs/IVs survive a reload, bad values are dropped, Megas lose items
+        await pg.evaluate("""(()=>{const id=profile.id; const d=JSON.parse(localStorage.getItem(PKEY(id)));
+          d.members=d.members||{}; d.members.all={"6":{nature:"Timid",evs:{spa:252,spe:252,hp:4},ivs:{atk:0},item:"Leftovers"},"9":{nature:"Grumpy",evs:{hp:300,atk:300},ivs:{hp:99}},"10034":{item:"Leftovers",nick:"Zard"}};
+          localStorage.setItem(PKEY(id), JSON.stringify(d));})()""")
+        await pg.reload(); await pg.wait_for_timeout(1000)
+        m = await pg.evaluate('JSON.stringify([memberOf("all",6), memberOf("all",9), memberOf("all",10034)])')
+        print("members", m)
+        assert m == '[{"item":"Leftovers","nature":"Timid","evs":{"hp":4,"spa":252,"spe":252},"ivs":{"atk":0}},{"evs":{"hp":252,"atk":252}},{"nick":"Zard"}]', m
+        print("stats", await pg.evaluate('JSON.stringify(monFromTeam("all",6,100).stats)'))
         print("errors", errs)
         await b.close()
 asyncio.run(main())

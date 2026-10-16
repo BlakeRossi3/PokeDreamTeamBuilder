@@ -2,6 +2,7 @@
 """Build the site, serve dist/web on localhost:8765 and run every Playwright test.
 
     pip install playwright && python3 -m playwright install chromium   # once
+    npm install                                                         # once (the Node engine tests use @smogon/calc)
     python3 tests/run_all.py            # all tests
     python3 tests/run_all.py audit      # only tests whose file name contains "audit"
 
@@ -19,6 +20,10 @@ TESTS = [  # (file, args)
     ("test_battles_and_exports.py", []),                # gyms, Versus, trainer card + GIF export, settings
     ("test_custom_teams.py", []),
     ("test_battle_engine.py", []),
+    ("test_battle_ui.py", ["1280", "860", "3d"]),       # moves + PP, Bag, U-turn, Elite Four run bag
+    ("test_battle_ui.py", ["390", "844", "2d"]),
+    ("test_engine.mjs", []),                            # engine rules: stats, crits, status, PP, items, Bag, AI (Node)
+    ("test_damage.mjs", ["1500"]),                      # damage vs @smogon/calc (Node)
 ]
 
 def main():
@@ -31,7 +36,8 @@ def main():
         for f, args in TESTS:
             if only and only not in f: continue
             print(f"\n=== {f} {' '.join(args)}", flush=True)
-            r = subprocess.run([sys.executable, str(ROOT / "tests" / f), *args], capture_output=True, text=True, timeout=900)
+            run = ["node"] if f.endswith(".mjs") else [sys.executable]
+            r = subprocess.run([*run, str(ROOT / "tests" / f), *args], capture_output=True, text=True, timeout=900, cwd=ROOT)
             out = "\n".join(l for l in (r.stdout + r.stderr).splitlines() if "ERR_TUNNEL" not in l and "fonts.g" not in l)
             print(out[-4000:])
             bad = r.returncode != 0 or "PAGEERR" in out or any(l.startswith(("errors:", "ERRS")) and l.strip() not in ("errors: []", "ERRS []") and "Failed to load resource" not in l for l in out.splitlines())

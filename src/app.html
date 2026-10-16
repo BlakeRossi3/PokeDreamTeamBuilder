@@ -1061,6 +1061,19 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .bt-move b{font-size:var(--fs)} .bt-move span{font-size:var(--fs-xs); opacity:.85} .bt-move em{font-style:normal; font-size:var(--fs-xs); font-weight:700; opacity:.95}
 .bt-move:hover:not(:disabled){filter:brightness(1.08); transform:translateY(-1px)}
 .bt-move:disabled{opacity:.35; cursor:not-allowed}
+.bt-move .bt-pp{font-variant-numeric:tabular-nums; font-weight:700; opacity:.9} .bt-move .bt-pp.low{color:#7a1d00} .bt-move .bt-pp.none{text-decoration:line-through}
+.bt-moves.one{grid-template-columns:1fr}
+.bt-bag{display:flex; flex-direction:column; gap:6px}
+.bt-bagb{display:grid; grid-template-columns:1fr auto; gap:2px 10px; width:100%; padding:8px 10px; text-align:left; cursor:pointer; background:var(--raised); color:var(--fg); border:2px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-d)}
+.bt-bagb small{grid-column:1 / -1; color:var(--muted); font-size:var(--fs-xs)} .bt-bagb .bag-n{font-weight:800}
+.bt-bagb:hover:not(:disabled){border-color:var(--accent)} .bt-bagb:disabled{opacity:.45; cursor:not-allowed}
+:root[data-mode="2d"] .bt-bagb{border-radius:0; border-color:var(--ink)}
+.bt-itemlog{color:var(--accent); font-weight:700}
+.prep-bag{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px}
+.bag-chip{padding:5px 10px; border-radius:999px; border:2px solid var(--line-2); background:var(--raised); color:var(--fg); cursor:pointer; font:inherit; font-size:var(--fs-sm)}
+.bag-chip.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--raised))} .bag-chip:disabled{opacity:.45; cursor:not-allowed}
+:root[data-mode="2d"] .bag-chip{border-radius:0; border-color:var(--ink)}
+.sw-flag.item{background:var(--raised); color:var(--fg); border:1px solid var(--line-2)}
 :root[data-mode="2d"] .bt-move{border-radius:0; border:2px solid var(--ink)}
 .bt-acts{display:flex; gap:6px; flex-wrap:wrap}
 .bt-head .bt-skip{margin-left:auto; flex:none}
@@ -1510,7 +1523,6 @@ const FE = /*FE*/;
 const MOVEDATA = /*MOVES*/;
 const BALLS = /*BALLS*/;
 const RIVALS = /*RIVALS*/;
-const STATUS_FX = /*STATUSFX*/; // move → [status, % chance], from @pkmn/dex
 const LEADERS = /*LEADERS*/; // pixel portraits for Gym Leaders, Elite Four and Champions without full trainer art
 const LEADER_BY = new Map(LEADERS.map((n, i) => [n, i]));
 
@@ -1648,9 +1660,8 @@ const floatsOf = n => n > 1025 ? !!(FORM_BY.get(n) || {}).fl : HOFD.fl.includes(
 // ---------- moves, abilities, items, Poké Balls ----------
 const MOVES = MOVEDATA.MOVES, MOVE_BY = new Map(MOVES.map(m => [m[0], m])), MOVE_LC = new Map(MOVES.map(m => [m[0].toLowerCase(), m]));
 const ITEMS = MOVEDATA.ITEMS, ITEM_LC = new Map(ITEMS.map(i => [i[0].toLowerCase(), i])), ABIL = MOVEDATA.ABIL;
-const FIXED_DMG = new Set(["Seismic Toss","Night Shade","Super Fang","Dragon Rage","Sonic Boom","Psywave","Endeavor","Final Gambit","Nature's Madness","Ruination","Counter","Mirror Coat","Metal Burst","Bide"]);
-const isDmg = mv => !!mv && (mv[3] > 0 || FIXED_DMG.has(mv[0]));
-const catName = mv => !isDmg(mv) ? "Status" : mv[2] === "P" ? "Physical" : "Special";
+// Megas and Primal forms hold no item (no Mega Stones in this app)
+const isMega = n => n > 1025 && /^(Mega|Primal)$/.test((FORM_BY.get(n) || {}).form || "");
 const BALL_IDS = BALLS.order;
 const ballName = id => id === "poke" ? "Poké Ball" : id[0].toUpperCase() + id.slice(1) + " Ball";
 const ballImg = (id, cls = "ball-ic") => `<img class="${cls}" src="${BALLS.img[id] || BALLS.img.poke}" alt="" draggable="false">`;
@@ -1667,15 +1678,20 @@ function loadLearnsets(){
 }
 const learnset = n => LSDATA ? (LSDATA.LS[String(n)] || LSDATA.LS[String(baseOf(n))] || []).map(i => MOVES[i]).filter(Boolean) : [];
 const abilitiesOf = n => LSDATA ? (LSDATA.AB[String(n)] || LSDATA.AB[String(baseOf(n))] || []) : [];
+const weightOf = n => (LSDATA && (LSDATA.WT[String(n)] ?? LSDATA.WT[String(baseOf(n))])) || 50;
 
-// ---------- per-member details: nickname, ball, ability, item, moves ----------
-function cleanMember(v){
+// ---------- per-member details: nickname, ball, ability, item, moves, nature, EVs, IVs ----------
+// n (optional) is the Pokémon's number: Megas and Primals never keep an item
+function cleanMember(v, n){
   if (!v || typeof v !== "object") return null;
   const r = {};
   if (typeof v.nick === "string" && v.nick.trim()) r.nick = v.nick.trim().slice(0, 12);
   if (BALL_IDS.includes(v.ball) && v.ball !== "poke") r.ball = v.ball;
   if (typeof v.ability === "string" && v.ability) r.ability = v.ability.slice(0, 40);
-  if (typeof v.item === "string" && ITEM_LC.has(v.item.toLowerCase())) r.item = ITEM_LC.get(v.item.toLowerCase())[0];
+  if (typeof v.item === "string" && ITEM_LC.has(v.item.toLowerCase()) && !(n && isMega(n))) r.item = ITEM_LC.get(v.item.toLowerCase())[0];
+  if (typeof v.nature === "string" && NATURES[v.nature] && v.nature !== "Hardy") r.nature = v.nature;
+  const ev = cleanEVs(v.evs); if (Object.keys(ev).length) r.evs = ev;
+  const iv = cleanIVs(v.ivs); if (Object.keys(iv).length) r.ivs = iv;
   if (Array.isArray(v.moves)) { const mv = [...new Set(v.moves.filter(x => typeof x === "string" && MOVE_BY.has(x)))].slice(0, 4); if (mv.length) r.moves = mv; }
   return Object.keys(r).length ? r : null;
 }
@@ -1685,7 +1701,7 @@ const ballOf = (id, n) => memberOf(id, n).ball || "poke";
 const movesOf = (id, n) => (memberOf(id, n).moves || []).map(x => MOVE_BY.get(x)).filter(Boolean);
 function setMember(id, n, patch){
   const all = state.members[id] = state.members[id] || {};
-  const c = cleanMember({...(all[n] || {}), ...patch});
+  const c = cleanMember({...(all[n] || {}), ...patch}, n);
   if (c) all[n] = c; else delete all[n];
   touched(); save();
 }
@@ -1693,8 +1709,8 @@ const F0 = () => ({fav:false, free:false, fe:false, leg:"all", bst:"any", forms:
 const BST_R = {any:[0, 9999], lo:[0, 399], mid:[400, 499], hi:[500, 599], top:[600, 9999]};
 
 // ---------- per-save settings + game progress ----------
-const UI_OPTS = {t3:["midnight","daylight","carbon","ultra"], t2:["classic","gameboy","night","pocket"], accent:["default","red","blue","green","purple","pink","gold","teal"], text:["normal","large"], motion:["full","reduced"], bmode:["manual","auto"], bspeed:["normal","fast"]};
-const freshUI = () => ({t3:"midnight", t2:"classic", accent:"default", text:"normal", motion:matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full", sound:true, music:55, sfx:70, bmode:"manual", bspeed:"normal"});
+const UI_OPTS = {t3:["midnight","daylight","carbon","ultra"], t2:["classic","gameboy","night","pocket"], accent:["default","red","blue","green","purple","pink","gold","teal"], text:["normal","large"], motion:["full","reduced"], bmode:["manual","auto"], bspeed:["normal","fast"], vsbag:["on","off"]};
+const freshUI = () => ({t3:"midnight", t2:"classic", accent:"default", text:"normal", motion:matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced" : "full", sound:true, music:55, sfx:70, bmode:"manual", bspeed:"normal", vsbag:"on"});
 function cleanUI(u){
   const o = freshUI(); if (!u || typeof u !== "object") return o;
   for (const [k, opts] of Object.entries(UI_OPTS)) if (opts.includes(u[k])) o[k] = u[k];
@@ -1867,7 +1883,7 @@ function applySaved(s){
   state.scenes = remapScenes(s.scenes);
   state.order = Array.isArray(s.order) ? s.order.filter(id => TEAM_BY.has(id)) : [];
   state.members = {};
-  for (const [id, o] of Object.entries(remap(s.members))) { if (!o || typeof o !== "object") continue; const r = {}; for (const [k, v] of Object.entries(o)) { const c = cleanMember(v); if (c && NAT_BY.has(+k)) r[k] = c; } state.members[id] = r; }
+  for (const [id, o] of Object.entries(remap(s.members))) { if (!o || typeof o !== "object") continue; const r = {}; for (const [k, v] of Object.entries(o)) { const c = cleanMember(v, +k); if (c && NAT_BY.has(+k)) r[k] = c; } state.members[id] = r; }
   state.notes = {};
   for (const [id, o] of Object.entries(remap(s.notes))) if (o && typeof o === "object") state.notes[id] = {text:String(o.text || "").slice(0, 600), stars:Math.max(0, Math.min(5, o.stars | 0))};
   state.games = cleanGames(s.games);
@@ -4488,19 +4504,19 @@ function buildHTML(num){
       return `<button type="button" class="ball-opt${ok ? "" : " locked"}" role="radio" data-ball="${b}" aria-checked="${(M.ball || "poke") === b}" title="${ballName(b)}${ok ? "" : " (locked)"}" aria-label="${ballName(b)}${ok ? "" : ", locked"}">${ballImg(b)}</button>`; }).join("")}${BALL_IDS.some(b => !owns("ball", b) && isExclusive(unlockOf("ball", b))) ? `<button type="button" class="ball-opt mystery" data-ballmore title="More from Gym Leaders" aria-label="More Poké Balls come from Gym Leaders">?</button>` : ""}</div>
     <div class="b2">
       <label class="field">Ability<select class="select" id="bAbil"><option value="">${ready ? "None chosen" : "Loading…"}</option>${abil.map(a => `<option ${M.ability === a ? "selected" : ""}>${esc(a)}</option>`).join("")}${M.ability && !abil.includes(M.ability) ? `<option selected>${esc(M.ability)}</option>` : ""}</select></label>
-      <label class="field">Held item<input id="bItem" list="dlItems" placeholder="None" value="${esc(M.item || "")}" autocomplete="off" spellcheck="false"></label>
+      <label class="field">Held item${isMega(num) ? `<input id="bItem" disabled placeholder="Mega Pokémon can’t hold items" value="">` : `<input id="bItem" list="dlItems" placeholder="None" value="${esc(M.item || "")}" autocomplete="off" spellcheck="false">`}</label>
     </div>
     <p class="note" id="bDesc"></p>
     <div class="cov-h">Moves</div>
     <div class="mv-list">${[0,1,2,3].map(i => mvRow(mv[i], i)).join("")}</div>
     <datalist id="dlMoves">${learnset(num).map(x => `<option value="${esc(x[0])}">`).join("")}</datalist>
-    <datalist id="dlItems">${ITEMS.map(x => `<option value="${esc(x[0])}">`).join("")}</datalist>
+    <datalist id="dlItems">${ITEMS.filter(x => x[2] !== "ball").map(x => `<option value="${esc(x[0])}">`).join("")}</datalist>
     <p class="note" id="bMvNote">${ready ? `${esc(m.name)} can learn ${learnset(num).length} moves. Damaging moves count toward your team’s type coverage.` : "Loading moves…"}</p>
   </div>`;
 }
 function wireBuild(md, num, onChange){
   const id = state.team, root = md.querySelector("#buildRoot"), m = G().byNum.get(num);
-  const desc = () => { const M = memberOf(id, num), lines = []; if (M.ability && ABIL[M.ability]) lines.push(`<b>${esc(M.ability)}:</b> ${esc(ABIL[M.ability])}`); if (M.item && ITEM_LC.get(M.item.toLowerCase())) lines.push(`<b>${esc(M.item)}:</b> ${esc(ITEM_LC.get(M.item.toLowerCase())[1])}`); root.querySelector("#bDesc").innerHTML = lines.join("<br>"); };
+  const desc = () => { const M = memberOf(id, num), lines = []; if (M.ability && ABIL[M.ability]) lines.push(`<b>${esc(M.ability)}:</b> ${esc(ABIL[M.ability])}`); if (M.item && ITEM_LC.get(M.item.toLowerCase())) lines.push(`<b>${esc(M.item)}:</b> ${esc(ITEM_LC.get(M.item.toLowerCase())[1])}${itemWorks(M.item) ? "" : " <i>(No battle effect here.)</i>"}`); if (M.ability && !ABIL_WORKS.has(M.ability)) lines.push(`<i>${esc(M.ability)} has no effect in these battles.</i>`); const off = movesOf(id, num).filter(mv => !moveWorks(mv)).map(mv => mv[0]); if (off.length) lines.push(`<i>No effect in these battles: ${esc(off.join(", "))}.</i>`); root.querySelector("#bDesc").innerHTML = lines.join("<br>"); };
   const refresh = () => { renderTeam(); if (onChange) { onChange(); return; } const h = md.querySelector("#modalTitle"); if (h) h.innerHTML = ballImg(ballOf(id, num), "ball-ic lg") + esc(nickOf(id, num)); };
   desc();
   if (!LSDATA) loadLearnsets().then(() => {
@@ -4549,358 +4565,8 @@ function wireBuild(md, num, onChange){
 }
 
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-// ================= BATTLE ENGINE (level-based, items, abilities, stat stages, weather) =================
-const CHART9 = GENS[8].chart;
-const effOf = (type, defTypes) => defTypes.reduce((x, d) => { const r = (CHART9[d] || {})[type]; return x * (r === undefined ? 1 : r); }, 1);
-const STRUGGLE = ["Struggle", "???", "P", 50, 100];
-const STAT_NAME = {atk:"Attack", def:"Defense", spa:"Sp. Atk", spd:"Sp. Def", spe:"Speed"};
-const stageMul = s => s >= 0 ? (2 + s)/2 : 2/(2 - s);
-const SETUP = {"Swords Dance":{atk:2}, "Nasty Plot":{spa:2}, "Dragon Dance":{atk:1, spe:1}, "Calm Mind":{spa:1, spd:1}, "Bulk Up":{atk:1, def:1}, "Quiver Dance":{spa:1, spd:1, spe:1}, "Iron Defense":{def:2}, "Agility":{spe:2}, "Rock Polish":{spe:2}, "Shell Smash":{atk:2, spa:2, spe:2, def:-1, spd:-1}, "Coil":{atk:1, def:1}, "Cosmic Power":{def:1, spd:1}, "Amnesia":{spd:2}, "Acid Armor":{def:2}, "Barrier":{def:2}, "Work Up":{atk:1, spa:1}, "Growth":{atk:1, spa:1}, "Howl":{atk:1}, "Meditate":{atk:1}, "Sharpen":{atk:1}, "Harden":{def:1}, "Withdraw":{def:1}, "Defense Curl":{def:1}, "Tail Glow":{spa:3}, "Victory Dance":{atk:1, def:1, spe:1}, "Tidy Up":{atk:1, spe:1}, "Shift Gear":{atk:1, spe:2}, "Belly Drum":{atk:6, cost:.5}, "Curse":{atk:1, def:1, spe:-1}, "Hone Claws":{atk:1}, "No Retreat":{atk:1, def:1, spa:1, spd:1, spe:1}, "Clangorous Soul":{atk:1, def:1, spa:1, spd:1, spe:1, cost:.33}, "Geomancy":{spa:2, spd:2, spe:2}, "Autotomize":{spe:2}, "Stockpile":{def:1, spd:1}, "Fillet Away":{atk:2, spa:2, spe:2, cost:.5}};
-const HEAL = {"Recover":.5, "Roost":.5, "Soft-Boiled":.5, "Slack Off":.5, "Milk Drink":.5, "Synthesis":.5, "Moonlight":.5, "Morning Sun":.5, "Heal Order":.5, "Shore Up":.5, "Rest":1, "Jungle Healing":.25, "Lunar Blessing":.25, "Life Dew":.25, "Wish":.5};
-const FOE_DROP = {"Growl":{atk:-1}, "Leer":{def:-1}, "Tail Whip":{def:-1}, "Screech":{def:-2}, "Charm":{atk:-2}, "Feather Dance":{atk:-2}, "Metal Sound":{spd:-2}, "Fake Tears":{spd:-2}, "Scary Face":{spe:-2}, "String Shot":{spe:-2}, "Cotton Spore":{spe:-2}, "Eerie Impulse":{spa:-2}, "Noble Roar":{atk:-1, spa:-1}, "Tickle":{atk:-1, def:-1}, "Confide":{spa:-1}, "Baby-Doll Eyes":{atk:-1}, "Play Nice":{atk:-1}};
-const SELF_DROP = {"Close Combat":{def:-1, spd:-1}, "Superpower":{atk:-1, def:-1}, "Draco Meteor":{spa:-2}, "Overheat":{spa:-2}, "Leaf Storm":{spa:-2}, "Fleur Cannon":{spa:-2}, "Psycho Boost":{spa:-2}, "Make It Rain":{spa:-1}, "Armor Cannon":{def:-1, spd:-1}, "Headlong Rush":{def:-1, spd:-1}, "Dragon Ascent":{def:-1, spd:-1}, "V-create":{def:-1, spd:-1, spe:-1}, "Hammer Arm":{spe:-1}, "Ice Hammer":{spe:-1}, "Spin Out":{spe:-2}};
-const SELF_BOOST = {"Power-Up Punch":{atk:1}, "Flame Charge":{spe:1}, "Trailblaze":{spe:1}, "Aqua Step":{spe:1}, "Rapid Spin":{spe:1}, "Torch Song":{spa:1}, "Esper Wing":{spe:1}, "Charge Beam":{spa:1}};
-const RECOIL = {"Brave Bird":1/3, "Flare Blitz":1/3, "Double-Edge":1/3, "Wood Hammer":1/3, "Head Smash":1/2, "Wild Charge":1/4, "Volt Tackle":1/3, "Take Down":1/4, "Head Charge":1/4, "Wave Crash":1/3, "Submission":1/4, "Light of Ruin":1/2};
-const DRAIN = {"Giga Drain":.5, "Drain Punch":.5, "Horn Leech":.5, "Draining Kiss":.75, "Leech Life":.5, "Parabolic Charge":.5, "Oblivion Wing":.75, "Absorb":.5, "Mega Drain":.5, "Bitter Blade":.5, "Matcha Gotcha":.5};
-const PRIO = {"Quick Attack":1, "Extreme Speed":2, "Aqua Jet":1, "Mach Punch":1, "Bullet Punch":1, "Ice Shard":1, "Shadow Sneak":1, "Vacuum Wave":1, "Accelerock":1, "Jet Punch":1, "Water Shuriken":1};
-const MULTI = {"Bullet Seed":3, "Rock Blast":3, "Icicle Spear":3, "Pin Missile":3, "Arm Thrust":3, "Tail Slap":3, "Scale Shot":3, "Water Shuriken":3, "Double Kick":2, "Dual Wingbeat":2, "Bonemerang":2, "Dragon Darts":2, "Double Hit":2, "Dual Chop":2, "Gear Grind":2, "Twineedle":2, "Surging Strikes":3, "Bone Rush":3, "Fury Attack":3, "Barrage":3, "Comet Punch":3, "Double Slap":3, "Fury Swipes":3, "Spike Cannon":3, "Triple Dive":3, "Tachyon Cutter":2, "Twin Beam":2, "Population Bomb":6, "Triple Axel":6};
-const AVOID = new Set(["Hyper Beam","Giga Impact","Solar Beam","Solar Blade","Sky Attack","Explosion","Self-Destruct","Misty Explosion","Focus Punch","Dream Eater","Last Resort","Synchronoise","Belch","Steel Beam","Mind Blown","Prismatic Laser","Eternabeam","Meteor Assault","Shell Trap","Burn Up","Future Sight","Doom Desire","Sucker Punch","Fake Out","First Impression","Skull Bash","Razor Wind","Freeze Shock","Ice Burn","Bounce","Fly","Dig","Dive","Phantom Force","Shadow Force","Sky Drop","Rollout","Ice Ball","Fling","Natural Gift","Spit Up","Snore","Hyperspace Fury","Dynamax Cannon","Behemoth Blade","Behemoth Bash","Hold Back","False Swipe","Feint","Uproar","Gigaton Hammer","Blood Moon","Steel Roller","Meteor Beam","Electro Shot","Head Smash","Outrage","Petal Dance","Thrash","Raging Fury","Last Respects","Rage Fist","Focus Blast","Zap Cannon","Inferno","Dynamic Punch","Thunder","Hurricane","Blizzard","Fire Blast","Stone Edge","Megahorn","Hydro Pump","Seismic Toss","Night Shade","Super Fang","Endeavor","Final Gambit","Dragon Rage","Sonic Boom","Psywave","Counter","Mirror Coat","Metal Burst","Bide","Retaliate","Echoed Voice","Round","Fusion Bolt","Fusion Flare","Belly Drum","Clangorous Soul"]);
-const PUNCH = /Punch/, BITE = /Fang|Bite|Crunch|Jaw/, SLICE = /Slash|Cutter|Blade|Cut|Razor|Sacred Sword|Leaf Blade|X-Scissor|Night Slash|Psycho Cut|Aerial Ace|Stone Axe|Ceaseless Edge|Kowtow Cleave|Bitter Blade|Aqua Cutter|Population Bomb|Solar Blade/;
-const TYPE_ITEM = {}, RESIST_BERRY = {};
-for (const [nm, ds] of ITEMS) { let m = ds.match(/^Holder's (\w+)-type attacks have 1\.2x power/); if (m) TYPE_ITEM[nm] = m[1]; m = ds.match(/Halves damage taken from a supereffective (\w+)-type attack/); if (m) RESIST_BERRY[nm] = m[1]; }
-const ABIL_OK = new Set(["Intimidate","Levitate","Flash Fire","Water Absorb","Storm Drain","Dry Skin","Volt Absorb","Lightning Rod","Motor Drive","Sap Sipper","Earth Eater","Well-Baked Body","Blaze","Torrent","Overgrow","Swarm","Huge Power","Pure Power","Adaptability","Technician","Thick Fat","Multiscale","Shadow Shield","Sturdy","Speed Boost","Moxie","Tough Claws","Sheer Force","Hustle","Filter","Solid Rock","Prism Armor","Wonder Guard","Tinted Lens","Pixilate","Aerilate","Refrigerate","Galvanize","Protean","Libero","Drought","Drizzle","Sand Stream","Snow Warning","Chlorophyll","Swift Swim","Sand Rush","Slush Rush","Regenerator","Magic Guard","Rock Head","Iron Fist","Strong Jaw","Sharpness","Fur Coat","Intrepid Sword","Dauntless Shield","Download","Beast Boost","Ice Scales","Fluffy","Punk Rock","Purifying Salt","Heatproof","Water Bubble","Steelworker","Dragon's Maw","Transistor","Rocky Payload","Orichalcum Pulse","Hadron Engine","Dragonize","Guts","Limber","Insomnia","Vital Spirit","Immunity","Water Veil","Magma Armor","Static","Flame Body","Poison Point","Effect Spore","Early Bird","Natural Cure","Marvel Scale","Quick Feet","Shield Dust","Serene Grace","Poison Heal","Comatose"]);
-const ABSORB = {"Levitate":["Ground"], "Flash Fire":["Fire","boost"], "Water Absorb":["Water","heal"], "Storm Drain":["Water","spa"], "Dry Skin":["Water","heal"], "Volt Absorb":["Electric","heal"], "Lightning Rod":["Electric","spa"], "Motor Drive":["Electric","spe"], "Sap Sipper":["Grass","atk"], "Earth Eater":["Ground","heal"], "Well-Baked Body":["Fire","def2"]};
-const SKIN = {"Pixilate":"Fairy", "Aerilate":"Flying", "Refrigerate":"Ice", "Galvanize":"Electric", "Dragonize":"Dragon"};
-const PINCH = {"Blaze":"Fire", "Torrent":"Water", "Overgrow":"Grass", "Swarm":"Bug"};
-const TYPE_PLUS = {"Steelworker":"Steel", "Dragon's Maw":"Dragon", "Transistor":"Electric", "Rocky Payload":"Rock"};
-const WEATHER_ABIL = {"Drought":"sun", "Drizzle":"rain", "Sand Stream":"sand", "Snow Warning":"snow", "Orichalcum Pulse":"sun"};
-const WEATHER_TXT = {sun:["The sunlight turned harsh!", "The harsh sunlight faded."], rain:["It started to rain!", "The rain stopped."], sand:["A sandstorm kicked up!", "The sandstorm subsided."], snow:["It started to snow!", "The snow stopped."]};
-// ---- status conditions ----
-const ST_TAG = {brn:"BRN", par:"PAR", psn:"PSN", tox:"PSN", slp:"SLP", frz:"FRZ"};
-const ST_GOT = {brn:"was burned!", par:"is paralyzed! It may be unable to move!", psn:"was poisoned!", tox:"was badly poisoned!", slp:"fell asleep!", frz:"was frozen solid!"};
-const ST_HINT = {brn:"Burns", par:"Paralyzes", psn:"Poisons", tox:"Badly poisons", slp:"Puts to sleep", frz:"Freezes", tri:"May burn, paralyze or freeze"};
-const ST_IMMUNE_TYPE = {brn:["Fire"], par:["Electric"], psn:["Poison","Steel"], tox:["Poison","Steel"], frz:["Ice"], slp:[]};
-const ST_IMMUNE_ABIL = {brn:["Water Veil"], par:["Limber"], psn:["Immunity"], tox:["Immunity"], frz:["Magma Armor"], slp:["Insomnia","Vital Spirit"]};
-const ST_CURE = {"Lum Berry":"all", "Cheri Berry":"par", "Chesto Berry":"slp", "Rawst Berry":"brn", "Pecha Berry":"psn", "Aspear Berry":"frz"};
-const POWDER = new Set(["Spore","Sleep Powder","Stun Spore","Poison Powder"]);
-const THAW = new Set(["Flame Wheel","Sacred Fire","Flare Blitz","Scald","Steam Eruption","Fusion Flare","Pyro Ball","Burn Up","Scorching Sands","Matcha Gotcha"]);
-const defaultAbility = n => { const l = abilitiesOf(n); return l.find(a => ABIL_OK.has(a)) || l[0] || ""; };
-
-function autoMoves(n, types, setup = true){
-  const m = NAT_BY.get(n), phys = m.stats[1] >= m.stats[3];
-  let ls = learnset(n).filter(mv => mv[3] > 0 && mv[3] <= 130 && !AVOID.has(mv[0]));
-  if (!ls.length) ls = MOVES.filter(mv => types.includes(mv[1]) && mv[3] >= 60 && mv[3] <= 90 && !AVOID.has(mv[0]));
-  const score = mv => mv[3]*(MULTI[mv[0]] || 1)*(mv[4] > 0 ? mv[4] : 100)/100*(types.includes(mv[1]) ? 1.5 : 1)*((mv[2] === "P") === phys ? 1.2 : .75);
-  const out = [], seen = new Set();
-  for (const mv of [...ls].sort((a, b) => score(b) - score(a))) { if (seen.has(mv[1])) continue; seen.add(mv[1]); out.push(mv); if (out.length === 4) break; }
-  if (setup && out.length >= 3) {
-    const want = phys ? ["Swords Dance","Dragon Dance","Bulk Up","Shell Smash"] : ["Nasty Plot","Quiver Dance","Calm Mind","Shell Smash"];
-    const can = new Set(learnset(n).map(x => x[0])), pick = want.find(w => can.has(w));
-    if (pick && Math.random() < .5) out[3] = MOVE_BY.get(pick);
-    else if (Math.random() < .3) {
-      const st = ["Spore","Will-O-Wisp","Thunder Wave","Toxic","Sleep Powder","Glare","Hypnosis","Stun Spore"].find(w => can.has(w));
-      if (st) out[3] = MOVE_BY.get(st);
-    }
-  }
-  return out.length ? out : [["Tackle","Normal","P",40,100]];
-}
-function mkMon(n, o = {}){
-  const m = NAT_BY.get(n), s = m.stats, L = o.level || 50;
-  const st = i => Math.floor((2*s[i] + 31 + 21)*L/100) + 5, hp = Math.floor((2*s[0] + 31 + 21)*L/100) + L + 10;
-  const moves = (o.moves || []).filter(Boolean);
-  return {n, name:o.nick || m.name, species:m.name, types:[...m.types], level:L, hp, max:hp, base:{atk:st(1), def:st(2), spa:st(3), spd:st(4), spe:st(5)},
-    stages:{atk:0, def:0, spa:0, spd:0, spe:0}, moves:(moves.length ? moves : autoMoves(n, m.types, o.setup !== false)).slice(0, 4),
-    ability:o.ability || defaultAbility(n), item:o.item || "", sh:!!o.sh, ball:o.ball || "poke", fe:isFE(n), flags:{}, status:null, sleep:0, toxN:0};
-}
-const monFromTeam = (id, n, level = 50) => { const M = memberOf(id, n); return mkMon(n, {level, nick:M.nick, moves:movesOf(id, n), ability:M.ability, item:M.item, sh:isShinyMember(id, n) || state.shiny, ball:ballOf(id, n)}); };
-
-class Battle {
-  constructor(sides){ this.s = sides.map(x => ({...x, act:0})); this.weather = null; this.wTurns = 0; this.turnNo = 0; this.over = false; this.winner = -1; this.need = [null, null]; }
-  get(i){ return this.s[i].party[this.s[i].act]; }
-  aliveIdx(i){ return this.s[i].party.map((m, k) => m.hp > 0 ? k : -1).filter(k => k >= 0); }
-  who(i, m){ return (this.s[i].foePrefix || "") + m.name; }
-  start(){ const ev = []; this.enter(1, ev); this.enter(0, ev); return ev; }
-  enter(i, ev){
-    const m = this.get(i); m.stages = {atk:0, def:0, spa:0, spd:0, spe:0}; m.locked = null; m.flags.flash = false; m.toxN = 0;
-    ev.push({k:"send", side:i, idx:this.s[i].act, n:m.n, sh:m.sh, name:m.name, hp:m.hp, max:m.max, st:m.status});
-    const foe = this.get(1 - i), A = m.ability;
-    if (A === "Intimidate" && foe && foe.hp > 0) this.boost(1 - i, {atk:-1}, ev, `${this.who(i, m)}’s Intimidate`);
-    if (A === "Intrepid Sword") this.boost(i, {atk:1}, ev, `${this.who(i, m)}’s Intrepid Sword`);
-    if (A === "Dauntless Shield") this.boost(i, {def:1}, ev, `${this.who(i, m)}’s Dauntless Shield`);
-    if (A === "Download" && foe && foe.hp > 0) this.boost(i, foe.base.def < foe.base.spd ? {atk:1} : {spa:1}, ev, `${this.who(i, m)}’s Download`);
-    if (WEATHER_ABIL[A] && this.weather !== WEATHER_ABIL[A]) { this.weather = WEATHER_ABIL[A]; this.wTurns = 5; ev.push({k:"msg", t:WEATHER_TXT[this.weather][0], w:this.weather}); }
-  }
-  boost(i, ch, ev, src){
-    const m = this.get(i); if (!m || m.hp <= 0) return;
-    for (const [k, v] of Object.entries(ch)) {
-      if (!STAT_NAME[k]) continue;
-      const before = m.stages[k]; m.stages[k] = Math.max(-6, Math.min(6, before + v)); const d = m.stages[k] - before;
-      const who = this.who(i, m);
-      const t = d === 0 ? `${who}’s ${STAT_NAME[k]} won’t go any ${v > 0 ? "higher" : "lower"}!`
-        : src ? `${src} ${d > 0 ? "raised" : "lowered"} ${who}’s ${STAT_NAME[k]}!`
-        : `${who}’s ${STAT_NAME[k]} ${d > 0 ? "rose" : "fell"}${Math.abs(d) >= 2 ? (d > 0 ? " sharply" : " harshly") : ""}!`;
-      ev.push({k:"msg", t, stat: d ? {side:i, up:d > 0} : null});
-    }
-  }
-  heal(i, amt, ev, why){
-    const m = this.get(i); if (m.hp <= 0 || m.hp >= m.max) return;
-    m.hp = Math.min(m.max, m.hp + Math.max(1, Math.floor(amt))); ev.push({k:"hp", side:i, hp:m.hp, max:m.max, heal:true});
-    if (why) ev.push({k:"msg", t:why});
-  }
-  hurt(i, amt, ev, why){
-    const m = this.get(i); if (m.hp <= 0) return;
-    m.hp = Math.max(0, m.hp - Math.max(1, Math.floor(amt))); ev.push({k:"hp", side:i, hp:m.hp, max:m.max});
-    if (why) ev.push({k:"msg", t:why});
-    if (m.hp <= 0) this.faint(i, ev);
-  }
-  faint(i, ev){ const m = this.get(i); ev.push({k:"faint", side:i, idx:this.s[i].act, t:`${this.who(i, m)} fainted!`}); }
-  canStatus(m, st){
-    if (!m || m.hp <= 0 || m.status || m.ability === "Comatose") return false;
-    if (m.types.some(t => (ST_IMMUNE_TYPE[st] || []).includes(t)) || (ST_IMMUNE_ABIL[st] || []).includes(m.ability)) return false;
-    if (st === "frz" && this.weather === "sun") return false;
-    return true;
-  }
-  setStatus(i, st, ev){
-    const m = this.get(i); if (st === "tri") st = ["brn", "par", "frz"][Math.floor(Math.random()*3)];
-    if (!this.canStatus(m, st)) return false;
-    m.status = st; m.toxN = 0; if (st === "slp") m.sleep = 1 + Math.floor(Math.random()*3);
-    ev.push({k:"st", side:i, st}); ev.push({k:"msg", t:`${this.who(i, m)} ${ST_GOT[st]}`});
-    this.berryCure(i, ev);
-    return true;
-  }
-  cure(i, ev, why){ const m = this.get(i); if (!m.status) return; const was = m.status; m.status = null; m.sleep = 0; m.toxN = 0; ev.push({k:"st", side:i, st:null}); if (why) ev.push({k:"msg", t:why}); else ev.push({k:"msg", t:`${this.who(i, m)} ${was === "slp" ? "woke up!" : was === "frz" ? "thawed out!" : "was cured of its " + {brn:"burn", par:"paralysis", psn:"poisoning", tox:"poisoning"}[was] + "!"}`}); }
-  berryCure(i, ev){ const m = this.get(i), c = ST_CURE[m.item]; if (!m.status || !c || (c !== "all" && c !== m.status && !(c === "psn" && m.status === "tox"))) return; const it = m.item; m.item = ""; this.cure(i, ev, `${this.who(i, m)}’s ${it} cured its status!`); }
-  speed(m){
-    let v = m.base.spe*stageMul(m.stages.spe);
-    if (m.item === "Choice Scarf") v *= 1.5;
-    if (m.status === "par" && m.ability !== "Quick Feet") v *= .5;
-    if (m.status && m.ability === "Quick Feet") v *= 1.5;
-    const w = this.weather, A = m.ability;
-    if ((A === "Chlorophyll" && w === "sun") || (A === "Swift Swim" && w === "rain") || (A === "Sand Rush" && w === "sand") || (A === "Slush Rush" && w === "snow")) v *= 2;
-    return v;
-  }
-  moveType(a, mv){ return SKIN[a.ability] && mv[1] === "Normal" ? SKIN[a.ability] : mv[1]; }
-  // damage calc; est = expected value without randomness
-  calc(a, d, mv, est){
-    const L = a.level;
-    if (FIXED_DMG.has(mv[0]) || (!mv[3] && mv !== STRUGGLE)) {
-      const t = mv[1], e = effOf(t, d.types);
-      if (e === 0 && ["Seismic Toss","Night Shade","Super Fang"].includes(mv[0])) return {dmg:0, eff:0};
-      const dmg = mv[0] === "Seismic Toss" || mv[0] === "Night Shade" ? L : mv[0] === "Super Fang" || mv[0] === "Ruination" || mv[0] === "Nature's Madness" ? Math.floor(d.hp/2) : mv[0] === "Dragon Rage" ? 40 : mv[0] === "Sonic Boom" ? 20 : 40;
-      return {dmg:Math.max(1, dmg), eff:1, fixed:true};
-    }
-    const type = mv === STRUGGLE ? "???" : this.moveType(a, mv);
-    let e = mv === STRUGGLE ? 1 : effOf(type, d.types);
-    const ab = ABSORB[d.ability];
-    if (ab && ab[0] === type) return {dmg:0, eff:0, absorbed:ab};
-    if (d.ability === "Wonder Guard" && e < 2) return {dmg:0, eff:0, wonder:true};
-    if (e === 0) return {dmg:0, eff:0};
-    const phys = mv[2] === "P";
-    let P = mv[3]*(MULTI[mv[0]] || 1);
-    if (a.ability === "Technician" && mv[3] <= 60) P *= 1.5;
-    if (TYPE_ITEM[a.item] === type) P *= 1.2;
-    if (a.item === "Muscle Band" && phys) P *= 1.1;
-    if (a.item === "Wise Glasses" && !phys) P *= 1.1;
-    if (a.ability === "Tough Claws" && phys) P *= 1.3;
-    if (a.ability === "Sheer Force") P *= 1.2;
-    if (a.ability === "Iron Fist" && PUNCH.test(mv[0])) P *= 1.2;
-    if (a.ability === "Strong Jaw" && BITE.test(mv[0])) P *= 1.5;
-    if (a.ability === "Sharpness" && SLICE.test(mv[0])) P *= 1.5;
-    if (SKIN[a.ability] && mv[1] === "Normal") P *= 1.2;
-    if (TYPE_PLUS[a.ability] === type) P *= 1.5;
-    if (PINCH[a.ability] === type && a.hp <= a.max/3) P *= 1.5;
-    if (a.flags.flash && type === "Fire") P *= 1.5;
-    if (a.ability === "Punk Rock" && /Voice|Boom|Hyper Voice|Bug Buzz|Snarl|Overdrive|Clanging|Sparkling|Torch Song|Alluring/.test(mv[0])) P *= 1.3;
-    if (a.ability === "Water Bubble" && type === "Water") P *= 2;
-    if (a.ability === "Orichalcum Pulse" && phys && this.weather === "sun") P *= 1.33;
-    if (a.ability === "Hadron Engine" && !phys) P *= 1.33;
-    let A = phys ? a.base.atk : a.base.spa, D = phys ? d.base.def : d.base.spd;
-    const crit = !est && Math.random() < 1/24;
-    const sa = phys ? a.stages.atk : a.stages.spa, sd = phys ? d.stages.def : d.stages.spd;
-    A *= crit ? Math.max(1, stageMul(sa)) : stageMul(sa); D *= crit ? Math.min(1, stageMul(sd)) : stageMul(sd);
-    if (phys && (a.ability === "Huge Power" || a.ability === "Pure Power")) A *= 2;
-    if (phys && a.ability === "Hustle") A *= 1.5;
-    if (phys && a.status && a.ability === "Guts") A *= 1.5;
-    if (phys && d.status && d.ability === "Marvel Scale") D *= 1.5;
-    if (phys && a.item === "Choice Band") A *= 1.5;
-    if (!phys && a.item === "Choice Specs") A *= 1.5;
-    if (!phys && d.item === "Assault Vest") D *= 1.5;
-    if (d.item === "Eviolite" && !d.fe) D *= 1.5;
-    if (phys && d.ability === "Fur Coat") D *= 2;
-    if (!phys && d.ability === "Ice Scales") D *= 2;
-    if (!phys && this.weather === "sand" && d.types.includes("Rock")) D *= 1.5;
-    if (phys && this.weather === "snow" && d.types.includes("Ice")) D *= 1.5;
-    let dmg = Math.floor(Math.floor((2*L/5 + 2)*P*A/Math.max(1, D))/50) + 2;
-    if (this.weather === "sun") dmg *= type === "Fire" ? 1.5 : type === "Water" ? .5 : 1;
-    if (this.weather === "rain") dmg *= type === "Water" ? 1.5 : type === "Fire" ? .5 : 1;
-    if (crit) dmg *= 1.5;
-    if (phys && a.status === "brn" && a.ability !== "Guts" && mv[0] !== "Facade") dmg *= .5;
-    if (mv[0] === "Facade" && a.status) dmg *= 2;
-    dmg *= est ? .925 : .85 + Math.random()*.15;
-    const stab = a.ability === "Protean" || a.ability === "Libero" || a.types.includes(type);
-    if (stab) dmg *= a.ability === "Adaptability" ? 2 : 1.5;
-    dmg *= e;
-    if (a.ability === "Tinted Lens" && e < 1) dmg *= 2;
-    if (["Filter","Solid Rock","Prism Armor"].includes(d.ability) && e > 1) dmg *= .75;
-    if (a.item === "Expert Belt" && e > 1) dmg *= 1.2;
-    if (a.item === "Life Orb") dmg *= 1.3;
-    if (d.ability === "Thick Fat" && (type === "Fire" || type === "Ice")) dmg *= .5;
-    if (d.ability === "Heatproof" && type === "Fire") dmg *= .5;
-    if (d.ability === "Water Bubble" && type === "Fire") dmg *= .5;
-    if (d.ability === "Purifying Salt" && type === "Ghost") dmg *= .5;
-    if (d.ability === "Fluffy" && phys) dmg *= .5;
-    if (d.ability === "Fluffy" && type === "Fire") dmg *= 2;
-    if ((d.ability === "Multiscale" || d.ability === "Shadow Shield") && d.hp === d.max) dmg *= .5;
-    let berry = false;
-    if (RESIST_BERRY[d.item] === type && e > 1 && !d.flags.berry) { dmg *= .5; berry = true; }
-    return {dmg:Math.max(1, Math.floor(dmg)), eff:e, crit, berry, type};
-  }
-  score(i, j){
-    const me = this.get(i), foe = this.get(1 - i), mv = me.moves[j];
-    if (!mv) return -1;
-    if (me.locked !== null && me.locked !== undefined && me.locked !== j) return -1;
-    if (me.item === "Assault Vest" && !isDmg(mv)) return -1;
-    if (isDmg(mv)) { const r = this.calc(me, foe, mv, true), pct = r.dmg/Math.max(1, foe.hp), acc = (mv[4] > 0 ? mv[4] : 100)/100; return (Math.min(pct, 1)*100 + (pct >= 1 ? 60 : 0))*acc + (PRIO[mv[0]] && pct >= 1 ? 40 : 0); }
-    const best = Math.max(0, ...me.moves.filter(isDmg).map(x => this.calc(me, foe, x, true).dmg/Math.max(1, foe.hp)));
-    if (SETUP[mv[0]]) { const top = Math.max(me.stages.atk, me.stages.spa); return me.hp/me.max >= .7 && top < 2 && best < .55 ? 70 : 2; }
-    if (HEAL[mv[0]]) return me.hp/me.max < .45 && best < 1 ? 85 : 1;
-    if (FOE_DROP[mv[0]]) return best < .3 ? 20 : 1;
-    const fx = STATUS_FX[mv[0]];
-    if (fx) {
-      if (!this.canStatus(foe, fx[0]) || (mv[1] === "Electric" && effOf("Electric", foe.types) === 0) || (POWDER.has(mv[0]) && foe.types.includes("Grass")) || best >= 1) return 1;
-      const v = {slp:75, par:this.speed(foe) > this.speed(me) ? 60 : 35, brn:foe.base.atk > foe.base.spa ? 62 : 30, tox:48, psn:35, frz:40}[fx[0]] || 30;
-      return foe.hp/foe.max > .5 ? v : v*.5;
-    }
-    return 0;
-  }
-  ai(i){
-    const me = this.get(i), opts = me.moves.map((mv, j) => [j, this.score(i, j)]).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
-    if (!opts.length || opts[0][1] <= 0) return {move:-1};
-    return {move: opts.length > 1 && opts[1][1] > 0 && Math.random() < .1 ? opts[1][0] : opts[0][0]};
-  }
-  aiReplace(i){
-    const foe = this.get(1 - i), alive = this.aliveIdx(i);
-    let best = alive[0], bv = -1e9;
-    for (const k of alive) { const m = this.s[i].party[k]; const v = Math.max(...m.moves.filter(isDmg).map(mv => effOf(mv[1], foe ? foe.types : [])), 0) - Math.max(...(foe ? foe.types : []).map(t => effOf(t, m.types)), 0)*.6 + Math.random()*.3; if (v > bv) { bv = v; best = k; } }
-    return best;
-  }
-  // choices: [{move:j} | {sw:k}, ...]
-  turn(ch){
-    if (this.over) return [];
-    const ev = []; this.turnNo++;
-    for (const i of [0, 1]) if (ch[i] && ch[i].sw !== undefined) {
-      const out = this.get(i);
-      if (out.ability === "Regenerator" && out.hp > 0) out.hp = Math.min(out.max, out.hp + Math.floor(out.max/3));
-      if (out.ability === "Natural Cure" && out.status) { out.status = null; out.sleep = 0; }
-      ev.push({k:"recall", side:i, t:`${this.s[i].human === false ? this.s[i].name + " withdrew " + out.name : "Come back, " + out.name}!`});
-      this.s[i].act = ch[i].sw; this.enter(i, ev);
-    }
-    const movers = [0, 1].filter(i => ch[i] && ch[i].move !== undefined);
-    const pr = i => { const mv = this.get(i).moves[ch[i].move]; return mv ? (PRIO[mv[0]] || 0) : 0; };
-    movers.sort((x, y) => pr(y) - pr(x) || this.speed(this.get(y)) - this.speed(this.get(x)) || (Math.random() - .5));
-    for (const i of movers) { if (this.over) break; if (this.get(i).hp > 0 && this.get(1 - i).hp > 0) this.act(i, ch[i].move, ev); }
-    if (!this.over) this.endTurn(ev);
-    this.check(ev);
-    return ev;
-  }
-  act(i, j, ev){
-    const me = this.get(i), foe = this.get(1 - i);
-    let mv = j >= 0 ? me.moves[j] : STRUGGLE;
-    if (!mv) mv = STRUGGLE;
-    if (me.status === "frz") {
-      if (THAW.has(mv[0]) || Math.random() < .2) this.cure(i, ev);
-      else { ev.push({k:"msg", t:`${this.who(i, me)} is frozen solid!`}); return; }
-    }
-    if (me.status === "slp") {
-      me.sleep -= me.ability === "Early Bird" ? 2 : 1;
-      if (me.sleep > 0) { ev.push({k:"msg", t:`${this.who(i, me)} is fast asleep.`}); return; }
-      this.cure(i, ev);
-    }
-    if (me.status === "par" && Math.random() < .25) { ev.push({k:"msg", t:`${this.who(i, me)} is paralyzed! It can’t move!`}); return; }
-    if (me.item.startsWith("Choice") && isDmg(mv) && j >= 0) me.locked = j;
-    ev.push({k:"move", side:i, t:`${this.who(i, me)} used ${mv[0]}!`, type:mv[1]});
-    if (!isDmg(mv)) return this.statusMove(i, mv, ev);
-    let acc = mv[4] > 0 ? mv[4] : 100; if (me.ability === "Hustle" && mv[2] === "P") acc *= .8;
-    if (Math.random()*100 >= acc) { ev.push({k:"msg", t:`${this.who(i, me)}’s attack missed!`}); return; }
-    const r = this.calc(me, foe, mv, false), fw = this.who(1 - i, foe);
-    if (r.absorbed) { const [, how] = r.absorbed; ev.push({k:"msg", t:`${fw}’s ${foe.ability} absorbed the attack!`});
-      if (how === "heal") this.heal(1 - i, foe.max/4, ev); else if (how === "boost") foe.flags.flash = true; else if (how === "def2") this.boost(1 - i, {def:2}, ev); else if (how) this.boost(1 - i, {[how]:1}, ev); return; }
-    if (r.wonder) { ev.push({k:"msg", t:`${fw}’s Wonder Guard protected it!`}); return; }
-    if (r.eff === 0) { ev.push({k:"msg", t:`It doesn’t affect ${fw}…`}); return; }
-    let dmg = r.dmg; const fullHP = foe.hp === foe.max;
-    if (r.berry) { foe.flags.berry = true; const it = foe.item; foe.item = ""; ev.push({k:"msg", t:`${fw}’s ${it} weakened the damage!`}); }
-    let endured = null;
-    if (dmg >= foe.hp && fullHP && (foe.item === "Focus Sash" || foe.ability === "Sturdy") && !r.fixed) { dmg = foe.hp - 1; endured = foe.item === "Focus Sash" ? "Focus Sash" : "Sturdy"; if (endured === "Focus Sash") foe.item = ""; }
-    dmg = Math.min(dmg, foe.hp); foe.hp -= dmg;
-    ev.push({k:"hp", side:1 - i, hp:foe.hp, max:foe.max, hit:true, eff:r.eff});
-    if (r.crit) ev.push({k:"msg", t:"A critical hit!"});
-    if (r.eff >= 2) ev.push({k:"msg", t:"It’s super effective!", se:true}); else if (r.eff < 1) ev.push({k:"msg", t:"It’s not very effective…"});
-    if (MULTI[mv[0]] && MULTI[mv[0]] > 1) ev.push({k:"msg", t:`Hit ${mv[0] === "Population Bomb" ? 6 : MULTI[mv[0]] === 6 ? 3 : MULTI[mv[0]]} times!`});
-    if (endured) ev.push({k:"msg", t:`${fw} hung on using its ${endured}!`});
-    // after-hit effects
-    if (foe.hp > 0 && r.eff >= 2 && foe.item === "Weakness Policy") { foe.item = ""; this.boost(1 - i, {atk:2, spa:2}, ev, `${fw}’s Weakness Policy`); }
-    if (foe.hp > 0 && foe.hp <= foe.max/2 && foe.item === "Sitrus Berry") { foe.item = ""; this.heal(1 - i, foe.max/4, ev, `${fw} ate its Sitrus Berry!`); }
-    if (foe.hp > 0 && foe.hp <= foe.max/2 && foe.item === "Oran Berry") { foe.item = ""; this.heal(1 - i, 10, ev, `${fw} ate its Oran Berry!`); }
-    if (foe.hp > 0 && r.eff >= 2 && foe.item === "Enigma Berry") { foe.item = ""; this.heal(1 - i, foe.max/4, ev, `${fw} ate its Enigma Berry!`); }
-    if (foe.hp <= 0) this.faint(1 - i, ev);
-    const fx = STATUS_FX[mv[0]];
-    if (fx && foe.hp > 0 && me.ability !== "Sheer Force" && foe.ability !== "Shield Dust" && Math.random()*100 < fx[1]*(me.ability === "Serene Grace" ? 2 : 1)) this.setStatus(1 - i, fx[0], ev);
-    if (foe.hp > 0 && me.hp > 0 && mv[2] === "P" && !me.status && Math.random() < .3) { const c = {"Static":"par", "Flame Body":"brn", "Poison Point":"psn", "Effect Spore":["slp","par","psn"][Math.floor(Math.random()*3)]}[foe.ability]; if (c && this.canStatus(me, c)) { ev.push({k:"msg", t:`${fw}’s ${foe.ability}!`}); this.setStatus(i, c, ev); } }
-    const mg = me.ability === "Magic Guard";
-    if (DRAIN[mv[0]] && me.hp > 0) this.heal(i, dmg*DRAIN[mv[0]], ev, `${this.who(1 - i, foe)} had its energy drained!`);
-    if (RECOIL[mv[0]] && me.ability !== "Rock Head" && !mg) this.hurt(i, dmg*RECOIL[mv[0]], ev, `${this.who(i, me)} is damaged by recoil!`);
-    if (mv === STRUGGLE) this.hurt(i, me.max/4, ev, `${this.who(i, me)} is damaged by recoil!`);
-    if (me.hp > 0 && me.item === "Life Orb" && !mg) this.hurt(i, me.max/10, ev, `${this.who(i, me)} lost some of its HP!`);
-    if (me.hp > 0 && foe.item === "Rocky Helmet" && mv[2] === "P" && !mg) this.hurt(i, me.max/6, ev, `${this.who(i, me)} was hurt by the Rocky Helmet!`);
-    if (me.hp > 0 && SELF_DROP[mv[0]]) this.boost(i, SELF_DROP[mv[0]], ev);
-    if (me.hp > 0 && SELF_BOOST[mv[0]]) this.boost(i, SELF_BOOST[mv[0]], ev);
-    if (me.hp > 0 && foe.hp <= 0 && me.ability === "Moxie") this.boost(i, {atk:1}, ev, `${this.who(i, me)}’s Moxie`);
-    if (me.hp > 0 && foe.hp <= 0 && me.ability === "Beast Boost") { const k = Object.keys(me.base).reduce((x, y) => me.base[y] > me.base[x] ? y : x); this.boost(i, {[k]:1}, ev, `${this.who(i, me)}’s Beast Boost`); }
-  }
-  statusMove(i, mv, ev){
-    const me = this.get(i), nm = mv[0], fx = STATUS_FX[nm];
-    if (fx) {
-      const foe = this.get(1 - i), fw = this.who(1 - i, foe);
-      if (mv[1] === "Electric" && effOf("Electric", foe.types) === 0) { ev.push({k:"msg", t:`It doesn’t affect ${fw}…`}); return; }
-      if (POWDER.has(nm) && foe.types.includes("Grass")) { ev.push({k:"msg", t:`It doesn’t affect ${fw}…`}); return; }
-      const acc = nm === "Toxic" && me.types.includes("Poison") ? 100 : mv[4] > 0 ? mv[4] : 100;
-      if (Math.random()*100 >= acc) { ev.push({k:"msg", t:`${this.who(i, me)}’s attack missed!`}); return; }
-      if (!this.setStatus(1 - i, fx[0], ev)) ev.push({k:"msg", t:"But it failed!"});
-      return;
-    }
-    if (SETUP[nm]) { const s = {...SETUP[nm]}; if (s.cost) { if (me.hp <= me.max*s.cost) { ev.push({k:"msg", t:"But it failed!"}); return; } this.hurt(i, me.max*s.cost, ev); delete s.cost; } this.boost(i, s, ev); return; }
-    if (HEAL[nm]) { if (me.hp >= me.max) { ev.push({k:"msg", t:`${this.who(i, me)}’s HP is full!`}); return; } this.heal(i, me.max*HEAL[nm], ev, `${this.who(i, me)} restored its HP.`); return; }
-    if (FOE_DROP[nm]) { this.boost(1 - i, FOE_DROP[nm], ev); return; }
-    if (nm === "Sunny Day" || nm === "Rain Dance" || nm === "Sandstorm" || nm === "Snowscape" || nm === "Hail") { const w = {"Sunny Day":"sun", "Rain Dance":"rain", "Sandstorm":"sand", "Snowscape":"snow", "Hail":"snow"}[nm]; this.weather = w; this.wTurns = 5; ev.push({k:"msg", t:WEATHER_TXT[w][0], w}); return; }
-    ev.push({k:"msg", t:"But nothing happened! (That move has no effect in quick battles.)"});
-  }
-  endTurn(ev){
-    if (this.weather) {
-      if (this.weather === "sand") for (const i of [0, 1]) { const m = this.get(i); if (m.hp > 0 && !m.types.some(t => ["Rock","Ground","Steel"].includes(t)) && m.ability !== "Magic Guard" && m.ability !== "Sand Rush") this.hurt(i, m.max/16, ev, `${this.who(i, m)} is buffeted by the sandstorm!`); }
-      if (--this.wTurns <= 0) { ev.push({k:"msg", t:WEATHER_TXT[this.weather][1], w:null}); this.weather = null; }
-    }
-    for (const i of [0, 1]) {
-      const m = this.get(i); if (m.hp <= 0) continue;
-      if (m.item === "Leftovers" && m.hp < m.max) this.heal(i, m.max/16, ev, `${this.who(i, m)} restored a little HP using its Leftovers!`);
-      if (m.item === "Black Sludge") { if (m.types.includes("Poison")) { if (m.hp < m.max) this.heal(i, m.max/16, ev, `${this.who(i, m)} restored a little HP using its Black Sludge!`); } else this.hurt(i, m.max/8, ev, `${this.who(i, m)} is hurt by its Black Sludge!`); }
-      if (m.hp > 0 && m.ability === "Speed Boost") this.boost(i, {spe:1}, ev, `${this.who(i, m)}’s Speed Boost`);
-      if (m.hp > 0 && m.status && m.ability !== "Magic Guard") {
-        if (m.status === "brn") this.hurt(i, m.max/16, ev, `${this.who(i, m)} was hurt by its burn!`);
-        else if ((m.status === "psn" || m.status === "tox") && m.ability === "Poison Heal") this.heal(i, m.max/8, ev, `${this.who(i, m)} restored HP with Poison Heal!`);
-        else if (m.status === "psn") this.hurt(i, m.max/8, ev, `${this.who(i, m)} was hurt by poison!`);
-        else if (m.status === "tox") { m.toxN = Math.min(15, m.toxN + 1); this.hurt(i, m.max*m.toxN/16, ev, `${this.who(i, m)} was hurt by poison!`); }
-      }
-      if (m.hp > 0 && !m.status && (m.item === "Flame Orb" || m.item === "Toxic Orb")) this.setStatus(i, m.item === "Flame Orb" ? "brn" : "tox", ev);
-    }
-  }
-  check(ev){
-    for (const i of [0, 1]) if (!this.aliveIdx(i).length) { this.over = true; this.winner = 1 - i; ev.push({k:"end", winner:1 - i}); return; }
-    if (this.turnNo >= 250) { const left = i => this.s[i].party.reduce((s, m) => s + m.hp/m.max, 0); this.over = true; this.winner = left(0) >= left(1) ? 0 : 1; ev.push({k:"msg", t:"Both sides are exhausted. The judges decide!"}); ev.push({k:"end", winner:this.winner}); return; }
-    for (const i of [0, 1]) this.need[i] = this.get(i).hp <= 0 ? "switch" : null;
-  }
-  replace(i, k, ev = []){ this.s[i].act = k; this.need[i] = null; this.enter(i, ev); return ev; }
-  forfeit(i){ this.over = true; this.winner = 1 - i; return [{k:"msg", t:`${this.s[i].name} forfeited the match.`}, {k:"end", winner:1 - i}]; }
-}
+/*ENGINE*/
+const monFromTeam = (id, n, level = 50) => { const M = memberOf(id, n); return mkMon(n, {level, nick:M.nick, moves:movesOf(id, n), ability:M.ability, item:M.item, nature:M.nature, evs:M.evs, ivs:M.ivs, sh:isShinyMember(id, n) || state.shiny, ball:ballOf(id, n)}); };
 
 // ================= GYM CHALLENGE + LEAGUES =================
 // [leader, types, signature ace]; teams are built from the ace + same-type Pokémon from that era
@@ -5881,7 +5547,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated sprites from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via PokéAPI. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Item sprites via PokéAPI.</dd><dt>Pokémon data</dt><dd>Stats, moves, abilities, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (MIT).</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Smooth 3D sprites use the xBR scaling algorithm by Hyllian, adapted from <a href="https://github.com/joseprio/xBRjs" target="_blank" rel="noopener">xBRjs</a> (Josep del Rio, MIT).</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated sprites from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via PokéAPI. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Item sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Smooth 3D sprites use the xBR scaling algorithm by Hyllian, adapted from <a href="https://github.com/joseprio/xBRjs" target="_blank" rel="noopener">xBRjs</a> (Josep del Rio, MIT).</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {
@@ -6200,7 +5866,7 @@ function renderBattleScreen(){
       <button class="bm-card" type="button" data-bsub="vs">${ic("card")}<b>Versus</b><span>Battle another save file on this device. Pass the device and pick moves in secret.</span><span class="meta">${state.games.vs.w} wins · ${state.games.vs.l} losses</span></button>
     </div>
     <div class="set-row bm-style"><span>Battle style</span><div class="segrow" data-bmode><button type="button" data-v="manual" aria-pressed="${state.ui.bmode === "manual"}">You choose moves</button><button type="button" data-v="auto" aria-pressed="${state.ui.bmode === "auto"}">Auto battle</button></div></div>
-    <p class="note">Battles use level-based stats, your Pokémon’s moves, abilities and held items. Pokémon without moves use the strongest ones they can learn. Wins earn PokéPoints to spend in the Shop.</p>`;
+    <p class="note">Battles follow the main games’ rules: real stats (level, nature, EVs and IVs), damage, accuracy, PP, status, weather, terrain, abilities and held items. You bring a Bag of Potions, Revives and X items. Pokémon without moves use the strongest ones they can learn. Wins earn PokéPoints to spend in the Shop.</p>`;
     paintAll($("scBody"));
     nav.onClick = e => { const b = e.target.closest("[data-bsub]"); if (b) { Sound.play("select"); if (b.dataset.gregGo) gymRegion = +b.dataset.gregGo; openScreen("battle", b.dataset.bsub); return; } const m = e.target.closest("[data-bmode] [data-v]"); if (m) { state.ui.bmode = m.dataset.v; save(); Sound.play("select"); renderBattleScreen(); } };
     return;
@@ -6210,7 +5876,29 @@ function renderBattleScreen(){
   if (sub === "vs") return renderVersus();
 }
 const teamSelect = (id, sel, label = "Your team") => { const ts = nonEmptyTeams(); return `<label class="field">${label}<select class="select" id="${id}">${ts.map(t => `<option value="${t.id}" ${t.id === sel ? "selected" : ""}>${esc(t.dex)} · ${teamOf(t.id).length} Pokémon</option>`).join("")}</select></label>`; };
-const playerSide = (teamId, level = 50) => ({name: profile && !profile.guest ? profile.name : "You", party: teamOf(teamId).slice(0, MAX).map(n => monFromTeam(teamId, n, level)), human:true, foePrefix:""});
+const playerSide = (teamId, level = 50, bag = BAG.standard()) => ({name: profile && !profile.guest ? profile.name : "You", party: teamOf(teamId).slice(0, MAX).map(n => monFromTeam(teamId, n, level)), human:true, foePrefix:"", bag, ai:3});
+// trainers' Pokémon: smarter natures, items and EVs the further you go (ai: 1 early gyms … 4 Champions)
+const TYPE_BOOST = {}; for (const it of ITEMS) if (it[2] === "type" && ITEM_TYPE[it[0]] && !/Incense/.test(it[0]) && !TYPE_BOOST[ITEM_TYPE[it[0]]]) TYPE_BOOST[ITEM_TYPE[it[0]]] = it[0];
+function foeMon(n, o){
+  const R = rng(o.seed || n), sp = NAT_BY.get(n), st = sp.stats, phys = st[1] >= st[3], fast = st[5] >= 85, ai = o.ai || 2;
+  const nature = ai >= 3 ? (phys ? (fast ? "Jolly" : "Adamant") : (fast ? "Timid" : "Modest")) : ai >= 2 ? NATURE_NAMES[Math.floor(R()*25)] : "Hardy";
+  const evs = ai >= 4 ? {hp:84, atk:84, def:84, spa:84, spd:84, spe:84} : {};
+  const moves = autoMoves(n, sp.types, ai >= 2, R);
+  let item = "";
+  if (!isMega(n)) {
+    if (o.ace && ai <= 2) item = "Sitrus Berry";
+    else if (ai >= 3) {
+      const stab = sp.types.find(t => moves.some(mv => isDmg(mv) && mv[1] === t));
+      const pool = !isFE(n) ? ["Eviolite"] : ["Sitrus Berry", "Leftovers", stab && TYPE_BOOST[stab], "Expert Belt", ai >= 4 && "Life Orb", ai >= 4 && st[0] + st[2] + st[4] < 230 && "Focus Sash", ai >= 4 && moves.every(isDmg) && "Assault Vest"].filter(Boolean);
+      item = pool[Math.floor(R()*pool.length)];
+    }
+  }
+  return mkMon(n, {level:o.level, nature, evs, moves, item});
+}
+const foeSide = (name, nums, o) => ({name, human:false, foePrefix:"The opposing ", ai:o.ai, bag:o.bag || null,
+  party:nums.filter(n => NAT_BY.has(n)).map((n, k, a) => foeMon(n, {level:o.level, ai:o.ai, seed:(o.seed || 1)*31 + k, ace:k === a.length - 1}))});
+// rivals: how strong, and what's in their bag
+const rivalTier = r => /Champion|Legend/.test(r.title) ? {ai:4, bag:{"Full Restore":3}} : /Elite Four|Boss|King|President/.test(r.title) ? {ai:3, bag:{"Full Restore":2}} : /Gym Leader/.test(r.title) ? {ai:2, bag:{"Hyper Potion":2}} : {ai:2, bag:{"Super Potion":2}};
 function needTeam(){ if (nonEmptyTeams().length) return false; $("scBody").innerHTML = `<div class="sc-narrow"><p>Build a team first, then come back to battle.</p><div class="actions"><button class="btn primary" type="button" id="goBuild">Open Team Builder</button></div></div>`; nav.onClick = e => { if (e.target.closest("#goBuild")) enterApp(state.mode); }; return true; }
 function renderRivals(){
   if (needTeam()) return;
@@ -6226,7 +5914,7 @@ function renderRivals(){
 async function withMoves(){ try { await loadLearnsets(); } catch(e){} }
 async function startRival(i){
   const r = RIVALS[i]; await withMoves();
-  const foe = {name:r.tr, party:r.team.filter(n => NAT_BY.has(n)).map(n => mkMon(n, {level:50})), human:false, foePrefix:"The opposing "};
+  const tier = rivalTier(r), foe = foeSide(r.tr, r.team, {level:50, ai:tier.ai, bag:{...tier.bag}, seed:i + 7});
   startBattle({back:"rival", foe:{name:r.tr, title:r.title, bg:r.bg}, sides:[playerSide(rivalTeam), foe], humans:[true, false],
     onEnd:win => { if (win) { const first = !state.games.wins[r.tr]; state.games.wins[r.tr] = (state.games.wins[r.tr] || 0) + 1; save(); earn(first ? 150 : 40, `Beat ${r.tr}${first ? " for the first time" : ""}`); } return {text: win ? `You defeated <b>${esc(r.tr)}</b>!` : `You lost to <b>${esc(r.tr)}</b>. Tweak your team and try again!`, buttons:[["Rematch", () => startRival(i), true], ["Choose another rival", () => openScreen("battle", "rival")]]}; }});
 }
@@ -6248,7 +5936,7 @@ function renderGym(){
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small></div>
         <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
         <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
-    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing, but after each win you can revive one fainted Pokémon. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
+    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
   paintAll($("scBody"));
   nav.onChange = null;
@@ -6277,19 +5965,13 @@ function pickForBattle(teamId, size, title, go){
     if (e.target.closest("#gpkGo") && sel.size === size) { const pick = team.filter(n => sel.has(n)); gymPicks[key] = pick; closeModal(); go(pick); }
   };
 }
-// a Pokémon moved to a new level keeps its share of HP, its status and any item it has left
-function relevel(m, level, teamId){
-  if (m.level === level) return;
-  const f = monFromTeam(teamId, m.n, level);
-  Object.assign(m, {level, base:f.base, hp:m.hp <= 0 ? 0 : Math.max(1, Math.round(f.max*m.hp/m.max)), max:f.max});
-}
 function startGym(g, k){
   const L = LEAGUES[g - 1], [nm] = L.gyms[k], tid = gymTeam[g] || gymTeamFor(g);
   pickForBattle(tid, GYM_SIZE[k], `Your team for ${nm}`, nums => runGym(g, k, tid, nums));
 }
 async function runGym(g, k, tid, nums){
   const L = LEAGUES[g - 1], [nm, ty, ace] = L.gyms[k], lv = GYM_LV[k]; await withMoves();
-  const foe = {name:nm, party:leagueTeam(g, nm, ty, ace, GYM_SIZE[k], g*100 + k).map(n => mkMon(n, {level:lv})), human:false, foePrefix:"The opposing "};
+  const foe = foeSide(nm, leagueTeam(g, nm, ty, ace, GYM_SIZE[k], g*100 + k), {level:lv, ai:k < 4 ? 1 : k < 7 ? 2 : 3, bag:{"Hyper Potion":k < 4 ? 1 : 2}, seed:g*100 + k});
   const me = {...playerSide(tid, lv), party:nums.map(n => monFromTeam(tid, n, lv))};
   startBattle({back:"gym", foe:{name:nm, title:`${GENS[g - 1].region} ${L.badge === "stamp" ? "trial" : "Gym Leader"} · ${ty}`, type:ty, bg:"gym"}, sides:[me, foe], humans:[true, false],
     onEnd:win => { let text;
@@ -6301,36 +5983,38 @@ async function runGym(g, k, tid, nums){
 async function startE4(g){
   await withMoves();
   const tid = gymTeam[g] || gymTeamFor(g);
-  e4run = {g, step:0, team:tid, party:playerSide(tid).party};
+  e4run = {g, step:0, team:tid, party:playerSide(tid).party, bag:BAG.league()};
   e4Battle();
 }
-// between Elite Four battles: one Max Revive and one Max Potion (both restore full HP and cure status),
-// and the team can be put in any order (the first one able to fight leads)
+// between Elite Four battles: no free healing, but the run's one bag can be used, and the team can be put in any order
+// (the first one able to fight leads)
+const bagLine = bag => BAG_ORDER.filter(k => bag[k] > 0).map(k => `${esc(k)} ×${bag[k]}`).join(" · ") || "Empty";
 function e4Prep(){
-  const P = e4run.party, L = LEAGUES[e4run.g - 1], who = e4run.step === 4 ? `Champion ${L.champ[0]}` : L.e4[e4run.step][0];
-  // one of each per break, even if this screen is closed and reopened
-  let rev = e4run.rv === e4run.step, pot = e4run.pt === e4run.step;
+  const P = e4run.party, L = LEAGUES[e4run.g - 1], who = e4run.step === 4 ? `Champion ${L.champ[0]}` : L.e4[e4run.step][0], bag = e4run.bag;
+  let use = null;   // a bag item waiting for a Pokémon
   const md = openModal(`<h3 class="mt" id="modalTitle">Get ready for ${esc(who)}</h3>
-    <p class="note" id="prepNote"></p><div class="prep-list" id="prepList"></div>
+    <p class="note" id="prepNote"></p><div class="prep-bag" id="prepBag"></div><div class="prep-list" id="prepList"></div>
     <div class="actions"><button class="btn primary" type="button" id="prepGo">Battle ${esc(who)}</button></div>`, {wide:true});
   const draw = () => {
     const lead = P.findIndex(m => m.hp > 0);
-    $("prepNote").innerHTML = `<b>Max Revive:</b> ${rev ? "used" : "1 left"} · <b>Max Potion:</b> ${pot ? "used" : "1 left"}. Both restore full HP and cure status. Use the arrows to change the order; the first Pokémon that can fight leads.`;
+    $("prepNote").innerHTML = use ? `Use the <b>${esc(use)}</b> on which Pokémon? <button class="btn sm" type="button" id="prepCancel">Cancel</button>` : `No healing between battles: only what’s left in your bag for this run. Use the arrows to change the order; the first Pokémon that can fight leads.`;
+    $("prepBag").innerHTML = BAG_ORDER.filter(k => bag[k] > 0).map(k => { const can = P.some(m => bagCanUse(k, m, false)); return `<button class="bag-chip${use === k ? " on" : ""}" type="button" data-pbag="${esc(k)}" ${can ? "" : "disabled"} title="${esc(BAG_ITEMS[k].d)}${can ? "" : " (can’t be used right now)"}">${esc(k)} <b>×${bag[k]}</b></button>`; }).join("") || `<span class="meta">Your bag is empty.</span>`;
     $("prepList").innerHTML = P.map((m, k) => `<div class="prep-row${m.hp <= 0 ? " out" : ""}">${spr(m.n, {sh:m.sh})}
       <div class="prep-t"><b>${esc(m.name)}${k === lead ? ` <span class="prep-lead">Leads</span>` : ""}</b><span class="meta">${m.hp <= 0 ? "Fainted" : `${m.hp} / ${m.max} HP${m.status ? ` · ${ST_TAG[m.status]}` : ""}`}</span></div>
-      ${m.hp <= 0 && !rev ? `<button class="btn sm primary" type="button" data-prv="${k}">Max Revive</button>` : ""}
-      ${m.hp > 0 && (m.hp < m.max || m.status) && !pot ? `<button class="btn sm primary" type="button" data-ppt="${k}">Max Potion</button>` : ""}
+      ${use && bagCanUse(use, m, false) ? `<button class="btn sm primary" type="button" data-puse="${k}">Use ${esc(use)}</button>` : ""}
       <button class="btn sm" type="button" data-pmv="${k}" data-d="-1" ${k === 0 ? "disabled" : ""} aria-label="Move ${esc(m.name)} up">▲</button>
       <button class="btn sm" type="button" data-pmv="${k}" data-d="1" ${k === P.length - 1 ? "disabled" : ""} aria-label="Move ${esc(m.name)} down">▼</button></div>`).join("");
     paintAll($("prepList"));
   };
-  const full = m => { m.hp = m.max; m.status = null; m.sleep = 0; m.toxN = 0; };
   draw();
   md.onclick = e => {
-    const rv = e.target.closest("[data-prv]");
-    if (rv && !rev) { const m = P[+rv.dataset.prv]; full(m); rev = true; e4run.rv = e4run.step; Sound.play("heal"); toast(`${m.name} was revived to full HP!`); draw(); return; }
-    const pt = e.target.closest("[data-ppt]");
-    if (pt && !pot) { const m = P[+pt.dataset.ppt]; full(m); pot = true; e4run.pt = e4run.step; Sound.play("heal"); toast(`${m.name} is back to full HP!`); draw(); return; }
+    const pb = e.target.closest("[data-pbag]"); if (pb) { use = use === pb.dataset.pbag ? null : pb.dataset.pbag; Sound.play("select"); draw(); return; }
+    if (e.target.closest("#prepCancel")) { use = null; draw(); return; }
+    const pu = e.target.closest("[data-puse]");
+    if (pu && use) { const m = P[+pu.dataset.puse], B = BAG_ITEMS[use];
+      if (B.revive) { m.hp = Math.max(1, Math.floor(m.max*B.revive)); m.status = null; toast(`${m.name} was revived!`); }
+      else { if (B.heal) m.hp = B.heal === "full" ? m.max : Math.min(m.max, m.hp + B.heal); if (B.cure && (B.cure === "all" || B.cure.includes(m.status))) m.status = null; toast(`${use} used on ${m.name}.`); }
+      m.sleep = m.status ? m.sleep : 0; m.toxN = 0; bag[use]--; use = null; Sound.play("heal"); draw(); return; }
     const mv = e.target.closest("[data-pmv]");
     if (mv) { const k = +mv.dataset.pmv, j = k + +mv.dataset.d; if (j >= 0 && j < P.length) { [P[k], P[j]] = [P[j], P[k]]; Sound.play("select"); draw(); } return; }
     if (e.target.closest("#prepGo")) { closeModal(); e4Battle(); }
@@ -6341,17 +6025,18 @@ function e4Battle(){
   const [nm, ty, ace] = champ ? [L.champ[0], "", 0] : L.e4[step];
   const lv = champ ? 54 : 48 + step;
   const nums = champ ? L.champ[1] : leagueTeam(g, nm, ty, ace, 5, g*1000 + step);
-  const party = nums.map((n, i) => mkMon(n, {level:lv, item: i === nums.length - 1 ? "Sitrus Berry" : ""}));
-  e4run.party.forEach(m => relevel(m, lv, e4run.team));   // you battle at their level
-  const me = {name: profile && !profile.guest ? profile.name : "You", party:e4run.party, human:true, foePrefix:""};
-  startBattle({back:"gym", foe:{name:nm, title: champ ? `${GENS[g - 1].region} Champion` : `${L.e4label || "Elite Four"} · ${step + 1} of 4`, type:ty || "Dragon", bg: champ ? "league" : "league"}, sides:[me, {name:nm, party, human:false, foePrefix:"The opposing "}], humans:[true, false],
+  // Elite Four: two Max Potions (the first two) or two Full Restores; Champions: Full Restores
+  const foe = foeSide(nm, nums, {level:lv, ai:champ ? 4 : 3, seed:g*1000 + step, bag: champ ? {"Full Restore":g <= 4 ? 3 : 4} : step < 2 ? {"Max Potion":2} : {"Full Restore":2}});
+  e4run.party.forEach(m => setLevel(m, lv));   // you battle at their level
+  const me = {name: profile && !profile.guest ? profile.name : "You", party:e4run.party, human:true, foePrefix:"", bag:e4run.bag, ai:3};
+  startBattle({back:"gym", foe:{name:nm, title: champ ? `${GENS[g - 1].region} Champion` : `${L.e4label || "Elite Four"} · ${step + 1} of 4`, type:ty || "Dragon", bg: champ ? "league" : "league"}, sides:[me, foe], humans:[true, false],
     leaveNote:"Leaving ends your run. You’ll start again from the first member.", onLeave:() => { e4run = null; },
     onEnd:win => {
       if (!win) { e4run = null; return {text:`Your run ends here. ${esc(nm)} was too strong this time. The ${esc(L.e4label || "Elite Four")} will be waiting.`, buttons:[["Back to the badge case", () => openScreen("battle", "gym"), true]]}; }
       if (!champ) { e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
-        // after every win: one Max Revive and one Max Potion, otherwise no healing
+        // no healing between battles: only the run's bag
         const who = e4run.step === 4 ? `Champion ${nx}` : nx;
-        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight. Before the next battle you get one Max Revive and one Max Potion, and you can change who leads.`,
+        return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight. Bag: ${bagLine(e4run.bag)}.`,
           buttons:[[`Get ready for ${who}`, e4Prep, true]]}; }
       const firstClear = !state.games.leagues[g];
       state.games.leagues[g] = true; save(); e4run = null; setTimeout(() => Sound.play("badge"), 900);
@@ -6379,13 +6064,15 @@ function renderVersus(){
     ${data ? (theirTeams.length ? `<div class="vs-pick">${teamSelect("vsMine", vsSel.mine, `${esc(profile && !profile.guest ? profile.name : "Your")} team`)}
       <label class="field">${esc(opp.name)}’s team<select class="select" id="vsTheirs">${theirTeams.map(t => `<option value="${t.id}" ${t.id === vsSel.theirs ? "selected" : ""}>${esc(t.dex)} · ${(data.teams[t.id] || []).filter(n => t.byNum.has(n)).length} Pokémon</option>`).join("")}</select></label></div>
       <div class="set-row"><span>How to play</span><div class="segrow" data-vsmode><button type="button" data-v="manual" aria-pressed="${vsSel.mode === "manual"}">Both pick moves</button><button type="button" data-v="auto" aria-pressed="${vsSel.mode === "auto"}">Watch it play out</button></div></div>
-      <p class="note">${vsSel.mode === "manual" ? "Pass the device between turns. Each player picks in secret." : "The battle plays itself using each Pokémon’s best moves."}</p>
+      <div class="set-row"><span>Bag</span><div class="segrow" data-vsbag><button type="button" data-v="on" aria-pressed="${state.ui.vsbag !== "off"}">Same bag for both</button><button type="button" data-v="off" aria-pressed="${state.ui.vsbag === "off"}">No items</button></div></div>
+      <p class="note">${vsSel.mode === "manual" ? "Pass the device between turns. Each player picks in secret." : "The battle plays itself using each Pokémon’s best moves."} ${state.ui.vsbag !== "off" ? `Each player gets ${bagLine(BAG.standard())}.` : "Neither player can use items."}</p>
       <div class="actions"><button class="btn primary" type="button" id="vsGo">Start battle</button></div>` : `<p class="note">${esc(opp.name)} hasn’t built any teams yet.</p>`) : ""}</div>`;
   paintAll($("scBody"));
   nav.onChange = e => { if (e.target.id === "vsMine") vsSel.mine = e.target.value; if (e.target.id === "vsTheirs") vsSel.theirs = e.target.value; };
   nav.onClick = e => {
     const p = e.target.closest("[data-vs]"); if (p) { const m = profileMeta(p.dataset.vs); vsSel = {...vsSel, id:m.id, ok:!m.pin, theirs:null}; Sound.play("select"); renderVersus(); const pi = $("vsPinIn"); if (pi) pi.focus(); return; }
     const md = e.target.closest("[data-vsmode] [data-v]"); if (md) { vsSel.mode = md.dataset.v; renderVersus(); return; }
+    const vb = e.target.closest("[data-vsbag] [data-v]"); if (vb) { state.ui.vsbag = vb.dataset.v; save(); Sound.play("select"); renderVersus(); return; }
     if (e.target.closest("#vsGo")) startVersus();
   };
   const f = $("vsPin"); if (f) f.addEventListener("submit", async ev => { ev.preventDefault(); const m = profileMeta(vsSel.id); if (await hashPin($("vsPinIn").value.trim(), m.pin.salt) === m.pin.hash) { vsSel.ok = true; Sound.play("confirm"); renderVersus(); } else { const er = $("vsErr"); er.textContent = "That PIN doesn’t match."; er.hidden = false; Sound.play("wrong"); } });
@@ -6393,9 +6080,10 @@ function renderVersus(){
 async function startVersus(){
   const opp = profileMeta(vsSel.id), data = readSave(opp.id); if (!data) return; await withMoves();
   const T = data.defs.find(t => t.id === vsSel.theirs) || TEAM_BY.get("all"), nums = (data.teams[vsSel.theirs] || []).filter(n => T.byNum.has(n)).slice(0, MAX);
-  const theirMon = n => { const M = cleanMember((data.members[vsSel.theirs] || {})[n]) || {}; return mkMon(n, {level:50, nick:M.nick, moves:(M.moves || []).map(x => MOVE_BY.get(x)), ability:M.ability, item:M.item, sh:(data.shiny[vsSel.theirs] || []).includes(n), ball:M.ball}); };
+  const theirMon = n => { const M = cleanMember((data.members[vsSel.theirs] || {})[n], n) || {}; return mkMon(n, {level:50, nick:M.nick, moves:(M.moves || []).map(x => MOVE_BY.get(x)), ability:M.ability, item:M.item, nature:M.nature, evs:M.evs, ivs:M.ivs, sh:(data.shiny[vsSel.theirs] || []).includes(n), ball:M.ball}); };
   const meName = profile && !profile.guest ? profile.name : "Guest", manual = vsSel.mode === "manual";
-  const A = {...playerSide(vsSel.mine), name:meName, foePrefix:`${meName}’s `}, B = {name:opp.name, party:nums.map(theirMon), human:manual, foePrefix:`${opp.name}’s `};
+  const bags = state.ui.vsbag !== "off";   // a mirrored bag for both players, unless turned off
+  const A = {...playerSide(vsSel.mine, 50, bags ? BAG.standard() : null), name:meName, foePrefix:`${meName}’s `}, B = {name:opp.name, party:nums.map(theirMon), human:manual, foePrefix:`${opp.name}’s `, bag:bags ? BAG.standard() : null, ai:3};
   const trI = Number.isInteger(data.tr.all) && TRAINERS[data.tr.all] ? data.tr.all : (opp.avatar ?? null);
   startBattle({back:"vs", foe:{name:opp.name, title:`Versus · ${T.dex}`, trIdx:trI, bg:"league"}, sides:[A, B], humans:[manual, manual], hotseat:manual, force:manual ? "manual" : "auto",
     onEnd:win => { if (win) state.games.vs.w++; else state.games.vs.l++; save(); if (win) earn(60, "Versus win"); return {text: win ? `<b>${esc(meName)}</b> wins!` : `<b>${esc(opp.name)}</b> wins!`, buttons:[["Rematch", startVersus, true], ["Back to Versus", () => openScreen("battle", "vs")]]}; }});
@@ -6404,6 +6092,7 @@ async function startVersus(){
 // ---- the battle view ----
 const F = {b:null, cfg:null, auto:false, fast:false, timer:0, resolve:null, tok:0};
 const WEATHER_LBL = {sun:"☀ Harsh sunlight", rain:"☂ Rain", sand:"≋ Sandstorm", snow:"❄ Snow"};
+const TERRAIN_LBL = {electric:"⚡ Electric Terrain", grassy:"✿ Grassy Terrain", misty:"✧ Misty Terrain", psychic:"◎ Psychic Terrain"};
 function startBattle(cfg){
   F.cfg = cfg; F.b = new Battle(cfg.sides); F.auto = cfg.force ? cfg.force === "auto" : state.ui.bmode === "auto"; F.fast = false; F.tok++;
   if (nav.screen === "battle" && nav.sub === "fight") renderScreen(); else openScreen("battle", "fight");
@@ -6463,10 +6152,11 @@ async function showEv(e){
       await wait(650); break;
     }
     case "msg": {
-      logLine(esc(e.t)); if (e.stat && !F.fast) Sound.play(e.stat.up ? "up" : "down");
-      if (e.w !== undefined) { const w = $("btWeather"); if (w) { w.hidden = !e.w; w.textContent = e.w ? WEATHER_LBL[e.w] : ""; } }
+      logLine(e.item ? `<span class="bt-itemlog">${esc(e.t)}</span>` : esc(e.t)); if (e.stat && !F.fast) Sound.play(e.stat.up ? "up" : "down"); if (e.item && !F.fast) Sound.play("heal");
+      if (e.w !== undefined || e.ter !== undefined) { const w = $("btWeather"), B = F.b; if (w) { const t = [B.weather && WEATHER_LBL[B.weather], B.terrain && TERRAIN_LBL[B.terrain]].filter(Boolean); w.hidden = !t.length; w.textContent = t.join(" · "); } }
       await wait(e.se ? 500 : 800); break;
     }
+    case "party": { const s = sideEl(e.side), pk = s.party && s.party.querySelector(`[data-pk="${e.idx}"]`); if (pk) pk.classList.toggle("out", e.hp <= 0); if (e.revived && !F.fast) Sound.play("heal"); break; }
     case "faint": { const s = sideEl(e.side); s.mon.classList.remove("hit", "lunge", "enter"); s.mon.classList.add("faint"); const pk = s.party.querySelector(`[data-pk="${e.idx}"]`); if (pk) pk.classList.add("out"); logLine(esc(e.t)); if (!F.fast) Sound.play("faint"); await wait(900); break; }
   }
 }
@@ -6489,10 +6179,12 @@ async function runBattle(tok){
       if (!humanFor(i)) { ch[i] = B.ai(i); continue; }
       if (F.cfg.hotseat) { await ask(() => renderCurtain(i)); if (tok !== F.tok) return; }
       for (;;) {
+        if (F.auto) { ch[i] = B.ai(i); break; }
         const c = await ask(() => renderMoves(i)); if (tok !== F.tok) return;
         if (c && c.forfeit) { await playEv(B.forfeit(i), tok); break; }
         if (c && c.auto) { ch[i] = B.ai(i); break; }
         if (c && c.sw === "menu") { const k = await askSwitch(i, false); if (tok !== F.tok) return; if (k === null) continue; ch[i] = {sw:k}; break; }
+        if (c && c.bag === "menu") { const u = await askBag(i); if (tok !== F.tok) return; if (!u) continue; ch[i] = u; break; }
         ch[i] = c; break;
       }
       if (B.over) break;
@@ -6500,6 +6192,12 @@ async function runBattle(tok){
     if (B.over || tok !== F.tok) break;
     renderWait();
     await playEv(B.turn(ch), tok);
+    // U-turn, Volt Switch, Baton Pass, Eject Button…: someone picks who comes in, then the turn carries on
+    while (B.pend && !B.over && tok === F.tok) {
+      const i = B.pend.side; let k = humanFor(i) ? await askSwitch(i, true, true) : B.aiReplace(i);
+      if (tok !== F.tok) return; if (k === null || k === undefined) k = B.aiReplace(i);
+      await playEv(B.resume(i, k), tok);
+    }
   }
   if (tok === F.tok) finishBattle();
 }
@@ -6523,16 +6221,46 @@ function renderCurtain(i){
   toSide(c);
 }
 function renderMoves(i){
-  const B = F.b, me = B.get(i), foe = B.get(1 - i), c = $("btCmd"), S = B.s[i];
-  const canSwitch = B.aliveIdx(i).filter(k => k !== S.act).length > 0;
-  c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}What will <b>${esc(me.name)}</b> do?</p>
-    <div class="bt-moves">${me.moves.map((mv, j) => { const dmg = isDmg(mv), sc = B.score(i, j), e = dmg && !FIXED_DMG.has(mv[0]) ? effOf(B.moveType(me, mv), foe.types) : 1;
-      const fx = STATUS_FX[mv[0]];
-      const hint = !dmg ? (SETUP[mv[0]] ? "Boosts stats" : HEAL[mv[0]] ? "Heals" : FOE_DROP[mv[0]] ? "Lowers foe’s stats" : fx ? (B.canStatus(foe, fx[0] === "tri" ? "brn" : fx[0]) ? ST_HINT[fx[0]] : "Won’t work now") : "No effect here") : e === 0 ? "No effect" : e >= 2 ? "Super effective" : e < 1 ? "Not very effective" : "";
-      const extra = dmg && fx && fx[1] < 100 ? ` · ${fx[1]}% ${({brn:"burn", par:"paralysis", psn:"poison", tox:"poison", slp:"sleep", frz:"freeze", tri:"status"})[fx[0]]}` : "";
-      return `<button class="bt-move" type="button" data-mv="${j}" style="${tStyle(mv[1] === "???" ? "Normal" : mv[1])}" ${sc < 0 ? "disabled" : ""}><b>${esc(mv[0])}</b><span>${mv[1]} · ${catName(mv)}${mv[3] ? " " + mv[3] : ""}${extra}</span>${hint ? `<em>${hint}</em>` : ""}</button>`; }).join("")}</div>
-    <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${canSwitch ? "" : "disabled"}>Switch</button>${F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
+  const B = F.b, me = B.get(i), foe = B.get(1 - i), c = $("btCmd"), S = B.s[i], O = B.options(i);
+  const card = (mv, j, pp, max, ok, why) => {
+    const dmg = isDmg(mv), t = mv[1] === "???" ? "Normal" : B.moveType(me, mv), fx = mv[8] || {};
+    const e = dmg && foe && foe.hp > 0 ? B.typeMul(me, foe, mv, t) : 1;
+    const hint = !dmg ? (fx.st ? (foe && B.canStatus(1 - i, fx.st, me) ? ST_HINT[fx.st] : "Won’t work now") : moveHint(mv) || "Status move") : e === 0 ? "No effect" : e >= 2 ? "Super effective" : e < 1 ? "Not very effective" : "";
+    const sec = dmg && fx.sec && fx.sec.find(x => x.st);
+    const extra = sec && sec.c < 100 ? ` · ${sec.c}% ${({brn:"burn", par:"paralysis", psn:"poison", tox:"poison", slp:"sleep", frz:"freeze"})[sec.st]}` : "";
+    return `<button class="bt-move" type="button" data-mv="${j}" style="${tStyle(t === "???" ? "Normal" : t)}" ${ok ? "" : "disabled"} title="${esc(why || (mv[0] + " · " + t + " · " + catName(mv) + (mv[3] ? " · Power " + mv[3] : "") + (mv[4] ? " · Accuracy " + mv[4] : "")))}">
+      <b>${esc(mv[0])}</b><span>${t} · ${catName(mv)}${mv[3] ? " " + mv[3] : ""}${extra}</span><span class="bt-pp${pp === 0 ? " none" : pp <= max/4 ? " low" : ""}">PP ${pp}/${max}</span>${!ok && why ? `<em>${esc(why)}</em>` : hint ? `<em>${hint}</em>` : ""}</button>`; };
+  let body;
+  if (O.forced) body = `<div class="bt-moves one">${O.forced.move === -2 ? `<button class="bt-move" type="button" data-mv="-2" style="${tStyle("Normal")}"><b>Recharge</b><span>${esc(me.name)} must rest this turn</span></button>` : card(me.moves[O.forced.move], O.forced.move, me.pp[O.forced.move], maxPP(me.moves[O.forced.move]), true, "")}</div>`;
+  else if (O.struggle) body = `<div class="bt-moves one"><button class="bt-move" type="button" data-mv="-1" style="${tStyle("Normal")}"><b>Struggle</b><span>No moves left to use · hurts ${esc(me.name)} too</span></button></div>`;
+  else body = `<div class="bt-moves">${O.moves.map(x => card(x.mv, x.j, x.pp, x.max, x.ok, x.why)).join("")}</div>`;
+  c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${O.forced ? `<b>${esc(me.name)}</b> keeps going…` : `What will <b>${esc(me.name)}</b> do?`}</p>${body}
+    <div class="bt-acts"><button class="btn sm" type="button" data-bt="switch" ${O.canSwitch ? "" : "disabled"} ${O.trapped ? `title="${esc(me.name)} can’t escape!"` : ""}>${O.trapped ? "Trapped" : "Switch"}</button>${S.bag ? `<button class="btn sm" type="button" data-bt="bag" ${O.bag ? "" : "disabled"}>Bag</button>` : ""}${F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="auto">Auto battle</button>`}<button class="btn sm" type="button" data-bt="run">Forfeit</button></div>`;
   toSide(c);
+}
+// the Bag: pick an item, then (for Potions, Revives, status heals) who it’s for
+function askBag(i){
+  const B = F.b, S = B.s[i];
+  let item = null;
+  return ask(() => {
+    const draw = () => {
+      const c = $("btCmd");
+      if (!item) {
+        const rows = BAG_ORDER.filter(k => S.bag[k] > 0).map(k => { const can = S.party.some((m, x) => bagCanUse(k, m, x === S.act)); return `<button class="bt-bagb" type="button" data-bagit="${esc(k)}" ${can ? "" : "disabled"}><b>${esc(k)}</b><span class="bag-n">×${S.bag[k]}</span><small>${esc(BAG_ITEMS[k].d)}${can ? "" : " Nobody needs it right now."}</small></button>`; }).join("");
+        c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}Use which item? <span class="meta">Using an item takes your turn.</span></p><div class="bt-sw bt-bag">${rows || `<p class="note">The bag is empty.</p>`}</div><div class="bt-acts"><button class="btn sm" type="button" data-bt="cancel">Back</button></div>`;
+      } else {
+        c.innerHTML = `<p class="bt-q">Use the <b>${esc(item)}</b> on which Pokémon?</p><div class="bt-sw">${S.party.map((m, k) => { const ok = bagCanUse(item, m, k === S.act);
+          return `<button class="bt-swb${ok ? " good" : ""}" type="button" data-bagto="${k}" ${ok ? "" : "disabled"}><span class="sw-id"><span class="sw-top">${ballImg(m.ball)}<b class="sw-n">${esc(m.name)}</b>${m.status && m.hp > 0 ? `<span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}<span class="sw-hp">${m.hp <= 0 ? "Fainted" : `${m.hp}/${m.max}`}</span></span>${m.hp > 0 ? `<span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span>` : ""}</span></button>`; }).join("")}</div><div class="bt-acts"><button class="btn sm" type="button" data-bagback>Back</button></div>`;
+      }
+      toSide(c);
+    };
+    F.bagPick = v => {
+      if (v === "back") { item = null; draw(); return; }
+      if (typeof v === "string") { const it = BAG_ITEMS[v]; if (it.boost || it.crit || it.mist) { resolveAsk({item:v, target:S.act}); return; } const ok = S.party.map((m, k) => bagCanUse(v, m, k === S.act) ? k : -1).filter(k => k >= 0); item = v; if (ok.length === 1 && it.revive === undefined && ok[0] === S.act) { resolveAsk({item:v, target:S.act}); return; } draw(); return; }
+      resolveAsk({item, target:v});
+    };
+    draw();
+  });
 }
 // one switch choice, one row: who (name, HP, types) on the left, their moves rated against the foe on the right
 function swButton(B, i, m, k, active){
@@ -6540,8 +6268,8 @@ function swButton(B, i, m, k, active){
   const top = `<span class="sw-top">${ballImg(m.ball)}<b class="sw-n" title="${esc(m.name)}">${esc(m.name)}</b>${m.status && !out ? `<span class="bt-st" data-st="${m.status}">${ST_TAG[m.status]}</span>` : ""}<span class="sw-hp">${out ? "Fainted" : `${m.hp}/${m.max}`}</span></span>`;
   if (out) return `<button class="bt-swb out" type="button" data-sw="${k}" disabled>${top}</button>`;
   let best = -1;
-  const mv = m.moves.map(mv => { const dmg = isDmg(mv), t = mv[1] === "???" ? "Normal" : mv[1];
-    const e = vs && dmg && !FIXED_DMG.has(mv[0]) ? effOf(B.moveType(m, mv), foe.types) : null;
+  const mv = m.moves.map(mv => { const dmg = isDmg(mv), t = mv[1] === "???" ? "Normal" : B.moveType(m, mv);
+    const e = vs && dmg ? B.typeMul(m, foe, mv, t) : null;
     if (e !== null) best = Math.max(best, e);
     const c = e === null ? "s" : e === 0 ? "0" : e >= 4 ? "4" : e >= 2 ? "2" : e < 1 ? "h" : "1";
     const word = {s: dmg ? "fixed damage" : "status move", 0:"no effect", 4:"super effective (×4)", 2:"super effective", h:"not very effective", 1:"normal damage"}[c];
@@ -6549,15 +6277,15 @@ function swButton(B, i, m, k, active){
   const weak = vs && foe.types.some(t => effOf(t, m.types) >= 2);
   return `<button class="bt-swb${active ? " cur" : best >= 2 ? " good" : ""}" type="button" data-sw="${k}" ${active ? "disabled" : ""}>
     <span class="sw-id">${top}<span class="bt-bar sm"><i style="width:${m.hp/m.max*100}%" data-l="${m.hp/m.max <= .2 ? "r" : m.hp/m.max <= .5 ? "y" : "g"}"></i></span>
-      <span class="sw-tags">${m.types.map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}${active ? `<span class="sw-flag cur">In battle</span>` : weak ? `<span class="sw-flag warn">Weak to foe</span>` : ""}</span></span>
+      <span class="sw-tags">${m.types.map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}${m.item ? `<span class="sw-flag item" title="Held item">${esc(m.item)}</span>` : ""}${active ? `<span class="sw-flag cur">In battle</span>` : weak ? `<span class="sw-flag warn">Weak to foe</span>` : ""}</span></span>
     <span class="sw-mv">${mv}</span></button>`;
 }
-function askSwitch(i, forced){
+function askSwitch(i, forced, mid){
   return ask(() => {
     const B = F.b, S = B.s[i], c = $("btCmd");
-    c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${forced ? "Choose your next Pokémon." : "Switch to which Pokémon?"}</p>
+    c.innerHTML = `<p class="bt-q">${F.cfg.hotseat ? `<b>${esc(S.name)}:</b> ` : ""}${mid ? "Who comes in?" : forced ? "Choose your next Pokémon." : "Switch to which Pokémon?"}</p>
       <div class="bt-sw">${(() => { const foe = B.get(1 - i); return foe && foe.hp > 0 ? `<p class="sw-key">Moves rated against <b>${esc(foe.name)}</b>: ×2 super effective · ½ not very effective · ✕ no effect. Green edge = has a super-effective move.</p>` : ""; })()}${S.party.map((m, k) => swButton(B, i, m, k, k === S.act)).join("")}</div>
-      <div class="bt-acts">${forced ? (F.cfg.hotseat ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
+      <div class="bt-acts">${forced ? (F.cfg.hotseat || mid ? "" : `<button class="btn sm" type="button" data-bt="autosw">Auto battle</button>`) : `<button class="btn sm" type="button" data-bt="cancel">Back</button>`}</div>`;
     toSide(c);
   });
 }
@@ -6565,24 +6293,29 @@ document.addEventListener("keydown", e => {
   if (nav.screen !== "battle" || nav.sub !== "fight" || !$("modalWrap").hidden || e.target.closest("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
   if (/^[1-6]$/.test(e.key)) { const b = $("scBody").querySelectorAll(".bt-move:not([disabled]), .bt-swb:not([disabled])"), all = $("scBody").querySelectorAll(".bt-move, .bt-swb"), t = all[+e.key - 1]; if (t && !t.disabled && b.length) { e.preventDefault(); t.click(); } }
   else if (e.key === "s" || e.key === "S") { const b = $("scBody").querySelector('[data-bt="switch"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } }
+  else if (e.key === "b" || e.key === "B") { const b = $("scBody").querySelector('[data-bt="bag"]:not([disabled])'); if (b) { e.preventDefault(); b.click(); } }
 });
 function onFightClick(e){
-  const b = e.target.closest("[data-mv], [data-sw], [data-bt], [data-res]"); if (!b) return;
+  const b = e.target.closest("[data-mv], [data-sw], [data-bt], [data-res], [data-bagit], [data-bagto], [data-bagback]"); if (!b) return;
+  if (b.dataset.bagit !== undefined) { Sound.play("select"); if (F.bagPick) F.bagPick(b.dataset.bagit); return; }
+  if (b.dataset.bagto !== undefined) { Sound.play("select"); if (F.bagPick) F.bagPick(+b.dataset.bagto); return; }
+  if (b.hasAttribute("data-bagback")) { if (F.bagPick) F.bagPick("back"); return; }
   if (b.dataset.res !== undefined) { const fn = F.result && F.result[+b.dataset.res]; if (fn) { Sound.play("select"); fn(); } return; }
   if (b.dataset.mv !== undefined) { Sound.play("select"); resolveAsk({move:+b.dataset.mv}); return; }
   if (b.dataset.sw !== undefined) { Sound.play("select"); resolveAsk(+b.dataset.sw); return; }
   const a = b.dataset.bt;
   if (a === "switch") resolveAsk({sw:"menu"});
+  else if (a === "bag") resolveAsk({bag:"menu"});
   else if (a === "cancel") resolveAsk(null);
   else if (a === "ready") resolveAsk(true);
   else if (a === "auto") { F.auto = true; resolveAsk({auto:true}); }
   else if (a === "autosw") { F.auto = true; resolveAsk(null); }
   else if (a === "autotog") { F.auto = !F.auto; renderWait(); }
-  else if (a === "fast") { F.fast = true; F.auto = true; b.disabled = true; b.textContent = "⏭ Skipping to the result…"; clearTimeout(F.timer); if (F.wake) F.wake(); const cmd = $("btCmd"); if (F.resolve && cmd.querySelector(".bt-moves")) resolveAsk({auto:true}); else if (F.resolve && cmd.querySelector(".bt-sw")) resolveAsk(null); else renderWait(); }
+  else if (a === "fast") { F.fast = true; F.auto = true; b.disabled = true; b.textContent = "⏭ Skipping to the result…"; clearTimeout(F.timer); if (F.wake) F.wake(); if (F.resolve) resolveAsk(document.querySelector("#btSide .bt-moves, #btCmd .bt-moves") ? {auto:true} : null); else renderWait(); }   // the choices may sit in the side panel
   else if (a === "run") askConfirm("Forfeit this battle?", "It counts as a loss.", "Forfeit").then(ok => { if (ok) resolveAsk({forfeit:true}); });
 }
 function finishBattle(){
-  const B = F.b, win = B.winner === 0, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
+  const B = F.b; B.cleanup(); const win = B.winner === 0, res = F.cfg.onEnd ? F.cfg.onEnd(win, B) : {text: win ? "You won!" : "You lost.", buttons:[]};
   F.fast = false; setMusic(null);
   const sk = $("scBody").querySelector(".bt-skip"); if (sk) sk.hidden = true;
   setTimeout(() => Sound.play(win || F.cfg.hotseat ? "victory" : "lose"), 150);

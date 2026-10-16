@@ -18,7 +18,7 @@ PLACEHOLDERS = [
     ("DATA", DATA / "data.json"), ("IDX", PACKS / "index.json"), ("TRAINERS", DATA / "trainer_names2.json"),
     ("OLDTRAINERS", DATA / "trainer_names.json"), ("TAGS", DATA / "themes_tags.json"), ("HOFD", DATA / "hofdata.json"),
     ("FORMS", DATA / "forms.json"), ("FE", DATA / "fe.json"), ("MOVES", DATA / "moves_data.json"), ("BALLS", DATA / "balls.json"),
-    ("RIVALS", DATA / "rivals.json"), ("LEADERS", DATA / "leaders.json"), ("STATUSFX", DATA / "status_fx.json"),
+    ("RIVALS", DATA / "rivals.json"), ("LEADERS", DATA / "leaders.json"),
 ]
 TITLE = "Dream Team Dex"
 DESC = ("Build Pokémon dream teams for every region, battle Gym Leaders, decorate your own Pokémon Home and stage "
@@ -32,6 +32,8 @@ def assemble() -> str:
         tag = f"/*{ph}*/"
         assert page.count(tag) == 1, f"{tag} appears {page.count(tag)} times in src/app.html"
         page = page.replace(tag, f.read_text(encoding="utf-8").strip())
+    assert page.count("/*ENGINE*/") == 1, "/*ENGINE*/ must appear once in src/app.html"
+    page = page.replace("/*ENGINE*/", (SRC / "engine.js").read_text(encoding="utf-8").strip())
     art = {p.relative_to(ART).with_suffix("").as_posix(): "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()
            for p in sorted(ART.rglob("*.png"))}
     assert art, "art/2d is empty"

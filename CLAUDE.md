@@ -22,15 +22,22 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `python3 scripts/build.py` — build `dist/web/` (the website). `--artifact` also writes the single-page claude.ai version.
 - `python3 -m http.server 8765 --directory dist/web` — run it locally at http://localhost:8765/
 - `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once). Must be clean.
+- `node scripts/gen_data.mjs` — regenerate Pokémon/move/ability/item/learnset data from Pokémon Showdown (`@pkmn/dex`).
+  Run by hand when data should change; the build itself never needs Node.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
   (`pip install playwright && python3 -m playwright install chromium` once). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
-- No Python packages are needed to build; Playwright is only for tests.
+- `node tests/test_engine.mjs` (rules, items, Bag, AI, random-battle stress test) and `node tests/test_damage.mjs [n] [seed]`
+  (damage vs `@smogon/calc`, all 16 rolls) — both also run from `run_all.py`.
+- No Python packages are needed to build; Playwright is only for tests. If the pre-installed browser doesn't match,
+  install the Playwright version that does (e.g. `pip install playwright==1.56.0` for `/opt/pw-browsers/chromium-1194`).
 
 ## Layout
-- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~6,300 lines). Source of truth.
+- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~6,400 lines). Source of truth.
+- `src/engine.js` — the battle engine (pure logic, no DOM), inlined into the page at `/*ENGINE*/`; Node tests load it
+  through `tests/engine_harness.mjs`. See `docs/battle-audit.md` for what it covers.
   Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
-  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*STATUSFX*/` are filled from `data/` and `packs/index.json`;
+  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
   `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
 - `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `h` = HOME stills, `-f*` = forms; 16 per pack),
@@ -51,7 +58,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 `ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SMOOTH 3D SPRITES`
 (`getSprite`, `spKey`, `hqFrame` xBR upscale, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
-`PERSONALIZE` · `BATTLE ENGINE` · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
+`PERSONALIZE` · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
 `POKÉMON HOME` · `HALL OF FAME GALLERY` · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
@@ -80,6 +87,9 @@ Boot code is at the very end of the script.
 - **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
+
+- **Battles.** Member battle fields (`nature`, `evs`, `ivs`) are validated in `cleanMember`; Megas/Primals never hold
+  items (there are no Mega Stones). Any damage change must keep `tests/test_damage.mjs` at 0 mismatches.
 
 ## Blake's preferences
 - Keep it free and non-profit. Polished, "production-ready" feel; he likes bold improvements when asked to clean up.
