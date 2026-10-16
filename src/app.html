@@ -1548,6 +1548,10 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 .hearts i{display:block; width:11px; height:10px; color:#d6dbe6}
 .hearts i svg{display:block; width:100%; height:100%; fill:currentColor}
 .hearts i.on{color:#e2413b}
+.hearts i.new{animation:heartPop .5s var(--ease) .35s both}
+@keyframes heartPop{0%{transform:scale(.3); color:#d6dbe6} 60%{transform:scale(1.45)} 100%{transform:scale(1)}}
+.hm-berry.bump{animation:bump .4s var(--ease)}
+@keyframes bump{40%{transform:scale(1.2) translateY(-3px)}}
 .hearts i.half{color:#e2413b; -webkit-mask:linear-gradient(90deg, #000 50%, rgba(0,0,0,.25) 50%); mask:linear-gradient(90deg, #000 50%, rgba(0,0,0,.25) 50%)}
 .hearts .hm-rib{display:block; width:14px; height:14px; margin-left:3px}
 .hearts .hm-rib svg{width:100%; height:100%}
@@ -6331,7 +6335,7 @@ function homeLayer(tod){
 const scrX = x => x*HS.ts - (HS.camPx ?? Math.round(HS.cam*HS.ts)), scrY = y => HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY;
 function homeFrame(now){
   if (!HS.cv || !HS.cv.isConnected) return;
-  const dt = Math.min(.05, (now - HS.last)/1000); HS.last = now;
+  const dt = HS.dt = Math.min(.05, (now - HS.last)/1000); HS.last = now;
   const pixel = state.mode === "2d", c = pixel ? HS.lctx : HS.ctx, V = HS.V, ts = HS.ts, tod = clockTod();
   homeUpdate(dt, now);
   // camera follows the trainer
@@ -6356,6 +6360,7 @@ function homeFrame(now){
   c.drawImage(homeLayer(tod), -HS.camPx, -HS.camY - (HS.head || 0));
   drawWeather(c, now, pixel, "win");
   drawWindowLight(c, pixel, L);
+  drawWeather(c, now, pixel, "far");
   if (HS.cam < 0) { const g = c.createLinearGradient(scrX(0) - ts*.5, 0, scrX(0), 0); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); c.fillStyle = g; c.fillRect(scrX(0) - ts*.5, 0, ts*.5, V.H); }
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
@@ -6369,6 +6374,7 @@ function homeFrame(now){
   for (const g of homeData().gifts) list.push({y:g.y, draw:() => drawGift(c, g, now, pixel)});
   list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
   list.sort((a, b) => a.y - b.y).forEach(d => d.draw());
+  drawHomeFx(c, now, pixel);
   // prompts and emotes on top
   drawWeather(c, now, pixel, "out");
   if (HS.edit) drawDecoOverlay(c, pixel);
@@ -6420,23 +6426,63 @@ function furnShadow(c, p, pixel){
   if (!pixel && p.y < .35 && roomAt(p.x + it.w/2) && roomAt(p.x + it.w/2).wall) { const wy = scrY(0), g = c.createLinearGradient(0, wy - ts*.7, 0, wy); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.13)"); c.fillStyle = g; c.fillRect(scrX(p.x) - ts*.08, wy - ts*.7, it.w*ts + ts*.16, ts*.7); }
 }
 // 3D Pokémon walk the Home at their native size (a whole-number multiple on big screens); only giants are shrunk to fit a room
-function monScale(m){ if (!m.sp) return 1; const pixel = state.mode === "2d", bb = m.sp.bb; if (pixel) return 1; const k = natK(HS.ts, 40); return Math.min(k, 3.4*HS.ts/bb.h); }
+function monScale(m, sp = m.sp){ if (!sp) return 1; const pixel = state.mode === "2d", bb = sp.bb; if (pixel) return 1; const k = natK(HS.ts, 40); return Math.min(k, 3.4*HS.ts/bb.h); }
+// real sleeping sprites (PMD Sprite Collab, packs zz-*) and 3D back sprites for facing the TV or the fire
+const hasSleep = n => { const k = spKey(n, false, "zz"); return !!(IDX[k] && IDX[k].some(e => e[0] === n)); };
+function monAltSprites(m){
+  if (m.act === "nap" && !m.zz && !m.zzLoad && hasSleep(m.n)) { m.zzLoad = true; getSprite(spKey(m.n, false, "zz"), m.n).then(s => { m.zz = s; }).catch(() => {}); }
+  if ((m.act === "watch" || m.act === "warm") && state.mode !== "2d" && !m.bk && !m.bkLoad && hasBack(m.n, false)) { m.bkLoad = true; getSprite(spKey(m.n, false, "3db"), m.n).then(s => { m.bk = s; }).catch(() => {}); }
+}
 function drawHomeMon(c, m, now, pixel){
-  const sp = m.sp; if (!sp) return;
-  const ts = HS.ts, bb = sp.bb, s = monScale(m), w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
+  if (!m.sp) return;
+  const zz = m.act === "nap" && m.zz, bk = !pixel && (m.act === "watch" || m.act === "warm") && m.bk, sp = zz || bk || m.sp;
+  // a sleeping sprite is pixel art drawn at a whole-number scale close to the awake size; the rest as usual
+  const s = zz ? Math.max(1, Math.min(4, Math.round(m.sp.bb.w*monScale(m)*.6/zz.bb.w))) : monScale(m, sp);
+  const ts = HS.ts, bb = sp.bb, w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
   const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim, ft = footOf(sp), up = Math.max(0, lift - zl), lf = 1/(1 + up/(ts*.9)), sw = Math.max(ts*.2, ft.w*w*.62)*lf;   // the shadow shrinks and fades as it hops or floats
   if (swim) { c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = pixel ? 1 : Math.max(1, ts*.04); c.beginPath(); c.ellipse(Math.round(X), Math.round(Y - zl), Math.max(2, w*.36), Math.max(1, w*.09), 0, 0, 7); c.stroke(); }
   else softShadow(c, X + ft.cx*w*m.dir + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
   c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
-  if (m.act === "nap") c.scale(1.04, .9 + .02*Math.sin(now/700 + m.n));   // breathing while asleep
+  if (m.act === "nap" && !zz) c.scale(1.04, .9 + .02*Math.sin(now/700 + m.n));   // no sleeping sprite: breathe, squashed
+  if (m.eatT > now) c.scale(1 + .03*Math.abs(Math.sin(now/85)), 1 - .07*Math.abs(Math.sin(now/85)));   // munching
   if (m.visitor) c.globalAlpha = .82 + .12*Math.sin(now/500 + m.n);
   if (swim) { c.beginPath(); c.rect(-w, -h, w*2, h*.72); c.clip(); }
   if (Number.isInteger(s)) c.imageSmoothingEnabled = false;
   c.drawImage(img, bb.x, bb.y, bb.w, bb.h, Math.round(-w/2), -Math.round(h), Math.round(w), Math.round(h));
   c.restore();
   m.box = {x:X - w/2, y:Y - lift - h, w, h};
+  if (m.eatT > now && now > (m.crumbT || 0)) { m.crumbT = now + 140; fx("crumb", m.x + m.dir*.15, m.y, (lift + h*.3)/ts, {col:m.eatCol}); }
+}
+// ---- little effects: heart bursts, sparkles, crumbs, berries flying to the pouch, gift confetti ----
+// positions are in tiles (x, floor y, height above the floor) so they stay put when the camera moves
+function fx(k, x, y, z, o = {}){
+  if (!HS.fx) HS.fx = []; if (HS.fx.length > 160) HS.fx.shift();
+  const a = Math.random()*Math.PI*2, sp = o.sp ?? .8;
+  HS.fx.push({k, x, y, z, vx:o.vx ?? Math.cos(a)*sp*.6, vz:o.vz ?? (1 + Math.random())*sp, t0:performance.now(), dur:o.dur || 900, col:o.col, to:o.to, rot:Math.random()*6, g:o.g ?? 2.2});
+}
+function burst(k, m, n = 6, o = {}){ for (let i = 0; i < n; i++) fx(k, m.x + (Math.random() - .5)*.3, m.y, (m.box ? (scrY(m.y) - m.box.y)/HS.ts : 1)*.85, o); }
+function drawHomeFx(c, now, pixel){
+  if (!HS.fx || !HS.fx.length) return;
+  const ts = HS.ts, R = v => pixel ? Math.round(v) : v;
+  HS.fx = HS.fx.filter(p => now - p.t0 < p.dur);
+  for (const p of HS.fx) {
+    const t = (now - p.t0)/1000, u = (now - p.t0)/p.dur, a = u > .7 ? (1 - u)/.3 : 1;
+    let x, z;
+    if (p.to) { const e = Math.min(1, u); x = p.x + (p.to.x - p.x)*e; z = p.z + (p.to.z - p.z)*e + Math.sin(e*Math.PI)*1.2; }   // an arc to a point
+    else { x = p.x + p.vx*t; z = Math.max(0, p.z + p.vz*t - p.g*t*t*(p.k === "heart" || p.k === "spark" ? .15 : 1)); }
+    const X = R(scrX(x)), Y = R(scrY(p.y) - z*ts);
+    c.globalAlpha = Math.max(0, a);
+    if (p.k === "heart") { if (pixel) { c.fillStyle = "#e2413b"; EMO_PX.heart.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === "X") c.fillRect(X - 3 + i, Y - 3 + j, 1, 1); }); } else { c.fillStyle = "#e2413b"; emoteShape(c, "heart", X, Y, ts*(.13 + .05*Math.sin(u*Math.PI))); } }
+    else if (p.k === "spark") { c.fillStyle = p.col || "#ffd43b"; if (pixel) { c.fillRect(X, Y - 2, 1, 5); c.fillRect(X - 2, Y, 5, 1); } else emoteShape(c, "sig", X, Y, ts*.12*(1 - u*.5)); }
+    else if (p.k === "crumb") { c.fillStyle = p.col || "#c98a4a"; const sz = pixel ? 1 : Math.max(1, ts*.04); c.fillRect(X, Y, sz, sz); }
+    else if (p.k === "berry") { c.fillStyle = p.col || "#e2413b"; const r = pixel ? 2 : ts*.09; if (pixel) c.fillRect(X - 2, Y - 2, 4, 4); else { c.beginPath(); c.arc(X, Y, r, 0, 7); c.fill(); c.fillStyle = "#3fae5a"; c.fillRect(X - r*.2, Y - r*1.5, r*.4, r*.6); } }
+    else if (p.k === "confetti") { c.fillStyle = p.col; c.save(); c.translate(X, Y); c.rotate(p.rot + t*8); const sz = pixel ? 2 : ts*.07; c.fillRect(-sz, -sz/2, sz*2, sz); c.restore(); }
+    else if (p.k === "lid") { c.save(); c.translate(X, Y); c.rotate((p.vx > 0 ? 1 : -1)*t*7); const sz = ts*.36; c.fillStyle = "#e2413b"; c.fillRect(R(-sz/2), R(-sz*.12), R(sz), R(sz*.24)); c.fillStyle = "#ffd43b"; c.fillRect(R(-sz*.09), R(-sz*.12), R(sz*.18), R(sz*.24)); c.restore(); }
+    else if (p.k === "splash") { c.strokeStyle = "rgba(210,228,255,.8)"; c.lineWidth = pixel ? 1 : Math.max(1, ts*.025); c.beginPath(); c.ellipse(X, Y, ts*.12*(.4 + u), ts*.04*(.4 + u), 0, 0, 7); c.stroke(); }
+  }
+  c.globalAlpha = 1;
 }
 function drawHomeTrainer(c, now, pixel){
   const sp = HS.trSp, me = HS.me, ts = HS.ts; const X = scrX(me.x), Y = scrY(me.y);
@@ -6551,8 +6597,19 @@ function homeUpdate(dt, now){
     if (!me.path.length) { me.path = null; me.walk = 0; if (me.target) { const m = me.target; me.target = null; if (Math.hypot(m.x - me.x, (m.y - me.y)*1.4) < 2.2) homeUseThing({k:"mon", m}); }
       if (HS.pickAt) { const t = HS.pickAt; HS.pickAt = null; if (Math.hypot(t.x + t.it.w/2 - me.x, (t.y + t.it.d + .45 - me.y)*1.4) < 1.8) pickBerry(t); } }
   } else me.walk = 0;
+  if (now > (HS.furnT || 0)) { HS.furnT = now + 500; const sig = JSON.stringify(homeData().items); if (HS.furnSig !== undefined && sig !== HS.furnSig) homeFurnChanged(); HS.furnSig = sig; }
+  const night = clockTod() === "night";
   for (const m of HS.mons) {
     if (m.hop > 0) m.hop = Math.max(0, m.hop - dt*1.8);
+    // followers trail a little behind you, and stop when you stop
+    const fi = HS.followers.indexOf(m.n);
+    if (fi >= 0 && !VISIT && !HS.edit && !(night && !isNocturnal(m.n)) && !m.plan && (m.st === "idle" || m.follow)) {
+      const tx = Math.max(.4, Math.min(HS.W - .4, me.x - me.dir*(1.05 + fi*.85))), ty = Math.max(.5, Math.min(HM.D - .3, me.y + (fi ? .3 : -.2))), d = Math.hypot(tx - m.x, (ty - m.y)*1.4);
+      if (d > (me.walk ? .45 : 1.25) && !blocked(tx, ty, m.fl)) {
+        if (!m.follow || now > (m.pathT || 0)) { m.pathT = now + 600; m.path = dividers().some(dv => (dv.x - m.x)*(dv.x - tx) < 0) ? findPath(m, {x:tx, y:ty}) : null; }
+        m.follow = true; m.st = "walk"; m.tx = tx; m.ty = ty;
+      }
+    }
     m.t -= dt*1000; if (me.target === m && m.st === "idle") m.t = Math.max(m.t, 500);
     if (m.st === "act") homeActTick(m, now);
     else if (m.st === "idle" && m.t <= 0 && homeDecide(m, now)) { /* off to use furniture, play, follow you or leave a gift */ }
@@ -6562,15 +6619,41 @@ function homeUpdate(dt, now){
       if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null; } else m.t = 1500;
       if (Math.random() < .12) m.emote = {k:clockTod() === "night" && Math.random() < .6 ? "zz" : "note", t0:now, dur:1600};
     } else if (m.st === "walk") {
-      const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), sp = m.spd*dt;   // through the doorway when it needs another room
+      const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), last = !(m.path && m.path.length > 1);   // through the doorway when it needs another room
+      m.v = Math.min(m.spd*(m.follow && me.walk ? 1.25 : 1), (m.v || 0) + m.spd*dt*3.5, last ? Math.max(.3, d*2.4) : 99);   // speeds up, and slows down as it arrives
+      const sp = m.v*dt;
       if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
-      else if (d <= sp) { if (m.plan) homeAct(m, m.plan, now); else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
-      else { const nx = m.x + dx/d*sp, ny = m.y + dy/d*sp*.8, canSwim = m.fl || (m.water && m.swimTrip) || m.swim;
-        if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; m.plan = null; m.spot = null; } else { m.x = nx; m.y = ny; if (Math.abs(dx) > .02) m.dir = Math.sign(dx); } }
+      else if (d <= sp) { m.x = wp.x; m.y = wp.y; m.v = 0; if (m.plan) homeAct(m, m.plan, now); else if (m.follow) { m.follow = false; m.st = "idle"; m.t = 900; if (Math.abs(me.x - m.x) > .1) m.dir = Math.sign(me.x - m.x); } else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
+      else {
+        const canSwim = m.fl || (m.water && m.swimTrip) || m.swim, av = d > .5 ? steerAway(m) : {x:0, y:0};
+        let ux = dx/d + av.x, uy = dy/d + av.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l;
+        let nx = m.x + ux*sp, ny = m.y + uy*sp*.8;
+        if (blocked(nx, ny, canSwim)) { nx = m.x + dx/d*sp; ny = m.y + dy/d*sp*.8; }   // steering would bump into something: go straight
+        if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; m.plan = null; m.spot = null; m.follow = false; m.v = 0; }
+        else { m.x = nx; m.y = ny; if (Math.abs(ux) > .15) m.dir = Math.sign(ux); }   // faces the way it's going
+      }
     }
     m.swim = !m.fl && !m.z && inPond(roomAt(m.x), m.x, m.y);
   }
   if (HS.msgT && now > HS.msgT) { HS.msgT = 0; const el = $("hmMsg"); if (el) el.hidden = true; }
+}
+// gentle steering: a push away from other Pokémon and the trainer that are close ahead
+function steerAway(m){
+  let x = 0, y = 0; const R = .8;
+  for (const o of [...HS.mons, HS.me]) {
+    if (o === m || o === m.with || (o.z || 0) > 0 || o.st === "act" && o.spot && o.spot.on) continue;
+    const ddx = m.x - o.x, ddy = (m.y - o.y)*1.4, d = Math.hypot(ddx, ddy);
+    if (d < R && d > .01) { const k = (R - d)/R*1.3; x += ddx/d*k; y += ddy/d*k/1.4; }
+  }
+  return {x, y};
+}
+// furniture moved or put away: anyone using (or heading to) it gets down, and nobody is left inside furniture
+function homeFurnChanged(){
+  const keys = new Set(homeSpots().map(x => x.key));
+  for (const m of HS.mons) {
+    if (m.spot && !keys.has(m.spot.key)) { if (m.st === "act") { m.x = m.spot.ax; m.y = m.spot.ay; } m.z = 0; m.depth = null; m.act = null; m.spot = null; m.plan = null; m.with = null; m.st = "idle"; m.t = 800; m.hop = 1; }
+    if (!m.z && blocked(m.x, m.y, m.fl || m.swim)) { const sp = randomSpot(m.fl, {x:m.x, y:m.y}) || randomSpot(m.fl); if (sp) { m.x = sp.x; m.y = sp.y; } }
+  }
 }
 function tryMove(o, dx, dy){ if (!blocked(o.x + dx, o.y + dy)) { o.x += dx; o.y += dy; } else if (!blocked(o.x + dx, o.y)) o.x += dx; else if (!blocked(o.x, o.y + dy)) o.y += dy; }
 function homeGoTo(m){
@@ -6582,12 +6665,13 @@ function homeInteract(m){
   const D = homeData(), day = todayKey(), now = performance.now(), name = monName(m.n);
   m.hop = 1; if (m.st !== "act") { m.st = "idle"; m.t = 2500; } m.dir = HS.me.x < m.x ? -1 : 1; HS.me.dir = m.x > HS.me.x ? 1 : -1;
   m.emote = {k:!VISIT && !m.visitor && friendOf(m.n) >= 25 ? "sig" : "heart", t0:now, dur:1800}; Sound.play("heal");   // from 25 friendship, its own sparkle
+  burst("heart", m, 7, {sp:.9, dur:1100});
   if (m.visitor) { homeMsg(`${eventOn() && eventOn().id === "halloween" ? "Boo!" : "Hello there!"} It’s just visiting, and will leave by morning.`, {n:m.n, tag:"Visitor"}); return; }
   if (VISIT) { homeMsg(["Is happy to meet you!", "Says hello!", "Wants to play!"][Math.floor(Math.random()*3)], {n:m.n}); return; }   // a friend's Pokémon: just a hello
   const g = D.gain[m.n] && D.gain[m.n].d === day ? D.gain[m.n] : (D.gain[m.n] = {d:day, n:0});
   let up = 0; if (g.n < 25) { up = Math.min(5, 25 - g.n); g.n += up; D.fr[m.n] = Math.min(100, friendOf(m.n) + up); }
   const f = friendOf(m.n), lines = f >= 100 ? ["Is your best friend!", "Won’t leave your side!"] : f >= 60 ? ["Loves playing with you!", "Is so happy to see you!"] : f >= 25 ? ["Is getting used to you.", "Seems happy."] : ["Is a little shy.", "Watches you curiously."];
-  homeMsg(`${lines[Math.floor(Math.random()*lines.length)]}${up ? "" : ` <span class="meta">It’s had enough petting for today.</span>`}`, {n:m.n, f});
+  homeMsg(`${lines[Math.floor(Math.random()*lines.length)]}${up ? "" : ` <span class="meta">It’s had enough petting for today.</span>`}`, {n:m.n, f, f0:f - up});
   if (D.pet[m.n] !== day) { D.pet[m.n] = day; earn(10, `Played with ${name}`); }
   save(); renderResidents(); checkAch();
 }
@@ -6596,7 +6680,7 @@ const nickFor = n => { if (VISIT && VISIT.nicks[n]) return VISIT.nicks[n]; for (
 function homeMsg(html, o = {}){
   const el = $("hmMsg"); if (!el) return; const n = o.n;
   el.className = "home-msg" + (n ? " talk" : "");
-  el.innerHTML = `<span class="hmm-av${n ? "" : " sys"}" aria-hidden="true">${n ? spr(n, {mode:"2d"}) : "✦"}</span><div class="hmm-b">${n ? `<div class="hmm-h"><b>${esc(nickFor(n))}</b>${o.f !== undefined ? heartsHTML(o.f) : o.tag ? `<span class="hmm-tag">${esc(o.tag)}</span>` : ""}</div>` : ""}<p class="hmm-t">${html}</p></div>`;
+  el.innerHTML = `<span class="hmm-av${n ? "" : " sys"}" aria-hidden="true">${n ? spr(n, {mode:"2d"}) : "✦"}</span><div class="hmm-b">${n ? `<div class="hmm-h"><b>${esc(nickFor(n))}</b>${o.f !== undefined ? heartsHTML(o.f, o.f0) : o.tag ? `<span class="hmm-tag">${esc(o.tag)}</span>` : ""}</div>` : ""}<p class="hmm-t">${html}</p></div>`;
   if (n) paintAll(el);
   el.style.minHeight = ""; el.hidden = false; el.classList.remove("in"); void el.offsetWidth; el.classList.add("in");
   el.style.minHeight = el.offsetHeight + "px";   // the box keeps its final size while the words type in
@@ -6614,7 +6698,9 @@ function typewriter(el){
 }
 const HEART_SVG = '<svg viewBox="0 0 10 9" aria-hidden="true"><path d="M5 8.6L1.1 4.8A2.35 2.35 0 0 1 5 1.75 2.35 2.35 0 0 1 8.9 4.8z"/></svg>';
 // friendship as five hearts (one per 20), plus the ribbon at 100
-const heartsHTML = f => `<span class="hearts" title="Friendship ${f}/100" aria-label="Friendship ${f} of 100">${[0, 1, 2, 3, 4].map(k => `<i class="${f >= (k + 1)*20 ? "on" : f >= k*20 + 10 ? "half" : ""}">${HEART_SVG}</i>`).join("")}${f >= 100 ? `<span class="hm-rib">${RIBBON_SVG}</span>` : ""}</span>`;
+const heartLvl = (f, k) => f >= (k + 1)*20 ? 2 : f >= k*20 + 10 ? 1 : 0;
+// f0: the friendship before; hearts that just filled pop in (the meter animates in the dialog)
+const heartsHTML = (f, f0 = f) => `<span class="hearts" title="Friendship ${f}/100" aria-label="Friendship ${f} of 100">${[0, 1, 2, 3, 4].map(k => `<i class="${["", "half", "on"][heartLvl(f, k)]}${heartLvl(f, k) > heartLvl(f0, k) ? " new" : ""}">${HEART_SVG}</i>`).join("")}${f >= 100 ? `<span class="hm-rib">${RIBBON_SVG}</span>` : ""}</span>`;
 function renderResidents(){
   const box = $("hmRes"); if (!box) return; const mons = homeMons();
   box.innerHTML = mons.length ? mons.map(n => { const f = friendOf(n); return `<button class="hm-r" type="button" data-hres="${n}" title="Walk to ${esc(monName(n))} · friendship ${f}/100">${spr(n, {mode:"2d"})}<span class="hm-rt"><b>${esc(nickFor(n))}</b>${heartsHTML(f)}</span></button>`; }).join("")
@@ -6799,10 +6885,8 @@ const pickWeighted = list => { const tot = list.reduce((a, x) => a + x.w, 0); if
 function homeDecide(m, now){
   if (m.visitor) return false;
   const tod = clockTod(), night = tod === "night", me = HS.me, f = friendOf(m.n);
-  // friends follow you around (the two who like you most, from 50 friendship)
-  if (f >= 50 && !VISIT && HS.followers.includes(m.n) && !(night && !isNocturnal(m.n)) && Math.hypot(me.x - m.x, me.y - m.y) > 2.2 && Math.random() < .75) {   // at night they'd rather sleep
-    const t = randomSpot(m.fl, {x:me.x, y:me.y}); if (t && Math.hypot(t.x - me.x, t.y - me.y) < 2.6) { homeWalk(m, t); return true; }
-  }
+  // friends who follow you (the two who like you most, from 50 friendship) mostly stay with you (see homeUpdate)
+  if (f >= 50 && !VISIT && HS.followers.includes(m.n) && !(night && !isNocturnal(m.n)) && Math.hypot(me.x - m.x, me.y - m.y) < 2.5 && Math.random() < .6) { m.t = 1200 + Math.random()*1500; return true; }
   // gifts: at 60+ friendship, once a day, sometimes leave a little present
   const D = homeData(), day = todayKey();
   if (!VISIT && !night && f >= 60 && D.giftDay[m.n] !== day && D.gifts.length < 6 && Math.random() < .12) { homeGift(m, day); return true; }
@@ -6831,7 +6915,7 @@ function homeDecide(m, now){
   return false;
 }
 function homeWalk(m, t, plan){
-  m.tx = t.x; m.ty = t.y; m.st = "walk"; m.plan = plan || null; m.spot = plan && plan.spot || null; m.swimTrip = false;
+  m.tx = t.x; m.ty = t.y; m.st = "walk"; m.plan = plan || null; m.spot = plan && plan.spot || null; m.swimTrip = false; m.follow = false;
   m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null;
 }
 // arrived: start the planned activity
@@ -6840,21 +6924,28 @@ function homeAct(m, plan, now){
   m.act = plan.act; m.st = "act"; m.with = plan.with || null; HS.acts = (HS.acts || 0) + 1;
   m.t = plan.act === "nap" ? (night ? 25000 + Math.random()*25000 : 9000 + Math.random()*8000) : plan.act === "play" ? 4500 : 7000 + Math.random()*9000;
   if (s && s.on) { m.x = s.x; m.y = s.y; m.z = s.z; m.depth = s.depth; m.hop = 1; }
-  if (s && s.act === "warm" || s && s.act === "watch" || s && s.act === "splash" || s && s.act === "sniff") m.dir = 1;
-  if (m.with) m.dir = m.with.x > m.x ? 1 : -1;
+  else if (s) { m.x = s.x; m.y = s.y; }   // right on its spot
+  if (s && !s.on) { const it = placedItems().find(p => s.key.startsWith(`${p.id}@${p.x},${p.y}#`)); if (it) { const cx = it.x + it.it.w/2; m.dir = Math.abs(cx - m.x) < .2 ? (m.dir || 1) : Math.sign(cx - m.x); } }   // faces what it's using
+  if (s && s.on) m.dir = m.x < (HS.W/2) ? 1 : -1;   // sitting or napping: faces into the room
+  if (m.with) { m.dir = m.with.x > m.x ? 1 : -1; const o = m.with; m.pc = o.pc && o.act === "play" ? o.pc : {x:(m.x + o.x)/2, y:(m.y + o.y)/2}; m.ang = Math.atan2((m.y - m.pc.y)*1.4, m.x - m.pc.x); }
+  monAltSprites(m);
   m.emote = {k:ACT_EMO[m.act] || "note", t0:now, dur:1800}; m.emoT = now;
   if (m.act === "splash") Sound.play("splash");
 }
 function homeActEnd(m){
   const s = m.spot;
   if (s && s.on) { m.x = s.ax; m.y = s.ay; m.hop = 1; }
-  m.z = 0; m.depth = null; m.act = null; m.spot = null; m.with = null; m.plan = null; m.st = "idle"; m.t = 1500 + Math.random()*3000;
+  m.z = 0; m.depth = null; m.act = null; m.spot = null; m.with = null; m.plan = null; m.pc = null; m.st = "idle"; m.t = 1500 + Math.random()*3000;
 }
 // per-frame activity upkeep (emotes, bouncing, play hops)
 function homeActTick(m, now){
   if (m.st !== "act") return;
   if (m.act === "bounce" && m.hop <= 0) m.hop = 1;
-  if (m.act === "play" && m.hop <= 0 && Math.random() < .03) { m.hop = 1; if (m.with) m.dir = m.with.x > m.x ? 1 : -1; }
+  if (m.act === "play" && m.with && m.with.act === "play" && m.with.with === m && m.pc) {   // both there: chase each other round in a little circle
+    m.ang += (HS.dt || .016)*2.4; const nx = m.pc.x + Math.cos(m.ang)*.6, ny = m.pc.y + Math.sin(m.ang)*.42;
+    if (!blocked(nx, ny, m.fl)) { if (Math.abs(nx - m.x) > .002) m.dir = Math.sign(nx - m.x); m.x = nx; m.y = ny; }
+    if (m.hop <= 0 && Math.random() < .02) m.hop = 1;
+  } else if (m.act === "play" && m.hop <= 0 && Math.random() < .03) { m.hop = 1; if (m.with) m.dir = m.with.x > m.x ? 1 : -1; }
   if (now - m.emoT > (m.act === "nap" ? 2600 : 4200)) { m.emoT = now; if (m.act === "nap" || Math.random() < .5) m.emote = {k:ACT_EMO[m.act] || "note", t0:now, dur:1600}; }
   if (m.t <= 0) homeActEnd(m);
 }
@@ -6873,7 +6964,8 @@ function pickBerry(p){
   if (bagTotal() >= 99) { homeMsg("Your berry pouch is full."); return; }
   D.trees[k] = {d:day, n:3 - left + 1}; D.bag[b.id] = (D.bag[b.id] | 0) + 1;
   Sound.play("pick"); homeMsg(`You picked a <b>${b.name}</b>! ${itemIcon(b.name)} <span class="meta">(${left - 1} left on this tree today)</span>`);
-  save(); renderHomeBag();
+  fx("berry", p.x + p.it.w/2, p.y + p.it.d, 2.1, {to:{x:HS.me.x, z:1.1}, dur:650, col:b.col});   // pops off the tree into your pouch
+  save(); setTimeout(() => { renderHomeBag(); const el = $("hmBag") && $("hmBag").querySelector(`[data-hold="${b.id}"]`); if (el) el.classList.add("bump"); }, 600);
 }
 function feedMon(m, bid){
   const D = homeData(), day = todayKey(), b = BERRY_BY.get(bid), now = performance.now();
@@ -6885,7 +6977,8 @@ function feedMon(m, bid){
   fd.n++; D.fedN++; D.fr[m.n] = Math.min(100, friendOf(m.n) + up);
   m.hop = 1; m.st = m.st === "act" ? m.st : "idle"; m.t = Math.max(m.t, 2000); m.dir = HS.me.x < m.x ? -1 : 1;
   m.emote = {k:fav ? "fav" : "heart", t0:now, dur:2200}; Sound.play(fav ? "up" : "heal");
-  homeMsg(fav ? `Loved the <b>${b.name}</b>! It’s its favourite flavour.` : `Ate the <b>${b.name}</b>. Yum!`, {n:m.n, f:friendOf(m.n)});
+  m.eatT = now + 1500; m.eatCol = b.col; if (fav) burst("spark", m, 9, {sp:1.1, dur:1200, col:"#ffd43b"}); else burst("heart", m, 3);
+  homeMsg(fav ? `Loved the <b>${b.name}</b>! It’s its favourite flavour.` : `Ate the <b>${b.name}</b>. Yum!`, {n:m.n, f:friendOf(m.n), f0:friendOf(m.n) - up});
   save(); renderResidents(); renderHomeBag(); checkAch();
 }
 function renderHomeBag(){
@@ -6904,6 +6997,8 @@ function homeGift(m, day){
 function openGift(i){
   const D = homeData(), g = D.gifts[i]; if (!g || VISIT) return;
   D.gifts.splice(i, 1); Sound.play("pick");
+  fx("lid", g.x, g.y, .45, {vx:(Math.random() < .5 ? -1 : 1)*.9, vz:2.2, g:5, dur:800});   // the unwrap: the lid flies off, confetti
+  for (let k = 0; k < 14; k++) fx("confetti", g.x, g.y, .4, {sp:1.4, dur:1100, g:3.2, col:["#e2413b", "#ffd43b", "#3fae5a", "#3a8fd6", "#e27ab8"][k % 5]});
   if (g.k === "pp") { earn(g.v, `A gift from ${nickFor(g.n)}`); homeMsg(`Left you a gift: <b>${g.v} PokéPoints</b>!`, {n:g.n}); }
   else if (g.k === "berry") { const b = BERRY_BY.get(g.v); D.bag[g.v] = Math.min(99, (D.bag[g.v] | 0) + 1); homeMsg(`Left you a gift: a <b>${b.name}</b>! ${itemIcon(b.name)}`, {n:g.n}); renderHomeBag(); }
   else { const it = unlockOf("furn", g.v); if (it) { grant(it); homeMsg(`Left you a gift: a <b>${esc(it.name)}</b>! Find it in Decorate.`, {n:g.n}); Sound.play("up"); } }
@@ -6911,9 +7006,13 @@ function openGift(i){
 }
 function drawGift(c, g, now, pixel){
   const ts = HS.ts, X = scrX(g.x), Y = scrY(g.y), s = ts*.32, b = Math.abs(Math.sin(now/500 + g.x))*ts*.05, R = v => pixel ? Math.round(v) : v;
+  const wob = Math.max(0, Math.sin(now/260 + g.x*3)) * (Math.sin(now/1700 + g.y) > .55 ? .16 : 0);   // a wobble every few seconds
+  if (Math.random() < .02) fx("spark", g.x + (Math.random() - .5)*.5, g.y, .4 + Math.random()*.5, {vx:0, vz:.15, g:0, dur:700, col:"#fff6c4"});
+  c.save(); c.translate(R(X), R(Y)); c.rotate(wob*Math.sin(now/60)); c.translate(-R(X), -R(Y));
   softShadow(c, X, Y, s*.7*(1 - b/ts), s*.22, .3, pixel);
   c.fillStyle = "#e2413b"; c.fillRect(R(X - s/2), R(Y - s - b), R(s), R(s)); c.fillStyle = "#ffd43b"; c.fillRect(R(X - s*.09), R(Y - s - b), R(s*.18), R(s)); c.fillRect(R(X - s/2), R(Y - s*.6 - b), R(s), R(s*.16));
   c.beginPath(); c.ellipse(R(X - s*.18), R(Y - s - b - s*.12), s*.2, s*.12, -.5, 0, 7); c.ellipse(R(X + s*.18), R(Y - s - b - s*.12), s*.2, s*.12, .5, 0, 7); c.fill();
+  c.restore();
 }
 // the pickable berries on each tree
 function drawTreeBerries(c, p, pixel){
@@ -6967,20 +7066,25 @@ function skyRects(pixel){
   }
   return out.filter(q => q.x + q.w > 0 && q.x < HS.V.W);
 }
-// which = "win": through the windows (drawn before furniture); "out": over outdoor rooms (drawn over everything)
+// which = "win": through the window panes; "far": a slower, dimmer layer over outdoor rooms behind everyone (plus snow
+// settling on the ground); "out": the near layer over outdoor rooms, on top of everything, with rain splashing on the ground
 function drawWeather(c, now, pixel, which){
   const w = HS.weather; if (w === "sun") return;
   for (const q of skyRects(pixel)) {
-    if (!!q.out !== (which === "out")) continue;
+    if (!!q.out !== (which !== "win")) continue;
+    const far = which === "far", ts = HS.ts, P = v => pixel ? Math.round(v) : v;
     c.save(); c.beginPath(); c.rect(q.x, q.y, q.w, q.h); c.clip();
-    if (w === "cloud" || w === "rain") { c.fillStyle = w === "rain" ? "rgba(60,70,90,.28)" : "rgba(120,130,150,.18)"; c.fillRect(q.x, q.y, q.w, q.h); }
-    const n = Math.ceil(q.w*q.h/(HS.ts*HS.ts)*(q.out ? 1.2 : 6)), ts = HS.ts;
+    if (!far && (w === "cloud" || w === "rain")) { c.fillStyle = w === "rain" ? "rgba(60,70,90,.28)" : "rgba(120,130,150,.18)"; c.fillRect(q.x, q.y, q.w, q.h); }
+    if (far && w === "snow") { const gy = scrY(0); c.fillStyle = "rgba(255,255,255,.18)"; c.fillRect(q.x, gy, q.w, q.y + q.h - gy);   // a light dusting on the ground
+      c.fillStyle = "rgba(255,255,255,.5)"; for (let i = 0; i < q.w*(HM.D*HM.SQ)/(ts*.9); i++) { const sx = (i*0.6180339) % 1, sy = (i*0.7548776) % 1; c.fillRect(P(q.x + sx*q.w), P(gy + sy*(q.y + q.h - gy)), Math.max(1, ts*.05), Math.max(1, ts*.03)); } }
+    const n = Math.ceil(q.w*q.h/(ts*ts)*(q.out ? (far ? .8 : 1.1) : 6)), sp = far ? .55 : 1, sz = far ? .6 : 1, al = far ? .35 : 1, seed = far ? 11.7 : 0;
     for (let i = 0; i < n; i++) {
-      const sx = (i*73.13) % 1, sy = (i*37.71) % 1;
-      if (w === "rain") { const y = q.y + ((sy*q.h + now*.6*ts/32*6) % (q.h + ts)) - ts*.5, x = q.x + ((sx*q.w + y*.15) % q.w); c.fillStyle = "rgba(200,220,255,.55)"; c.fillRect(pixel ? Math.round(x) : x, pixel ? Math.round(y) : y, Math.max(1, ts*.03), ts*.28); }
-      else if (w === "snow") { const y = q.y + ((sy*q.h + now*.05*ts/32*6) % (q.h + ts)) - ts*.3, x = q.x + ((sx*q.w + Math.sin(now/900 + i)*ts*.3 + q.w) % q.w), s = Math.max(1, ts*(.04 + (i % 3)*.02)); c.fillStyle = "rgba(255,255,255,.85)"; c.fillRect(pixel ? Math.round(x) : x, pixel ? Math.round(y) : y, s, s); }
+      const sx = (i*73.13 + seed) % 1, sy = (i*37.71 + seed) % 1;
+      if (w === "rain") { const y = q.y + ((sy*q.h + now*.6*sp*ts/32*6) % (q.h + ts)) - ts*.5, x = q.x + ((sx*q.w + y*.15) % q.w); c.fillStyle = `rgba(200,220,255,${(.55*al).toFixed(2)})`; c.fillRect(P(x), P(y), Math.max(1, ts*.03*sz), ts*.28*sz); }
+      else if (w === "snow") { const y = q.y + ((sy*q.h + now*.05*sp*ts/32*6) % (q.h + ts)) - ts*.3, x = q.x + ((sx*q.w + Math.sin(now/900 + i)*ts*.3 + q.w) % q.w), s = Math.max(1, ts*(.04 + (i % 3)*.02)*sz); c.fillStyle = `rgba(255,255,255,${(.85*al).toFixed(2)})`; c.fillRect(P(x), P(y), s, s); }
     }
     c.restore();
+    if (which === "out" && w === "rain" && q.out && Math.random() < .5) fx("splash", (q.x + Math.random()*q.w + HS.camPx)/ts, .3 + Math.random()*(HM.D - .5), 0, {vx:0, vz:0, g:0, dur:380});   // splashes on the ground
   }
 }
 // night lights: lamps, the fireplace, the TV and pumpkins glow after dark
@@ -7279,7 +7383,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Sleeping sprites</dt><dd>Pokémon napping in the Pokémon Home use the Sleep animations from <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">PMD Sprite Collab</a> by its contributors, licensed <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>. Every artist is listed in <a href="https://github.com/BlakeRossi3/PokeDreamTeamBuilder/blob/main/docs/pmd-credits.md" target="_blank" rel="noopener">docs/pmd-credits.md</a>.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Online accounts use <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">supabase-js</a> (Supabase, MIT) and <a href="https://supabase.com/" target="_blank" rel="noopener">Supabase</a>.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {

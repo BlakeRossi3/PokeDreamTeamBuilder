@@ -26,6 +26,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   Run by hand when data should change; the build itself never needs Node.
 - `node scripts/gen_families.mjs` — rebuild `data/families.json` (evolution families, for Home Pokémon that play together).
 - `python3 scripts/gen_back_packs.py` — rebuild the 3D back-sprite packs (`3db`/`3dbs`) from PokéAPI's copy of Showdown's `ani-back`.
+- `python3 scripts/gen_sleep_packs.py` — rebuild the sleeping-sprite packs (`zz`) from PMD Sprite Collab (CC BY-NC 4.0) and
+  `docs/pmd-credits.md` (every artist). Napping Pokémon in the Home use them; others fall back to a squash.
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
@@ -45,7 +47,7 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ITEMICONS*/`, `/*REWARDS*/`, `/*FAMILIES*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
   `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
-- `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `3db`/`3dbs` = 3D back sprites, `h` = HOME stills,
+- `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `3db`/`3dbs` = 3D back sprites, `h` = HOME stills, `zz` = PMD sleeping sprites,
   `-f*` = forms; 16 per pack; `python3 scripts/gen_back_packs.py` rebuilds the back packs),
   `t/*.wasm` trainer packs (`2d`, `3d`, `3f`, `l` = Gym Leader portraits). `index.json` maps each sprite to
   `[id, offset, length, kind]` — kind 0 png, 1 gif, 2 webp, 3 = shiny stored as a palette patch of the normal sprite.
