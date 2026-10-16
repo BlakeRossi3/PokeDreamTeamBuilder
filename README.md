@@ -30,11 +30,15 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 
 **Docs:** [battle audit](docs/battle-audit.md) (what the engine covers) · [rewards table](docs/rewards.md) (every Gym, Elite
 Four and Champion reward) · [3D sprites](docs/3d-sprites.md) (sources compared, gaps) · [online accounts setup](docs/supabase-setup.md)
-(Supabase, click by click) · [roadmap](docs/ROADMAP.md) · [changelog](docs/CHANGELOG.md).
+(Supabase, click by click) · [sleeping-sprite credits](docs/pmd-credits.md) · roadmaps [1](docs/ROADMAP.md) and [2](docs/ROADMAP-2.md) ·
+[changelog](docs/CHANGELOG.md).
 
 **Tests** (`tests/run_all.py` runs them all): layout audit (every screen, 2D/3D, desktop/phone, no sideways scroll) ·
+layout checker (nothing sticking out, clipped, overlapping or wrapping unevenly, at desktop, tablet and phone sizes) ·
+accessibility (axe-core: contrast, labels, ARIA) ·
 Shop and Home · save migration · battles, exports and settings · custom teams · battle engine and battle UI · Pokémon sheet ·
-rewards · online accounts and friends (with a stand-in Supabase in `tests/fake_supabase.js`) · Home life · the engine rules
+rewards · online accounts and friends (with a stand-in Supabase in `tests/fake_supabase.js`) · live friend battles (two
+browser contexts joined by a stand-in server) · Home life · the engine rules
 and damage-vs-`@smogon/calc` checks in Node. The database rules are checked separately on a local Postgres with
 `sh supabase/tests/run.sh`.
 
@@ -44,7 +48,8 @@ and damage-vs-`@smogon/calc` checks in Node. The database rules are checked sepa
   achievements +100 each · rivals 150 the first time, 40 after · Gym Leaders 200 + exclusive rewards the first time, 40 after ·
   Elite Four members 300 + elite rewards the first time · leagues 1,000 + the Champion's set the first time, 250 after · Versus wins 60 ·
   +10 per Home Pokémon you play with each day · gifts from Home Pokémon at 60+ friendship (20–60, once a day each) · +20 for liking a friend's Home and +20 for each Like your Home gets
-  (once a day per Home) · friend battles are just for fun (no points).
+  (once a day per Home) · live friend battle wins 60 (up to 3 paid wins per friend a day; battling a friend's team against the
+  computer is just for fun).
 - **Exclusives** are never sold (the Shop shows them as "?" until earned). Every Gym Leader gives their badge, a themed
   exclusive (furniture or a rare Poké Ball that fits them) and an icon of their ace; the first badge of a region gives its
   Badge Case. Elite Four members give an elite profile icon and a signature statue; Champions give their card design,
@@ -58,7 +63,9 @@ Invite favorites to live in your Home, walk around as your trainer (keyboard, ta
 on phones) and decorate it (drag pieces to move them, Undo, flip, turn rugs). Pokémon nap in beds, sit on sofas, watch
 TV, warm up by the fire, bounce on trampolines and splash in fountains, choosing by type (Fire likes the fireplace,
 Water the fountain…). They meet up to play (family and same-type friends first), most sleep at night while Ghost and
-Dark types roam, and lamps, fires and TVs glow after dark. Pick up to 3 berries a day per Berry tree and feed them
+Dark types roam, and lamps, fires and TVs glow after dark. Napping Pokémon use real sleeping sprites (PMD Sprite Collab,
+969 species); in 3D, Pokémon watching TV or warming up by the fire turn their backs to you. They steer around each other,
+followers trail behind you, and playing pairs chase each other round. Pick up to 3 berries a day per Berry tree and feed them
 (+8 friendship, +15 for a Pokémon's hidden favourite flavour). Friendship 25 unlocks a special emote, 50 makes it follow
 you, 60+ brings the odd gift and 100 earns a friendship ribbon on its Team Builder card and your trainer card. Daily
 weather shows through the windows and in outdoor rooms; seasonal events (Halloween, winter holidays) bring limited-time
@@ -75,7 +82,9 @@ both changed, the player chooses which progress to keep. Without the config the 
 
 **Friends** (online accounts only): add friends by friend code, username or a share link (`?friend=CODE`). See their
 trainer card, the team they show off (Hall of Fame card + lineup with sprites, nicknames, Poké Balls, items and moves),
-copy that team, battle it against the computer, and visit their Pokémon Home. A Like on a friend's Home gives both
+copy that team, battle it against the computer, and visit their Pokémon Home. **Live friend battles:** challenge a friend
+who's online (1v1, 3v3 or 6v6, Bag on or off, everyone level 50) and battle in real time, each choosing your own moves:
+both devices build the same battle from a shared seed and swap only their choices over a private Realtime channel. A Like on a friend's Home gives both
 players 20 PokéPoints, once a day. No chat or free text; blocking hides you completely. Choose what friends see on the
 Trainer card screen.
 

@@ -1,6 +1,48 @@
 # What's new in Dream Team Dex
 
-A big update. Here's everything, in plain words, ready to post.
+## ⚔️ Battle your friends, live
+- **Challenge a friend who's online** from your friends list or their profile: pick 1 vs 1, 3 vs 3 or 6 vs 6, and
+  whether to bring the Bag. They get a challenge card with Accept / Not now.
+- **Real time, both of you in control:** you each pick your own moves, switches and items, and every turn plays out
+  on both screens at once. Everyone is level 50, and your Pokémon show their backs in 3D.
+- **Fair and tidy:** a 60-second turn timer (it picks for you if time runs out), and if someone's connection drops
+  for 30 seconds, the other player wins. Rematch with one tap.
+- **Rewards:** a win is worth 60 PokéPoints (up to 3 paid wins against each friend a day), plus two new
+  achievements: Friendly rivals and Best of friends.
+
+## 🏠 A Pokémon Home that feels alive
+- **Real sleeping Pokémon:** napping Pokémon curl up with proper sleeping sprites (969 species, from PMD Sprite
+  Collab) instead of a squashed sprite.
+- **Speech bubbles:** messages show the Pokémon's icon, name and friendship hearts, and the words type in. Hover or
+  tap a Pokémon to see its name; prompts are neat "E · Play with Pikachu" key-caps.
+- **Light and shadow:** soft shadows sized to each Pokémon (pixel shadows in 2D), furniture that sits on the floor,
+  sunlight through the windows, and sunsets and nights that fade in with the clock. Lamps and fires pool warm light.
+- **Livelier Pokémon:** they walk smoothly around each other, face what they're doing (in 3D they turn their backs
+  to watch TV or warm up by the fire), chase each other when playing, and friends trail behind you and stop when
+  you stop. Petting bursts with hearts; feeding munches; picked berries fly into your pouch; gifts wobble and pop
+  open with confetti. Rain splashes and snow dusts the ground outside.
+- **Bedtime that works:** at night, everyone who isn't nocturnal heads for the nearest bed.
+- **Tidier toolbar** with icons, a PokéPoints pill, and resident cards with friendship hearts.
+
+## ✨ Cleaner everywhere
+- **No more messy rows:** type badges, tabs and buttons line up evenly instead of one-then-four, names wrap instead of
+  getting cut off, and nothing pokes out of its box. An automatic checker now looks at every screen in 2D and 3D,
+  on desktop, tablet and phone, before each update.
+- **One consistent look:** the same text sizes, spacing, button heights and shadows on every screen; numbers line up;
+  sprites show a soft placeholder while they load; messages slide in at the top so they never cover your buttons.
+- **Easier to use:** clear focus outlines for keyboard players, better contrast on small text, and screen-reader
+  labels checked automatically.
+- **Small fixes:** the trainer card's "VIII" no longer overlaps, battle portraits fit on phones, the stat card no
+  longer covers your team, and the sign-in email wording matches the email you get.
+
+**Site size:** 419.8 MB in 608 files (GitHub Pages allows 1 GB; the largest file is well under 100 MB).
+
+Dream Team Dex is still free and non-profit. Pokémon © Nintendo, Game Freak, Creatures and The Pokémon Company.
+
+---
+
+# Earlier: the first big update
+Everything from the first big update, in plain words.
 
 ## ⚔️ Battles that play like the real games
 - **Real damage:** the real Pokémon damage formula. It's checked against the community damage calculator on tens of

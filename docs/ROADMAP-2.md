@@ -1,5 +1,14 @@
 # Roadmap 2: polish, a living Home, and friend battles
 
+**Status: done (Oct 16, 2026).** All seven phases are merged (PRs #11–#17). Notes on what changed from the plan:
+- Friends show as online from `profiles.last_active` (refreshed every minute, visible only to accepted friends) instead of
+  a separate presence channel: simpler, same privacy.
+- A win by disconnect can't be confirmed by both players, so it isn't paid (the result still counts on your device).
+- The two-player test joins two browser contexts through a small stand-in server rather than BroadcastChannel, so each
+  player keeps their own saves.
+- The optional Eat animation was left out: feeding uses a munch, crumbs and sparkles instead.
+- 56 species have no PMD Sleep animation yet (listed in `docs/pmd-credits.md`); they nap with the old squash.
+
 Blake's brief:
 - Clean up the messes everywhere: arrow buttons sticking out of their boxes, type badges wrapping one-then-four, and
   similar. No overhaul; make it look professional.

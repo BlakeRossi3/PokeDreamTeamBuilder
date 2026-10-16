@@ -735,6 +735,7 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 .slot .nm{display:flex; align-items:center; justify-content:center; gap:5px; margin-top:auto; padding:0 6px 10px}
 .slot .nm .nt{min-width:0; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal; overflow-wrap:anywhere; text-align:left; line-height:1.12}
 .slot .nm .nt.l{font-size:.88em} .slot .nm .nt.xl{font-size:.78em}
+@media (max-width:480px){ :root[data-mode="2d"] .slot .nm{gap:3px; padding-inline:4px} :root[data-mode="2d"] .slot .nm .nt{font-size:.82em} :root[data-mode="2d"] .slot .nm .nt.l{font-size:.7em} :root[data-mode="2d"] .slot .nm .nt.xl{font-size:.62em} }   /* the wide pixel font: long names shrink to fit whole */
 :root[data-mode="2d"] .slot .nm{padding-bottom:2px}
 .actions .btn.undo{flex:0 0 auto; padding-inline:14px}
 .ph .right .btn.more{min-width:36px; padding-inline:8px; font-size:18px; line-height:1; letter-spacing:.05em}
