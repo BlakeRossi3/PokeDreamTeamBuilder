@@ -210,8 +210,6 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 .bt-st{display:inline-block; margin-left:6px; padding:0 5px; border-radius:4px; font-size:10px; font-weight:800; letter-spacing:.04em; line-height:16px; color:#fff; background:#888; vertical-align:1px}
 .bt-st[data-st="brn"]{background:#e2622b} .bt-st[data-st="par"]{background:#d9b416; color:#1c1600} .bt-st[data-st="psn"], .bt-st[data-st="tox"]{background:#9a3fb0} .bt-st[data-st="slp"]{background:#7d8597} .bt-st[data-st="frz"]{background:#4cb3d6}
 :root[data-mode="2d"] .bt-st{border-radius:0; font-family:var(--font-px, inherit)}
-.spr-hq{pointer-events:none}
-.spr.hq-off{opacity:0}
 .spr, .tr{position:relative; display:block; image-rendering:var(--pixel); max-width:100%; object-fit:contain}
 img.spr:not([src]), img.tr:not([src]){visibility:hidden}
 .stage.loading::after{content:""; position:absolute; inset:0; margin:auto; width:30px; height:30px; border-radius:50%;
@@ -840,6 +838,7 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 .bt-mon.foe{right:8%; top:16%}
 .bt-mon.you{left:8%; bottom:8%}
 .bt-mon.you .spr{transform:scaleX(-1)}
+.bt-mon.you .spr.back{transform:none}
 .bt-mon.enter .stage{animation:btin .45s ease-out}
 .bt-mon.lunge.you .stage{animation:btlungeL .35s ease}
 .bt-mon.lunge.foe .stage{animation:btlungeR .35s ease}
@@ -903,7 +902,6 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 :root[data-mode="2d"] .bt-log{background:var(--paper); border:3px solid var(--ink); box-shadow:inset 0 0 0 2px var(--frame)}
 @media (max-width:560px){ .bt-hp{font-size:11px; padding:4px 7px} .bt-party.foe{top:calc(5% + 46px)} .qz-stage{height:190px} }
 :root:not([data-mode="2d"]) .bt-mon{height:52%}
-:root:not([data-mode="2d"]) .bt-mon .spr{min-height:82%; width:auto}
 :root:not([data-mode="2d"]) .bt-mon.foe{top:10%}
 @media (max-width:620px){
   .bt-field{aspect-ratio:5/4}
@@ -2081,6 +2079,7 @@ function keyFor(img){
   if (img.dataset.tr !== undefined) return mode === "3d" && img.dataset.full ? "t3f" : "t" + mode;
   const n = +img.dataset.num, sh = img.dataset.sh === "1" || state.shiny;
   if (img.dataset.hd && mode === "3d") return hdKey(n, sh);
+  if (img.dataset.back && mode === "3d" && hasBack(n, sh)) return spKey(n, sh, "3db");   // the player's side in battle
   return spKey(n, sh, mode);
 }
 function urlFor(img){
@@ -2090,7 +2089,7 @@ function urlFor(img){
 let errToastAt = 0;
 function paintImg(img){
   const url = urlFor(img), st = img.parentElement;
-  if (url) { if (img.getAttribute("src") !== url) img.src = url; st && st.classList.remove("loading"); if (img.dataset.hq) hqSync(img); return; }
+  if (url) { if (img.getAttribute("src") !== url) img.src = url; st && st.classList.remove("loading"); return; }
   img.removeAttribute("src"); st && st.classList.add("loading");
   const key = keyFor(img);
   let set = waiting.get(key); if (!set) { set = new Set(); waiting.set(key, set); }
@@ -2132,7 +2131,7 @@ document.addEventListener("load", e => {
   if (!(img instanceof HTMLImageElement) || !img.dataset.zoom) return;
   const slot = img.closest(".bt-mon");
   if (slot && imgMode(img) === "2d") { const k = Math.max(1, Math.min(2, Math.floor(Math.min(slot.clientWidth/img.naturalWidth, slot.clientHeight/img.naturalHeight)*2)/2)); img.style.width = Math.round(img.naturalWidth*k) + "px"; return; }
-  img.style.width = (imgMode(img) === "2d") ? Math.min(img.naturalWidth * (+img.dataset.zoom || 2), 320) + "px" : (img.closest(".vt-slot") ? Math.round(img.naturalWidth * 1.7) + "px" : "");
+  img.style.width = (imgMode(img) === "2d") ? Math.min(img.naturalWidth * (+img.dataset.zoom || 2), 320) + "px" : "";   // 3D: native size
 }, true);
 
 const typeBadges = types => `<div class="types">${types.map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</div>`;
@@ -2624,58 +2623,10 @@ function getSprite(key, id){
   return pr;
 }
 const frameAt = (s, t) => s ? s.frames[frameIdx(s, t)].img : null;
-// ================= SMOOTH 3D SPRITES =================
-// 3D-style sprites are small renders with hard pixel edges, so they look jagged when shown large. Frames shown
-// large are upscaled 2x with xBR (Hyllian's algorithm, ported from xBRjs by Josep del Rio, MIT) in idle time,
-// then drawn with smoothing. 2D mode keeps crisp pixels and never uses this.
-function xbrFactory(){
-  const yuvCache = new Map();
-  const yuv = p => { let v = yuvCache.get(p); if (v) return v; const r = p & 255, g = (p >>> 8) & 255, b = (p >>> 16) & 255;
-    v = [r*.299 + g*.587 + b*.114, -r*.168736 - g*.331264 + b*.5, r*.5 - g*.418688 - b*.081312]; if (yuvCache.size > 50000) yuvCache.clear(); yuvCache.set(p, v); return v; };
-  const diff = (A, B) => { const a = A >>> 24, b = B >>> 24; if (!a && !b) return 0; if (!a || !b) return 1e6; const x = yuv(A), y = yuv(B); return Math.abs(x[0] - y[0])*48 + Math.abs(x[1] - y[1])*7 + Math.abs(x[2] - y[2])*6; };
-  const eq = (A, B) => { const a = A >>> 24, b = B >>> 24; if (!a && !b) return true; if (!a || !b) return false; const x = yuv(A), y = yuv(B); return Math.abs(x[0] - y[0]) <= 48 && Math.abs(x[1] - y[1]) <= 7 && Math.abs(x[2] - y[2]) <= 6; };
-  const mix = (A, B, q1, q2) => { const a = A >>> 24, b = B >>> 24, s = q1 + q2; let r, g, bl;
-    if (!a) { r = B & 255; g = (B >>> 8) & 255; bl = (B >>> 16) & 255; } else if (!b) { r = A & 255; g = (A >>> 8) & 255; bl = (A >>> 16) & 255; }
-    else { r = (q2*(B & 255) + q1*(A & 255))/s; g = (q2*((B >>> 8) & 255) + q1*((A >>> 8) & 255))/s; bl = (q2*((B >>> 16) & 255) + q1*((A >>> 16) & 255))/s; }
-    return ((r | 0) | ((g | 0) << 8) | ((bl | 0) << 16) | (((q2*b + q1*a)/s | 0) << 24)) >>> 0; };
-  // one corner of the 2x kernel; returns [n1, n2, n3]
-  function kernel(pe, pi, ph, pf, pg, pc, pd, pb, f4, i4, h5, i5, n1, n2, n3){
-    if (pe === ph || pe === pf) return [n1, n2, n3];
-    const e = diff(pe, pc) + diff(pe, pg) + diff(pi, h5) + diff(pi, f4) + diff(ph, pf)*4,
-      i = diff(ph, pd) + diff(ph, i5) + diff(pf, i4) + diff(pf, pb) + diff(pe, pi)*4,
-      px = diff(pe, pf) <= diff(pe, ph) ? pf : ph;
-    if (e < i && (!eq(pf, pb) && !eq(ph, pd) || eq(pe, pi) && (!eq(pf, i4) && !eq(ph, i5)) || eq(pe, pg) || eq(pe, pc))) {
-      const ke = diff(pf, pg), ki = diff(ph, pc), ex2 = pe !== pc && pb !== pc, ex3 = pe !== pg && pd !== pg;
-      if ((ke*2 <= ki && ex3) || (ke >= ki*2 && ex2)) {
-        if (ke*2 <= ki && ex3) { n3 = mix(n3, px, 1, 3); n2 = mix(n2, px, 3, 1); }
-        if (ke >= ki*2 && ex2) { n3 = mix(n3, px, 1, 3); n1 = mix(n1, px, 3, 1); }
-      } else n3 = mix(n3, px, 1, 1);
-    } else if (e <= i) n3 = mix(n3, px, 3, 1);
-    return [n1, n2, n3];
-  }
-  return function xbr2x(P, W, H){
-    const out = new Uint32Array(W*H*4), W2 = W*2, at = (x, y) => P[Math.min(W - 1, Math.max(0, x)) + Math.min(H - 1, Math.max(0, y))*W];
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const pe = P[x + y*W];
-      const a1 = at(x - 1, y - 2), b1 = at(x, y - 2), c1 = at(x + 1, y - 2), a0 = at(x - 2, y - 1), pa = at(x - 1, y - 1), pb = at(x, y - 1), pc = at(x + 1, y - 1), c4 = at(x + 2, y - 1),
-        d0 = at(x - 2, y), pd = at(x - 1, y), pf = at(x + 1, y), f4 = at(x + 2, y), g0 = at(x - 2, y + 1), pg = at(x - 1, y + 1), ph = at(x, y + 1), pi = at(x + 1, y + 1), i4 = at(x + 2, y + 1),
-        g5 = at(x - 1, y + 2), h5 = at(x, y + 2), i5 = at(x + 1, y + 2);
-      let e0 = pe, e1 = pe, e2 = pe, e3 = pe;
-      if (pe >>> 24 || pf >>> 24 || ph >>> 24 || pd >>> 24 || pb >>> 24) {
-        [e1, e2, e3] = kernel(pe, pi, ph, pf, pg, pc, pd, pb, f4, i4, h5, i5, e1, e2, e3);
-        [e0, e3, e1] = kernel(pe, pc, pf, pb, pi, pa, ph, pd, b1, c1, f4, c4, e0, e3, e1);
-        [e2, e1, e0] = kernel(pe, pa, pb, pd, pc, pg, pf, ph, d0, a0, b1, a1, e2, e1, e0);
-        [e3, e0, e2] = kernel(pe, pg, pd, ph, pa, pi, pb, pf, h5, g5, d0, g0, e3, e0, e2);
-      }
-      const o = x*2 + y*2*W2; out[o] = e0; out[o + 1] = e1; out[o + W2] = e2; out[o + W2 + 1] = e3;
-    }
-    return out;
-  };
-}
-const XBR = xbrFactory();
-// phones and tablets (and low-memory devices) keep a much smaller cache of smoothed frames
-const HQ_SMALL = matchMedia("(pointer:coarse)").matches || (navigator.deviceMemory && navigator.deviceMemory < 4);
-const HQ = {queue:[], busy:false, bytes:0, held:[], cap:HQ_SMALL ? 70e6 : 220e6, per:HQ_SMALL ? 20e6 : 48e6, off:false};
+// ================= SPRITES AT NATIVE SIZE =================
+// Every sprite is shown at the size its source made it (or a whole-number multiple in 2D), never upscaled with a
+// filter. 3D sprites are Pokémon Showdown's animated model renders; the player's side in battle uses their back
+// sprites (`3db`/`3dbs` packs) and mirrors the front where a Pokémon has none.
 // the frame index of an animated sprite at time t (ms)
 function frameIdx(s, t){
   if (!s || s.frames.length === 1 || !s.total) return 0;
@@ -2683,115 +2634,14 @@ function frameIdx(s, t){
   for (let i = 0; i < s.frames.length; i++) { const d = s.frames[i].delay; if (r < d) return i; r -= d; }
   return 0;
 }
-// the smoothed frame (bb-cropped, 2x, with a 1px border: source rect starts at 2,2) or null while it is being made
-function hqFrame(sp, i){
-  if (HQ.off || !sp || !sp.bb) return null;
-  const f = sp.frames[i]; if (!f) return null;
-  const now = performance.now(); sp.hqUsed = now;
-  if (sp.hqState === "done") return f.hq;   // switch only once every frame is ready, so the animation never flickers between the two
-  if (sp.hqState === "wait" && now > sp.hqRetry) sp.hqState = null;
-  if (!sp.hqState) {
-    const b = sp.bb, cost = (b.w + 2)*(b.h + 2)*16*sp.frames.length;
-    hqTrim();
-    sp.hqState = cost > HQ.per ? "skip" : HQ.bytes + cost > HQ.cap ? "wait" : "queued";
-    if (sp.hqState === "wait") sp.hqRetry = now + 5000;
-    if (sp.hqState === "queued") { sp.hqCost = cost; HQ.queue.push(sp); HQ.queue.sort((a, b) => a.hqCost - b.hqCost); hqPump(); }
-  }
-  return null;
+// the scale for a 3D sprite on a canvas: 1 sprite pixel per canvas pixel at the reference size `ref` (the stage height
+// where sprites are native), a whole-number multiple on bigger stages, smaller only on small previews (never enlarged
+// with a filter); a user scale close to a whole number snaps to it
+function natK(stageH, ref, s = 1){
+  const k = (stageH >= ref*.75 ? Math.max(1, Math.round(stageH/ref)) : stageH/ref)*s, r = Math.round(k);
+  return r >= 1 && Math.abs(k - r) < .2 ? r : k;
 }
-// workers do the upscaling off the main thread; if workers aren't allowed, small slices run in idle time instead
-const hqWorkers = (() => {
-  try {
-    const src = `const XBR = (${xbrFactory.toString()})(); onmessage = e => { const d = e.data, out = XBR(new Uint32Array(d.buf), d.w, d.h); postMessage({id:d.id, buf:out.buffer}, [out.buffer]); };`;
-    const url = URL.createObjectURL(new Blob([src], {type:"text/javascript"})), n = Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 2) - 1));
-    return Array.from({length:n}, () => { const w = new Worker(url); w.busy = 0; return w; });
-  } catch(e){ return []; }
-})();
-let hqSeq = 0; const hqWait = new Map();
-hqWorkers.forEach(w => { w.onmessage = e => { w.busy--; const job = hqWait.get(e.data.id); hqWait.delete(e.data.id); if (job) job(e.data.buf); hqPump(); }; w.onerror = () => { hqWorkers.length = 0; hqWait.clear(); for (const sp of HQ.queue) sp.frames.forEach(f => { f.hqPending = false; }); hqPump(); }; });
-function hqCrop(img, b){
-  const w = b.w + 2, h = b.h + 2, c = mkCanvas(w, h), x = c.getContext("2d", {willReadFrequently:true});
-  x.drawImage(img, b.x - 1, b.y - 1, w, h, 0, 0, w, h);
-  return {w, h, data:x.getImageData(0, 0, w, h).data};
-}
-function hqPut(buf, w, h){ const o = mkCanvas(w*2, h*2); o.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(buf), w*2, h*2), 0, 0); return o; }
-function hqNext(){
-  while (HQ.queue.length) {
-    const sp = HQ.queue[0], f = sp.frames.find(fr => !fr.hq && !fr.hqPending);
-    if (f) return {sp, f};
-    if (sp.frames.every(fr => fr.hq)) { HQ.queue.shift(); sp.hqState = "done"; HQ.held.push(sp); HQ.bytes += sp.hqCost; hqTrim(); continue; }
-    return null;  // the rest of this sprite is still in flight
-  }
-  return null;
-}
-function hqPump(){
-  if (HQ.off) return;
-  if (hqWorkers.length) {
-    for (const w of hqWorkers) while (w.busy < 2) {
-      const j = hqNext(); if (!j) return;
-      const {w:cw, h:ch, data} = hqCrop(j.f.img, j.sp.bb), id = ++hqSeq, f = j.f;
-      f.hqPending = true; w.busy++;
-      hqWait.set(id, buf => { f.hqPending = false; f.hq = hqPut(buf, cw, ch); });
-      w.postMessage({id, w:cw, h:ch, buf:data.buffer}, [data.buffer]);
-    }
-    return;
-  }
-  if (HQ.busy) return; HQ.busy = true;
-  const step = () => {
-    const t0 = performance.now();
-    try {
-      let j;
-      while (performance.now() - t0 < 10 && (j = hqNext())) { const c = hqCrop(j.f.img, j.sp.bb); j.f.hq = hqPut(XBR(new Uint32Array(c.data.buffer), c.w, c.h).buffer, c.w, c.h); }
-    } catch(e){ HQ.off = true; HQ.queue.length = 0; }
-    if (hqNext()) setTimeout(step, 24); else HQ.busy = false;
-  };
-  setTimeout(step, 0);
-}
-// drop the smoothed frames of sprites that haven't been on screen for a few seconds, oldest first
-function hqTrim(){
-  if (HQ.bytes <= HQ.cap) return;
-  const now = performance.now();
-  HQ.held.sort((a, b) => a.hqUsed - b.hqUsed);
-  while (HQ.bytes > HQ.cap && HQ.held.length && now - HQ.held[0].hqUsed > 4000) { const sp = HQ.held.shift(); sp.frames.forEach(f => { f.hq = null; }); sp.hqState = null; HQ.bytes -= sp.hqCost; }
-}
-// <img data-hq> sprites shown large in 3D mode get a canvas twin drawn from the smoothed frames
-const HQIMG = new Map(); let hqRaf = 0;
-function hqSync(img){
-  const key = keyFor(img), id = +img.dataset.num, on = imgMode(img) === "3d" && !HQ.off;
-  let e = HQIMG.get(img);
-  if (!on) { if (e) { e.cv.remove(); HQIMG.delete(img); } img.classList.remove("hq-off"); return; }
-  if (e && e.key === key && e.id === id) return;
-  if (!e) {
-    const cv = document.createElement("canvas"); cv.className = "spr spr-hq"; cv.setAttribute("aria-hidden", "true");
-    const p = img.parentElement; if (getComputedStyle(p).position === "static") p.style.position = "relative";
-    p.appendChild(cv); e = {cv}; HQIMG.set(img, e);
-  }
-  Object.assign(e, {key, id, sp:null, t0:performance.now(), sig:""}); img.classList.remove("hq-off"); e.cv.style.display = "none";
-  getSprite(key, id).then(sp => { if (e.key === key && e.id === id) e.sp = sp; }).catch(() => {});
-  if (!hqRaf) hqRaf = requestAnimationFrame(hqLoop);
-}
-function hqLoop(now){
-  hqRaf = 0;
-  for (const [img, e] of HQIMG) {
-    if (!img.isConnected) { e.cv.remove(); HQIMG.delete(img); continue; }
-    const sp = e.sp; if (!sp || !img.complete) continue;
-    const bw = img.offsetWidth, bh = img.offsetHeight; if (!bw || !bh) continue;
-    const s = Math.min(bw/sp.w, bh/sp.h);
-    if (s < 1.25) { if (e.cv.style.display !== "none") { e.cv.style.display = "none"; img.classList.remove("hq-off"); } continue; }
-    const fi = frameIdx(sp, now - e.t0), hq = hqFrame(sp, fi), dpr = Math.min(2, devicePixelRatio || 1);
-    const sig = [fi, !!hq, bw, bh, img.offsetLeft, img.offsetTop].join(",");
-    if (sig === e.sig) continue; e.sig = sig;
-    const cv = e.cv, W = Math.round(bw*dpr), H = Math.round(bh*dpr);
-    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-    Object.assign(cv.style, {display:"block", position:"absolute", left:img.offsetLeft + "px", top:img.offsetTop + "px", width:bw + "px", height:bh + "px", maxWidth:"none", maxHeight:"none"});
-    const x = cv.getContext("2d"), k = s*dpr, ox = (W - sp.w*k)/2, oy = (H - sp.h*k)/2, b = sp.bb;
-    x.clearRect(0, 0, W, H); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
-    if (hq) x.drawImage(hq, 2, 2, b.w*2, b.h*2, ox + b.x*k, oy + b.y*k, b.w*k, b.h*k);
-    else x.drawImage(sp.frames[fi].img, b.x, b.y, b.w, b.h, ox + b.x*k, oy + b.y*k, b.w*k, b.h*k);
-    img.classList.add("hq-off");
-  }
-  if (HQIMG.size) hqRaf = requestAnimationFrame(hqLoop);
-}
+const hasBack = (num, sh) => { const k = spKey(num, sh, "3db"); return !!(IDX[k] && IDX[k].some(e => e[0] === num)); };
 let dlNs;
 async function downloadsNs(){ if (dlNs === undefined) dlNs = window.claude && window.claude.use ? await window.claude.use("downloads").catch(() => null) : null; return dlNs; }
 async function saveFile(filename, blob){
@@ -3882,7 +3732,8 @@ function drawItems(ctx, K, S, items, t, o){
     const bb = x.spr.bb || {x:0, y:0, w:img0.width, h:img0.height};
     if (pixel) { const k = it.s; w = Math.max(1, Math.round(bb.w*k)); h = Math.max(1, Math.round(bb.h*k)); }
     else if (x.trainer) { h = (bb.h/480)*.40*S.h*it.s; w = bb.w*h/bb.h; }
-    else { h = hFrac(x.n)*S.h*it.s*1.12; w = bb.w*h/bb.h; }
+    else if (x.hd) { h = Math.min(bb.h, hFrac(x.n)*S.h*it.s*1.12); w = bb.w*h/bb.h; }   // HD stills (large): sized by the Pokémon's height, never enlarged
+    else { const k = natK(S.h, 540, it.s/1.15); h = bb.h*k; w = bb.w*k; }   // animated 3D: native size at a 540-tall stage
     const floats = !x.trainer && (it.fl !== undefined ? it.fl : floatsOf(x.n));
     if (floats) { lift = .09*S.h; bob = Math.sin(t/900 + ph)*.015*S.h; }
     else if (!animated) { bob = Math.max(0, Math.sin(t/650 + ph))*.004*S.h; br = 1 + .016*Math.sin(t/800 + ph); }
@@ -3901,9 +3752,8 @@ function drawItems(ctx, K, S, items, t, o){
     if (pixel) { bx = Math.round(bx); by = Math.round(by); }
     ctx.translate(bx, by); if (it.f) ctx.scale(-1, 1); if (br !== 1) ctx.scale(2 - br, br);
     if (pop < 1) { const e = 1 + 2.2*Math.pow(pop - 1, 3) + 1.2*Math.pow(pop - 1, 2); ctx.scale(e, e); ctx.globalAlpha = Math.min(1, pop*2); }
-    const hq = !pixel && !x.trainer && h/bb.h > 1.25 ? hqFrame(x.spr, fi) : null;
-    if (hq) ctx.drawImage(hq, 2, 2, bb.w*2, bb.h*2, -w/2, -h, w, h);
-    else ctx.drawImage(img0, bb.x, bb.y, bb.w, bb.h, pixel ? Math.round(-w/2) : -w/2, -h, w, h);
+    if (!pixel && !x.trainer && Number.isInteger(w/bb.w)) ctx.imageSmoothingEnabled = false;   // whole-number scale: crisp, unfiltered
+    ctx.drawImage(img0, bb.x, bb.y, bb.w, bb.h, pixel || !x.trainer ? Math.round(-w/2) : -w/2, -h, w, h);
     ctx.restore();
     if (pop < 1) { const K2 = kit(ctx, {W:0, H:0}, S, pixel); K2.glow(gx, gy - lift - h*.45, h*(.35 + .6*pop), "#ffffff", .95*(1 - pop)); }
     boxes.push({key:x.key, x:gx - w/2, y:gy - lift - bob - h, w, h:h + lift, name:x.name, gx, gy, sw, img:img0, src:bb, ih:h, flip:!!it.f});
@@ -3987,11 +3837,11 @@ function drawTitleFrame(ctx, K, S, sc, pixel, title, sub){
 function sceneItems(sc, A, layout){
   if (layout === "lineup") {
     const n = A.mons.length, items = [{key:"t", trainer:true, it:{x:.13, y:.93, s:.95, f:0}, spr:A.trainer, style:A.trStyle, name:TRAINERS[A.tr]}];
-    A.mons.forEach((m, i) => items.push({key:String(m.n), n:m.n, idx:m.idx, ball:m.ball, it:{x: n === 1 ? .6 : .32 + i*(.62/(n-1)), y: i % 2 ? .74 : .9, s:1.15, f:0}, spr:m.spr, name:m.name || NAT_BY.get(m.n).name}));
+    A.mons.forEach((m, i) => items.push({key:String(m.n), n:m.n, idx:m.idx, ball:m.ball, it:{x: n === 1 ? .6 : .32 + i*(.62/(n-1)), y: i % 2 ? .74 : .9, s:1.15, f:0}, spr:m.spr, hd:m.hd, name:m.name || NAT_BY.get(m.n).name}));
     return items.sort((a, b) => a.it.y - b.it.y);
   }
   const items = [{key:"t", trainer:true, it:itemOf(sc, "t", -1), spr:A.trainer, style:A.trStyle, name:TRAINERS[A.tr]}];
-  A.mons.forEach((m, i) => items.push({key:String(m.n), n:m.n, idx:m.idx, ball:m.ball, it:itemOf(sc, String(m.n), i), spr:m.spr, name:m.name || NAT_BY.get(m.n).name}));
+  A.mons.forEach((m, i) => items.push({key:String(m.n), n:m.n, idx:m.idx, ball:m.ball, it:itemOf(sc, String(m.n), i), spr:m.spr, hd:m.hd, name:m.name || NAT_BY.get(m.n).name}));
   return items.sort((a, b) => a.it.y - b.it.y);
 }
 function hofTitle(id, sc){ const T = TEAM_BY.get(id), who = state.name.trim(); return {title: sc.title.trim() || `${who ? who + "’s" : "My"} ${T.card} team`, sub:`Hall of Fame · ${T.sub}`}; }
@@ -4050,7 +3900,7 @@ class Stage {
     this.aKey = key; this.o.status && this.o.status("Setting the stage…");
     const keyOf = n => { const sh = isShinyMember(id, n) || state.shiny; return mode === "2d" ? spKey(n, sh, "2d") : !still(n) ? spKey(n, sh, "3d") : hdKey(n, sh); };
     try {
-      const mons = await Promise.all(t.map(async (n, idx) => ({n, idx, ball:ballOf(id, n), name:nickOf(id, n), spr: await getSprite(keyOf(n), n)})));
+      const mons = await Promise.all(t.map(async (n, idx) => ({n, idx, ball:ballOf(id, n), name:nickOf(id, n), hd: mode !== "2d" && still(n), spr: await getSprite(keyOf(n), n)})));
       const trainer = await getSprite(trStyle === "pixel" ? "t2d" : "t3f", tr);
       try { await Promise.all([document.fonts.load('italic 700 30px "Chakra Petch"'), document.fonts.load('700 20px "Pixelify Sans"'), document.fonts.load('20px "VT323"')]); } catch(e){}
       if (this.aKey !== key) return;
@@ -4298,7 +4148,7 @@ function renderView(){
     const sh = isShinyMember(state.team, m.num);
     html += `<button class="vt-slot${viewSel === m.num ? " on" : ""}" type="button" data-vsel="${m.num}" aria-pressed="${viewSel === m.num}">
       <span class="vt-fav" aria-hidden="true">${isFav(m.num) ? "♥" : ""}</span>
-      <div class="stage"><img class="spr" data-num="${m.num}"${sh ? ' data-sh="1"' : ""} data-zoom="2" data-hq="1" alt="" draggable="false"></div>
+      <div class="stage"><img class="spr" data-num="${m.num}"${sh ? ' data-sh="1"' : ""} data-zoom="2" alt="" draggable="false"></div>
       <span class="vt-no">${fmtNo(m.num)}${memberOf(state.team, m.num).nick ? ` · <span class="sp">${esc(m.name)}</span>` : ""}</span><span class="vt-name">${ballImg(ballOf(state.team, m.num))}${esc(nickOf(state.team, m.num))}${sh || state.shiny ? ' <span class="shiny-mark">✦</span>' : ""}</span>${typeBadges(m.types)}</button>`;
   }
   $("vtSlots").innerHTML = html;
@@ -5694,17 +5544,19 @@ function homeItemFx(c, p, now, pixel){
   if (k === "fountain") { c.fillStyle = "rgba(170,220,255,.8)"; for (let i = 0; i < 5; i++) { const t = (now/700 + i/5) % 1, x = scrX(p.x + 1) + Math.sin(i*2.1)*t*ts*.5, y = scrY(p.y + 1.05) - ts*1.2 + t*t*ts*.9; c.fillRect(Math.round(x), Math.round(y), Math.max(1, ts*.06), Math.max(1, ts*.06)); } }
   if (k === "tv" || k === "arcade") { if (Math.sin(now/300) > .7) { c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(scrX(p.x + .13), scrY(p.y + .47) - 1.3*ts, (p.it.w - .26)*ts, .5*ts); } }
 }
-function monScale(m){ if (!m.sp) return 1; const pixel = state.mode === "2d", bb = m.sp.bb; if (pixel) return 1; const want = Math.max(1.05, Math.min(2.6, bb.h/58)); return want*HS.ts/bb.h; }
+// 3D Pokémon walk the Home at their native size (a whole-number multiple on big screens); only giants are shrunk to fit a room
+function monScale(m){ if (!m.sp) return 1; const pixel = state.mode === "2d", bb = m.sp.bb; if (pixel) return 1; const k = natK(HS.ts, 40); return Math.min(k, 3.4*HS.ts/bb.h); }
 function drawHomeMon(c, m, now, pixel){
   const sp = m.sp; if (!sp) return;
   const ts = HS.ts, bb = sp.bb, s = monScale(m), w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
   const lift = (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*.5 : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim;
   c.fillStyle = swim ? "rgba(255,255,255,.35)" : `rgba(0,0,0,${m.fl ? .14 : .22})`; c.beginPath(); c.ellipse(Math.round(X), Math.round(Y), Math.max(2, w*.32), Math.max(1, w*.08), 0, 0, 7); c.fill();
-  const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img, hq = !pixel && h/bb.h > 1.25 ? hqFrame(sp, fi) : null;
+  const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
   c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
   if (swim) { c.beginPath(); c.rect(-w, -h, w*2, h*.72); c.clip(); }
-  if (hq) c.drawImage(hq, 2, 2, bb.w*2, bb.h*2, -w/2, -h, w, h); else c.drawImage(img, bb.x, bb.y, bb.w, bb.h, pixel ? Math.round(-w/2) : -w/2, -h, w, h);
+  if (Number.isInteger(s)) c.imageSmoothingEnabled = false;
+  c.drawImage(img, bb.x, bb.y, bb.w, bb.h, Math.round(-w/2), -Math.round(h), Math.round(w), Math.round(h));
   c.restore();
   m.box = {x:X - w/2, y:Y - lift - h, w, h};
 }
@@ -5871,7 +5723,7 @@ async function hofCardArt(cv, id, mode, tok){
   const sc = sceneOf(id, mode), t = teamOf(id), tr = trainerOf(id), pixel = mode === "2d";
   const still = n => !!(sc.items[String(n)] && sc.items[String(n)].st);
   const keyOf = n => { const sh = isShinyMember(id, n) || state.shiny; return pixel ? spKey(n, sh, "2d") : still(n) ? hdKey(n, sh) : spKey(n, sh, "3d"); };
-  const mons = await Promise.all(t.map(async (n, idx) => ({n, idx, ball:ballOf(id, n), name:nickOf(id, n), spr: await getSprite(keyOf(n), n).catch(() => null)})));
+  const mons = await Promise.all(t.map(async (n, idx) => ({n, idx, ball:ballOf(id, n), name:nickOf(id, n), hd: !pixel && still(n), spr: await getSprite(keyOf(n), n).catch(() => null)})));
   const trainer = await getSprite(pixel ? "t2d" : "t3f", tr).catch(() => null);
   try { await Promise.all([document.fonts.load('italic 700 30px "Chakra Petch"'), document.fonts.load('700 20px "Pixelify Sans"')]); } catch(e){}
   if (tok !== galTok || !cv.isConnected) return;
@@ -6076,7 +5928,7 @@ function renderSettings(){
       <div class="actions"><button class="btn" type="button" data-acctmenu>Account &amp; save files</button></div>
     </section>
     <section class="set-card set-credits"><h3>Credits</h3>
-      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated sprites from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via PokéAPI. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs. Smooth 3D sprites use the xBR scaling algorithm by Hyllian, adapted from <a href="https://github.com/joseprio/xBRjs" target="_blank" rel="noopener">xBRjs</a> (Josep del Rio, MIT).</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
+      <dl class="credits"><dt>Pokémon</dt><dd>Pokémon and all related names, characters and images are © Nintendo, Game Freak, Creatures and The Pokémon Company. Dream Team Dex is a free, non-profit fan project and is not affiliated with them.</dd><dt>Classic 2D sprites (#1–#649)</dt><dd>Official Black/White animated sprites, plus static and shiny sprites, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>.</dd><dt>Animated 2D sprites (#650–#1025, Megas, regional forms, Legends Z-A Megas)</dt><dd>Collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a> (OctavioKonzen). Animations from the <a href="https://eeveeexpo.com/resources/1544/" target="_blank" rel="noopener">Animated Pokémon System</a> by Lucidious89 (built on the Generation 8 Pack by Golisopod User and EBDX by Luka S.J.), with the Spanish “Sprites Animados” animators: Tenshi of War, DPertierra, Skyflyer, Hellfire_raptor, Antiant, Diegotoon20, KingOfThe-X-Roads and others. Fan animations from <a href="https://github.com/Ghasty001/Animated_sprites_by_Ghasty001" target="_blank" rel="noopener">Ghasty001</a> and base artists hexagonereal, Kyledove, Bloxable, KingOfThe-X-Roads, G.E.Z, Katten, aXl and Antiant. Mega Zygarde by <a href="https://www.deviantart.com/retronc/art/Mega-Zygarde-Gen-5-Pokemon-Sprite-1260116710" target="_blank" rel="noopener">RetroNC</a>. Base sprites from the <a href="https://www.smogon.com/forums/forums/smeargles-studio.258/" target="_blank" rel="noopener">Smogon Sprite Project</a> X/Y, Sun/Moon, Sword/Shield and Scarlet/Violet artists.</dd><dt>3D-style sprites</dt><dd>Animated front and back sprites rendered from the games’ 3D models, from <a href="https://play.pokemonshowdown.com/sprites/" target="_blank" rel="noopener">Pokémon Showdown</a> and the artists on its <a href="https://pokemonshowdown.com/credits" target="_blank" rel="noopener">credits page</a>, via <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Shown at their original size. HD art: Pokémon HOME renders via PokéAPI.</dd><dt>Trainers</dt><dd>Trainer sprites from <a href="https://play.pokemonshowdown.com/sprites/trainers/" target="_blank" rel="noopener">Pokémon Showdown</a> and its spriters. Gym Leader, Elite Four and Champion portraits from Pokémon Showdown and the <a href="https://luka-sj.com/res/ebs4" target="_blank" rel="noopener">Elite Battle System</a> (Luka S.J. and its community spriters), collected by <a href="https://github.com/OctavioKonzen/Pocketdex" target="_blank" rel="noopener">Pocketdex</a>. Full-size trainer art from Pokémon Masters EX (DeNA / The Pokémon Company).</dd><dt>Items and Poké Balls</dt><dd>Official bag icons from Pokémon Sword and Shield, collected by <a href="https://github.com/msikma/pokesprite" target="_blank" rel="noopener">PokéSprite</a> (Michiel Sikma and contributors, MIT), with gaps filled from <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokéAPI sprites</a>. Poké Ball sprites via PokéAPI.</dd><dt>Pokémon data and battle rules</dt><dd>Stats, moves, abilities, items, learnsets and move effects from <a href="https://github.com/pkmn/ps" target="_blank" rel="noopener">@pkmn/dex</a> (pkmn, MIT) and <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokéAPI</a>, based on <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener">Pokémon Showdown</a> (Guangcong Luo and contributors, MIT). The damage formula follows the games as documented by <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (MIT), which is also used to test it.</dd><dt>Fonts</dt><dd><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> (SIL Open Font License): Chakra Petch (Cadson Demak), Rubik (Hubert &amp; Fischer), Pixelify Sans (Stefie Justprince) and VT323 (Peter Hull).</dd><dt>Code</dt><dd><a href="https://github.com/matt-way/gifuct-js" target="_blank" rel="noopener">gifuct-js</a> (Matt Way) and <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> (Matt DesLauriers), both MIT, for reading and saving GIFs.</dd><dt>2D scenes and Home art</dt><dd>The 2D Hall of Fame backgrounds, Pokémon Home furniture, rooms and doorways are pixel art made for Dream Team Dex with <a href="https://retrodiffusion.ai/" target="_blank" rel="noopener">Retro Diffusion</a>.</dd><dt>Made for this app</dt><dd>Music and sound effects, battle scenes, the 3D-style Hall of Fame scenes and Home, and the rest of the app: original to Dream Team Dex.</dd></dl>
     </section></div>`;
   const set = (k, v) => { state.ui[k] = v; applyUI(); save(); };
   nav.onClick = e => {
@@ -6639,7 +6491,7 @@ function renderFight(){
   const cfg = F.cfg; if (!cfg) { openScreen("battle", "menu"); return; }
   const two = state.mode === "2d", f = cfg.foe;
   const hp = side => `<div class="bt-hp ${side}"><div class="bt-row"><b class="bt-nm"></b><span class="bt-st" hidden></span><span class="bt-lv"></span></div><span class="bt-bar"><i></i></span>${side === "you" || cfg.hotseat ? `<span class="bt-num"></span>` : ""}</div>`;
-  const mon = side => `<div class="bt-mon ${side}"><div class="stage"><img class="spr" alt="" draggable="false" data-hq="1"${two ? ' data-zoom="2"' : ""}></div></div>`;
+  const mon = side => `<div class="bt-mon ${side}"><div class="stage"><img class="spr" alt="" draggable="false"${two ? ' data-zoom="2"' : ""}></div></div>`;
   const party = (side, P) => `<div class="bt-party ${side}">${P.map((m, k) => `<span data-pk="${k}">${ballImg(m.ball)}</span>`).join("")}</div>`;
   const trHtml = f.trIdx !== undefined && f.trIdx !== null ? `<div class="stage medal"><img class="tr" data-tr="${f.trIdx}" alt="" draggable="false"></div>` : trOrEmblem(f.name, f.type);
   $("scBody").innerHTML = `<div class="bt2">
@@ -6674,7 +6526,9 @@ async function showEv(e){
   switch (e.k) {
     case "send": {
       const s = sideEl(e.side), m = B.s[e.side].party[e.idx], img = s.mon.querySelector("img");
-      img.dataset.num = m.n; if (m.sh) img.dataset.sh = "1"; else delete img.dataset.sh; paintImg(img);
+      img.dataset.num = m.n; if (m.sh) img.dataset.sh = "1"; else delete img.dataset.sh;
+      if (e.side === 0) { img.dataset.back = "1"; img.classList.toggle("back", imgMode(img) === "3d" && hasBack(m.n, !!m.sh || state.shiny)); }   // 3D: a real back sprite, else the mirrored front
+      paintImg(img);
       s.mon.classList.remove("faint", "hit", "lunge", "recall"); anim(s.mon, "enter");
       s.hp.querySelector(".bt-nm").textContent = m.name; s.hp.querySelector(".bt-lv").textContent = "Lv" + m.level; setHP(e.side, m.hp, m.max, true); setSt(e.side, e.st);
       s.party.querySelectorAll("[data-pk]").forEach(x => x.classList.toggle("act", +x.dataset.pk === e.idx));

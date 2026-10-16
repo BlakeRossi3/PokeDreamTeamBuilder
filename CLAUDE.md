@@ -42,7 +42,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
   `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
-- `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `h` = HOME stills, `-f*` = forms; 16 per pack),
+- `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `3db`/`3dbs` = 3D back sprites, `h` = HOME stills,
+  `-f*` = forms; 16 per pack; `python3 scripts/gen_back_packs.py` rebuilds the back packs),
   `t/*.wasm` trainer packs (`2d`, `3d`, `3f`, `l` = Gym Leader portraits). `index.json` maps each sprite to
   `[id, offset, length, kind]` — kind 0 png, 1 gif, 2 webp, 3 = shiny stored as a palette patch of the normal sprite.
   `.wasm` is only a container name so hosts serve them compressed; they are not WebAssembly. Packs are large
@@ -57,8 +58,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 
 ## Map of src/app.html (search for these banners)
 CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overrides), then markup, then JS sections:
-`ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SMOOTH 3D SPRITES`
-(`getSprite`, `spKey`, `hqFrame` xBR upscale, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
+`ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SPRITES AT NATIVE SIZE`
+(`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
 `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
 `POKÉMON HOME` · `HALL OF FAME GALLERY` · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
@@ -83,7 +84,7 @@ Boot code is at the very end of the script.
 - **Modals:** `openModal(html, {wide, onClose})` / `closeModal()`; the modal layer sits above the overlays.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
-- **Size:** the site is ~255 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
+- **Size:** the site is ~417 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
   outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
   everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
@@ -99,4 +100,6 @@ Boot code is at the very end of the script.
 ## Blake's preferences
 - Keep it free and non-profit. Polished, "production-ready" feel; he likes bold improvements when asked to clean up.
 - He prefers the animated idle 3D sprites over HD stills (an HD-sprite swap was tried and reverted).
+- Sprites are shown at native size, never upscaled with a filter (whole-number multiples on big canvases only).
+  See `docs/3d-sprites.md`.
 - Plain-language summaries of what changed; show screenshots of UI changes when possible.
