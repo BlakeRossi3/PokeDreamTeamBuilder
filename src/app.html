@@ -1548,7 +1548,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 :root[data-mode="2d"] .hm-cnt{border-radius:0}
 .home-pp{margin-left:auto; display:inline-flex; align-items:center; gap:6px; min-height:var(--h-sm); box-sizing:border-box; padding:2px 14px 2px 4px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; background:var(--panel); border:var(--bw) solid var(--line); box-shadow:var(--e1)}
 :root[data-mode="2d"] .home-pp{border-radius:0; padding-left:6px; background:var(--paper)}
-@media (max-width:560px){ .hm-tb > span:not(.ic):not(.hm-cnt){position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)} .hm-tb{padding-inline:9px} .home-bar{gap:6px} .home-pp{padding-right:10px} }
+@media (max-width:560px){ .hm-tb > span:not(.ic):not(.hm-cnt){display:none} .hm-tb{padding-inline:9px} .home-bar{gap:6px} .home-pp{padding-right:10px} }
 .home-stage{position:relative; overflow:hidden; border-radius:var(--r); border:var(--bw) solid var(--line); background:#1a1410}
 .home-stage canvas{display:block; width:100%; outline:none; cursor:pointer; touch-action:none; -webkit-user-select:none; user-select:none}
 .home-stage canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--hi)}
@@ -6555,10 +6555,10 @@ function renderHome(){
   const cap = homeCap(), mons = homeMons();
   $("scBody").innerHTML = `<div class="home">
     <div class="home-bar">
-      <button class="btn sm primary hm-tb" type="button" id="hmPick" title="Choose who lives here">${ic("paw")}<span>Pokémon</span><span class="hm-cnt">${mons.length}/${cap}</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms">${ic("shop")}<span>Shop</span></button>
-      <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode">${ic("camera")}<span>Photo</span></button>
+      <button class="btn sm primary hm-tb" type="button" id="hmPick" title="Choose who lives here" aria-label="Pokémon, ${mons.length} of ${cap}">${ic("paw")}<span>Pokémon</span><span class="hm-cnt">${mons.length}/${cap}</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture" aria-label="${HS.edit ? "Done decorating" : "Decorate"}">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms" aria-label="Shop">${ic("shop")}<span>Shop</span></button>
+      <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode" aria-label="Photo mode">${ic("camera")}<span>Photo</span></button>
       <span class="home-pp" title="Your PokéPoints">${fmtPP(state.games.pp)}</span>
     </div>
     ${HS.edit ? "" : `<div class="hm-bag" id="hmBag"></div>`}
