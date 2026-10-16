@@ -1,5 +1,11 @@
 # What's new in Dream Team Dex
 
+## ✨ Furniture that moves (2D)
+- Twelve Home pieces that used to be simple drawings are now detailed, animated pixel art: the Tesla lamp crackles,
+  the lava lamp's wax drifts, the lighthouse lamp glows, torches and the ghost lantern flicker, the crystal, cosmic
+  and beauty orbs swirl and sparkle, the honey cauldron bubbles, the seashell fountain pours and the volcano hot tub
+  steams. (3D keeps its own drawings.)
+
 ## 💥 Every move has an animation
 - **All 851 moves animate** in 3D and 2D: flames, waves, sparks, quakes, slashes, beams, stat-up glows, screens and
   hazards, plus hand-made effects for signature moves. Contact moves lunge; everything else casts.

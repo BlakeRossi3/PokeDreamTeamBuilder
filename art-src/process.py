@@ -104,6 +104,53 @@ for p in sorted((RAW / "furn").glob("*.png")):
                     px[x, y] = (int(rr*255), int(ng*255), int(nb*255), a)
         save(t, f"furn/trophy{g}.png")
 
+# ---------- animated furniture (Retro Diffusion animations, raw/anim/<id>.gif) ----------
+# Every frame loses its flat backdrop the same way as the stills; stray specks are dropped; all frames are cropped to
+# one shared box. Writes furn/<id>.png (the first frame, used for the Shop and as the still) and anim/<id>.png (the
+# frames side by side, each the size of the still).
+def drop_specks(im, min_px=4):
+    W, H = im.size
+    px, seen = im.load(), set()
+    for y in range(H):
+        for x in range(W):
+            if (x, y) in seen or not px[x, y][3]:
+                continue
+            blob, q = [], deque([(x, y)])
+            while q:
+                cx, cy = q.popleft()
+                if (cx, cy) in seen or not (0 <= cx < W and 0 <= cy < H) or not px[cx, cy][3]:
+                    continue
+                seen.add((cx, cy)); blob.append((cx, cy))
+                q.extend([(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)])
+            pale = all(min(px[b][:3]) > 180 for b in blob)   # leftover bits of the pale backdrop (not honey drops or sparks)
+            if len(blob) < min_px or (pale and len(blob) <= 8):
+                for b in blob:
+                    px[b] = (0, 0, 0, 0)
+    return im
+
+
+from PIL import ImageSequence
+for p in sorted((RAW / "anim").glob("*.gif")):
+    frames = []
+    for f in ImageSequence.Iterator(Image.open(p)):
+        im = f.convert("RGBA")
+        for _ in range(2):
+            im = flood_clear(im, border(im), 40)
+        im = flood_clear(im, border(im), 36, ref=(247, 251, 254))   # the animator's pale backdrop, when it survives
+        frames.append(drop_specks(im))
+    box = None
+    for f in frames:
+        bb = f.getbbox()
+        if bb:
+            box = bb if box is None else (min(box[0], bb[0]), min(box[1], bb[1]), max(box[2], bb[2]), max(box[3], bb[3]))
+    frames = [f.crop(box) for f in frames]
+    w, h = frames[0].size
+    sheet = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        sheet.paste(f, (i * w, 0))
+    save(frames[0], f"furn/{p.stem}.png")
+    save(sheet, f"anim/{p.stem}.png")
+
 # ---------- rooms ----------
 R = RAW / "room"
 save(rgba(R / "wall_hall.png"), "room/wall_hall.png")

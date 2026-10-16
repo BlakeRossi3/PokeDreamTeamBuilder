@@ -6597,16 +6597,22 @@ const HOUSE_DRAW = {
 const FURN_H = {hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
-function furnSprite(it, ts, pixel, flip){
-  const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : "", it.rot ? "r" : ""].join("|"); if (furnCache.has(k)) return furnCache.get(k);
+// animated 2D furniture: art/2d/anim/<id>.png holds the frames side by side, each the size of art/2d/furn/<id>.png
+const FURN_FRAME_MS = 150;
+const furnAnim = id => { const sh = artOf("anim/" + id), st = artOf("furn/" + id); return sh && st && sh.width > st.width ? {sh, n:Math.round(sh.width/st.width), w:st.width} : null; };
+const furnFrame = (p, now) => state.ui.motion === "reduced" || !furnAnim(p.it.id) ? 0 : Math.floor((now + p.x*97 + p.y*53)/FURN_FRAME_MS) % furnAnim(p.it.id).n;
+function furnSprite(it, ts, pixel, flip, fi = 0){
+  const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : "", it.rot ? "r" : "", fi].join("|"); if (furnCache.has(k)) return furnCache.get(k);
+  const A = pixel && !it.rot && fi > 0 && furnAnim(it.id);
   const img = pixel && !it.rot && artOf("furn/" + it.id);   // a turned rug is drawn from shapes
   if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
     const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
     const off = isFloorItem(it) ? (floorD - h)/2 : floorD - h;   // rugs sit in the middle of their footprint
     const c = mkCanvas(Math.ceil(it.w*ts + pad*2), Math.ceil(h + pad*2)), x = c.getContext("2d"); x.imageSmoothingEnabled = false;
     if (flip) { x.translate(c.width, 0); x.scale(-1, 1); }
-    x.drawImage(img, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
-    const out = {c, pad, h:-off/ts, art:true}; if (furnCache.size > 300) furnCache.clear(); furnCache.set(k, out); return out;
+    if (A) x.drawImage(A.sh, (fi % A.n)*A.w, 0, A.w, img.height, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
+    else x.drawImage(img, Math.round(pad + (it.w*ts - w)/2), pad, Math.round(w), Math.round(h));
+    const out = {c, pad, h:-off/ts, art:true}; if (furnCache.size > 400) furnCache.clear(); furnCache.set(k, out); return out;
   }
   const h = isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + .3, pad = Math.ceil(ts*.25), W = Math.ceil(it.w*ts + pad*2), H = Math.ceil(it.d*ts*HM.SQ + h*ts + pad*2);
   const c = mkCanvas(W, H), x = c.getContext("2d"); x.imageSmoothingEnabled = !pixel;
@@ -6903,7 +6909,7 @@ function homeFrame(now){
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
-  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
+  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
     if (!NO_SHADOW.has(p.it.kind)) furnShadow(c, p, pixel);
     c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
     if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});

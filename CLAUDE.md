@@ -61,11 +61,11 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `site/` — icons, share image, service worker template, notes for other hosts, `config.js` (Supabase URL + anon key;
   empty = local saves only) and `vendor/supabase.js` (supabase-js, vendored).
 - `supabase/` — `migrations/*.sql` (tables, RLS, RPCs for accounts, saves and friends) and `tests/` (runs them on a local Postgres).
-- `art/2d/` — the 2D pixel art (Hall of Fame backgrounds `hof/<scene>[_sunset|_night]`, Home `furn/<id>`, `room/…`
+- `art/2d/` — the 2D pixel art (Hall of Fame backgrounds `hof/<scene>[_sunset|_night]`, Home `furn/<id>` (and `anim/<id>`: the same item's animation frames side by side, drawn by `furnSprite`/`furnFrame`), `room/…`
   walls/floors/windows, `div/<type>_col|cap|post|door` room dividers). The website build puts them in
   `art2d.json` (fetched after the first screen; `ART_SRC` is `null` in the page); the single-page artifact keeps them inline
   (`/*ART2D*/`). The app looks them up with `artOf(key)` (null until loaded) and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
-- `art-src/` — how that art was made: `raw/` Retro Diffusion downloads, `jobs.tsv` (image → job id), `process.py`
+- `art-src/` — how that art was made: `raw/` Retro Diffusion downloads (`raw/anim/*.gif` = animations), `jobs.tsv` (image → job id), `process.py`
   (cut-outs, trophy recolours, clear window glass, wood/carpet floors) which writes `art/2d/`. Re-run it after changing `raw/`.
 - `docs/` — roadmap, battle audit, rewards table, 3D sprite research, Supabase setup, changelog.
 - `scripts/` — build, lint and the data/asset generators. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
