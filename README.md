@@ -2,8 +2,9 @@
 
 A free fan-made Pokémon app. Build a dream team for every region and collection (or make your own rules), give each
 Pokémon a nickname, Poké Ball, moves and an item, and stage an animated Hall of Fame scene for it. Then take your teams
-into battle against rivals, 72 Gym Leaders and nine Elite Fours, play the Daily 10 quiz, earn PokéPoints, unlock things
-in the Shop and invite your favorites into your own Pokémon Home. Plays in 2D pixel art or 3D, on desktop or phone,
+into battle against rivals, 72 Gym Leaders, nine Elite Fours and the Battle Tower (every move animated, every battle
+saved as a replay you can share), import and export teams in Pokémon Showdown's format, play the Daily 10 quiz and daily
+missions, earn PokéPoints, unlock things in the Shop and invite your favorites into your own Pokémon Home. Plays in 2D pixel art or 3D, on desktop or phone,
 and installs to your home screen.
 
 ## Run it
@@ -30,7 +31,7 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 
 **Docs:** [battle audit](docs/battle-audit.md) (what the engine covers) · [rewards table](docs/rewards.md) (every Gym, Elite
 Four and Champion reward) · [3D sprites](docs/3d-sprites.md) (sources compared, gaps) · [online accounts setup](docs/supabase-setup.md)
-(Supabase, click by click) · [sleeping-sprite credits](docs/pmd-credits.md) · roadmaps [1](docs/ROADMAP.md) and [2](docs/ROADMAP-2.md) ·
+(Supabase, click by click) · [sleeping-sprite credits](docs/pmd-credits.md) · roadmaps [1](docs/ROADMAP.md), [2](docs/ROADMAP-2.md) and [3](docs/ROADMAP-3.md) ·
 [changelog](docs/CHANGELOG.md).
 
 **Tests** (`tests/run_all.py` runs them all): layout audit (every screen, 2D/3D, desktop/phone, no sideways scroll) ·
@@ -38,7 +39,8 @@ layout checker (nothing sticking out, clipped, overlapping or wrapping unevenly,
 accessibility (axe-core: contrast, labels, ARIA) ·
 Shop and Home · save migration · battles, exports and settings · custom teams · battle engine and battle UI · Pokémon sheet ·
 rewards · online accounts and friends (with a stand-in Supabase in `tests/fake_supabase.js`) · live friend battles (two
-browser contexts joined by a stand-in server) · Home life · the engine rules
+browser contexts joined by a stand-in server) · Home life · battle animations for every move · replays (re-run to the same
+ending) · Showdown import/export · Battle Tower · Home games · daily missions and login streak · the engine rules
 and damage-vs-`@smogon/calc` checks in Node. The database rules are checked separately on a local Postgres with
 `sh supabase/tests/run.sh`.
 
@@ -49,11 +51,13 @@ and damage-vs-`@smogon/calc` checks in Node. The database rules are checked sepa
   Elite Four members 300 + elite rewards the first time · leagues 1,000 + the Champion's set the first time, 250 after · Versus wins 60 ·
   +10 per Home Pokémon you play with each day · gifts from Home Pokémon at 60+ friendship (20–60, once a day each) · +20 for liking a friend's Home and +20 for each Like your Home gets
   (once a day per Home) · live friend battle wins 60 (up to 3 paid wins per friend a day; battling a friend's team against the
-  computer is just for fun).
+  computer is just for fun) · Battle Tower wins 30–80 (+150 for the Tycoon) · daily missions 50–80 each, +150 for all three ·
+  daily visit 25 (200 every 7th day in a row, 1,000 on day 30).
 - **Exclusives** are never sold (the Shop shows them as "?" until earned). Every Gym Leader gives their badge, a themed
   exclusive (furniture or a rare Poké Ball that fits them) and an icon of their ace; the first badge of a region gives its
   Badge Case. Elite Four members give an elite profile icon and a signature statue; Champions give their card design,
-  Champion's Hall background, trophy, title and an icon. The full table is in `docs/rewards.md` / `data/rewards.json`.
+  Champion's Hall background, trophy, title and an icon. Battle Tower streaks of 21 and 49 give two icons, a background
+  and a trophy. The full table is in `docs/rewards.md` / `data/rewards.json`.
 - New saves start with 500. Saves from before the economy get points for past progress plus the rewards for badges
   they already had, and keep anything they were using. Saves from before the reward table (v2) get the new rewards for
   leaders they already beat, and keep everything they own.
@@ -69,7 +73,8 @@ followers trail behind you, and playing pairs chase each other round. Pick up to
 (+8 friendship, +15 for a Pokémon's hidden favourite flavour). Friendship 25 unlocks a special emote, 50 makes it follow
 you, 60+ brings the odd gift and 100 earns a friendship ribbon on its Team Builder card and your trainer card. Daily
 weather shows through the windows and in outdoor rooms; seasonal events (Halloween, winter holidays) bring limited-time
-furniture and night visitors. Photo mode saves a PNG or a short GIF.
+furniture and night visitors. Photo mode saves a PNG or a short GIF. **Games:** Berry Catch (catch falling berries;
+keep up to 5 for the first 3 rounds a day) and Hide-and-seek (find the Pokémon behind your furniture), both for friendship.
 
 ## Saves
 Progress lives in each player's browser (several save files per device, optional PIN). Players move a save between

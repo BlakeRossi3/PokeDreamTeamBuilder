@@ -155,3 +155,11 @@ cleared they get all four Elite Four rewards and the Champion's set. A one-time 
 
 Net, Dive, Dusk, Heavy, Lure, Level, Fast and Friend Balls are now Gym Leader exclusives, given by leaders that fit them; the Shop keeps
 Heal, Luxury, Nest, Quick, Timer and Repeat Balls. Unfound exclusives are collapsed into a "Still to find" strip of "?" tiles.
+
+## Battle Tower (Roadmap 3)
+
+Streak rewards, exclusive like the Gym rewards (`TOWER_REWARD` in `src/app.html`, `it.tower` makes `isExclusive` true):
+- **21 wins in a row:** Tower Tycoon's Milotic (elite profile icon) and the **Battle Tower** Hall of Fame background.
+- **49 wins in a row:** the steel **Battle Tower trophy** for the Home and Tower Tycoon's Regigigas (elite profile icon).
+
+Each win pays 30 PokéPoints, +10 per 7-win tier (up to +50), and +150 for beating Tycoon Palmer (every 7th battle).

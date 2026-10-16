@@ -75,3 +75,10 @@ sell anything, credit every outside source, keep the site well under 1 GB.
 
 ## Phase 8: Wrap-up
 - Full suite, layout checker and accessibility check clean; README, CLAUDE.md, credits, changelog and screenshots.
+
+## Status (end of the round)
+All eight phases shipped (PRs 18–25). Left for later:
+- The other Retro Diffusion furniture (snowman, toy box, telescope, kitchen stove, ball pit) is waiting for Blake to
+  approve the first piece, the hammock, which shipped. Budget used so far: about $0.18 of the ~$1.50.
+- Double battles (noted in Phase 4).
+- The full suite runs once at the end of the round now (cheaper testing); each phase ran only its own tests.

@@ -36,6 +36,15 @@ TESTS = [  # (file, args)
     ("test_friend_battle.py", ["390", "844"]),
     ("test_home_life.py", ["1280", "860", "3d"]),        # Home: furniture spots, night naps, berries, gifts, drag/undo/turn, photo mode
     ("test_home_life.py", ["390", "844", "2d"]),
+    ("test_battle_anim.py", ["1280", "860"]),           # every move has an animation that draws in 3D and 2D
+    ("test_replays.py", []),                            # replays re-run to the same ending; share links; Replays screen
+    ("test_showdown.py", ["390", "844"]),               # Showdown import/export round trip
+    ("test_tower.py", ["390", "844", "2d"]),            # Battle Tower: streaks, Tycoon, Tower-only rewards
+    ("test_tower.py", ["1280", "860", "3d"]),
+    ("test_home_games.py", ["2d", "390", "844"]),       # hammock, Berry Catch, Hide-and-seek
+    ("test_home_games.py", ["3d", "1280", "860"]),
+    ("test_missions.py", ["3d", "390", "844"]),         # daily missions + login streak
+    ("test_missions.py", ["2d", "1280", "860"]),
     ("test_engine.mjs", []),                            # engine rules: stats, crits, status, PP, items, Bag, AI (Node)
     ("test_damage.mjs", ["1500"]),                      # damage vs @smogon/calc (Node)
 ]

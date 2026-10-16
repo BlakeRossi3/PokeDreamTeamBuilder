@@ -34,6 +34,7 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
   (`pip install playwright && python3 -m playwright install chromium` once; `npm install` for axe-core). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
+- `python3 tests/perf_load.py` — first / repeat / offline load times on a throttled phone (run after loading changes).
 - `python3 tests/test_layout_lint.py [d t m]` — the layout checker (controls sticking out, clipped text, overlaps, uneven wraps,
   jitter) on every screen; `python3 tests/test_a11y.py` — axe-core accessibility (contrast, labels, ARIA). Both must report 0.
 - `sh supabase/tests/run.sh` — apply the Supabase migrations to a throwaway local Postgres and check their rules.
@@ -48,7 +49,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   through `tests/engine_harness.mjs`. See `docs/battle-audit.md` for what it covers.
   Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
   `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ITEMICONS*/`, `/*REWARDS*/`, `/*FAMILIES*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
-  `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
+  `"/*BUILD*/"` becomes the build hash; `{}/*PACKV*/` becomes a per-file content hash for each pack, `learnsets.json`,
+  `items.png` and `art2d.json` (`packUrl` adds `?v=`), so a deploy only re-downloads files that changed.
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
 - `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `3db`/`3dbs` = 3D back sprites, `h` = HOME stills, `zz` = PMD sleeping sprites,
   `-f*` = forms; 16 per pack; `python3 scripts/gen_back_packs.py` rebuilds the back packs),
@@ -60,8 +62,9 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   empty = local saves only) and `vendor/supabase.js` (supabase-js, vendored).
 - `supabase/` — `migrations/*.sql` (tables, RLS, RPCs for accounts, saves and friends) and `tests/` (runs them on a local Postgres).
 - `art/2d/` — the 2D pixel art (Hall of Fame backgrounds `hof/<scene>[_sunset|_night]`, Home `furn/<id>`, `room/…`
-  walls/floors/windows, `div/<type>_col|cap|post|door` room dividers). Embedded in the page at build time (`/*ART2D*/`);
-  the app looks them up with `artOf(key)` and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
+  walls/floors/windows, `div/<type>_col|cap|post|door` room dividers). The website build puts them in
+  `art2d.json` (fetched after the first screen; `ART_SRC` is `null` in the page); the single-page artifact keeps them inline
+  (`/*ART2D*/`). The app looks them up with `artOf(key)` (null until loaded) and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
 - `art-src/` — how that art was made: `raw/` Retro Diffusion downloads, `jobs.tsv` (image → job id), `process.py`
   (cut-outs, trophy recolours, clear window glass, wood/carpet floors) which writes `art/2d/`. Re-run it after changing `raw/`.
 - `docs/` — roadmap, battle audit, rewards table, 3D sprite research, Supabase setup, changelog.
@@ -72,9 +75,12 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 `ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SPRITES AT NATIVE SIZE`
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
-`POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
-`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `FRIEND BATTLES` (`fbChallenge`, `fbOpen`, `runLive`, `fbValid`) · `HOME LIFE` (`SPOT_OF`, `homeDecide`, `BERRIES`, `EVENTS`, `homePhoto`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
-`nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
+`SHOWDOWN IMPORT / EXPORT` (`sdParse`, `sdExport`) · `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
+`POKÉMON HOME` · `HOME GAMES` (`berryCatch`, `seekStart`/`seekAt`) · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `FRIEND BATTLES` (`fbChallenge`, `fbOpen`, `runLive`, `fbValid`) · `HOME LIFE` (`SPOT_OF`, `homeDecide`, `BERRIES`, `EVENTS`, `homePhoto`) · `DAILY MISSIONS + LOGIN STREAK` (`MISSIONS`, `missionBump`,
+`loginTick`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE ANIMATIONS` (`TYPE_FX`, `FXP`, `SIG_FX`, `moveRecipe`,
+`playMoveFx`) · `REPLAYS` (`rpNew`, `rpStep`, `rpEncode`/`rpDecode`, `runReplay`) · `BATTLE TOWER` (`towerFoe`, `towerBattle`,
+`TOWER_REWARD`) · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
 
 ## Things that are easy to get wrong
@@ -111,7 +117,7 @@ Boot code is at the very end of the script.
   `state.games.social.fbN/fbW`. `tests/test_friend_battle.py` runs two browser contexts joined by a stand-in server.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
-- **Size:** the site is ~420 MB (608 files; the sleeping-sprite packs add 2.8 MB). GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
+- **Size:** the site is ~420 MB (610 files; the sleeping-sprite packs add 2.8 MB). GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
   outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
   everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
@@ -126,6 +132,14 @@ Boot code is at the very end of the script.
 
 - **The Pokémon sheet** has three tabs: Battle (everything that changes a battle), Personalize (looks only) and Info.
   Keep anything that affects battle on the Battle tab only. Pickers open in the same modal and return with `sheetBack`.
+- **Replays** record the seed and every choice; a replay re-runs the engine and must reach the same hash (`rpHash`).
+  So every bit of battle randomness goes through `B.rand` inside `rpStep`/`fbStep`; never roll engine dice anywhere else,
+  and record deep copies (the engine mutates choice objects). `tests/test_replays.py` checks it.
+- **Animations:** every move needs a `moveRecipe` (signature ones in `SIG_FX`); `tests/test_battle_anim.py` draws all of
+  them in both styles.
+- **Battle Tower / missions / login / Home games** keep their state in `state.games.tower`, `.missions`, `.login` and
+  `home.games` (all validated in `cleanGames`). New ways to finish a mission call `missionBump(kind)`; nothing counts while
+  `VISIT` is set or for replays/hotseat. Tower rewards (`it.tower`) are exclusives.
 - **Battles.** Member battle fields (`nature`, `evs`, `ivs`, `level`) are validated in `cleanMember`; Megas/Primals never hold
   items (there are no Mega Stones). Any damage change must keep `tests/test_damage.mjs` at 0 mismatches.
 
