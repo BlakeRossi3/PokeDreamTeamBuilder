@@ -30,7 +30,7 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 ## Layout
 - `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~6,300 lines). Source of truth.
   Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
-  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*STATUSFX*/` are filled from `data/` and `packs/index.json`;
+  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
   `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
 - `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `h` = HOME stills, `-f*` = forms; 16 per pack),
