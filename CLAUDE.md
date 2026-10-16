@@ -74,9 +74,10 @@ Boot code is at the very end of the script.
 - **Hall of Fame scenes are per style:** `state.scenes[id]` is 3D, `state.scenes[id + "~2d"]` is 2D. Use
   `sceneOf(id, mode)`; copying/deleting a team must handle both keys.
 - **Economy.** Unlockables are in `ITEMS_ALL`; look up with `unlockOf(cat, id)`; use `owns`/`grant`/`buy`/`earn`.
-  Gym Leader and Champion rewards (`GYM_REWARD`) are exclusive: never sell them in the Shop. A team's default
-  Hall of Fame background is always usable (`bgUsable`). `ecoMigrate()` runs once per save for players from before
-  the economy existed. Point values are listed in README.md.
+  Gym Leader, Elite Four and Champion rewards (`GYM_REWARD`, `GYM_BONUS`, `E4_REWARD`, `BADGE_CASE`, built from
+  `data/rewards.json`; see `docs/rewards.md`) are exclusive (`isExclusive`): never sell them in the Shop. A team's default
+  Hall of Fame background is always usable (`bgUsable`). `ecoMigrate()` upgrades old saves once per version (`eco` 1: economy start; `eco` 2: grants the v2 rewards for badges and leagues already won) for players from before
+  the economy existed, and again (`eco` 1 → 2) to grant the v2 reward table for badges and leagues already won. Point values are listed in README.md.
 - **Screens** render into `#scBody` and wire events through `nav.onClick` etc.; anything with timers, rAF or observers
   must undo it in `nav.cleanup` (see `renderHome`).
 - **Modals:** `openModal(html, {wide, onClose})` / `closeModal()`; the modal layer sits above the overlays.

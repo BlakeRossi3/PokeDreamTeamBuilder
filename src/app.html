@@ -735,6 +735,16 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 .badge{display:inline-block; width:max-content; padding:1px 8px; border-radius:var(--pill); font-size:var(--fs-xs); font-weight:800} .badge.ok{background:#1f9d4c; color:#fff} .badge.no{background:var(--raised-2, rgba(127,127,127,.25)); color:var(--fg)}
 :root[data-mode="2d"] .badge{border-radius:0}
 @media (max-width:760px){ .ip-grid{max-height:none} }
+.picon.elite{position:relative; isolation:isolate}
+.picon.elite::before{content:""; position:absolute; inset:-4px; z-index:-1; border-radius:50%; background:conic-gradient(from var(--eang, 0deg), #ffd36b, #ff5ad0, #6fc3ff, #46d996, #ffd36b); animation:eliteSpin 3s linear infinite}
+:root[data-mode="2d"] .picon.elite::before{border-radius:0; animation:eliteBlink 1.2s steps(2) infinite; background:repeating-linear-gradient(45deg, #ffd36b 0 4px, #c94bd6 4px 8px)}
+@property --eang{syntax:"<angle>"; inherits:false; initial-value:0deg}
+@keyframes eliteSpin{to{--eang:360deg}} @keyframes eliteBlink{50%{filter:hue-rotate(90deg)}}
+:root[data-motion="reduced"] .picon.elite::before{animation:none}
+.shop-q{display:flex; flex-wrap:wrap; gap:4px} .q-tile{display:grid; place-items:center; width:26px; height:26px; border-radius:6px; background:var(--raised); border:var(--bw) dashed var(--line-2); color:var(--muted); font-weight:800; font-family:var(--font-d)}
+:root[data-mode="2d"] .q-tile{border-radius:0} .shop-find{margin-top:14px}
+.title-row{margin:4px 0 10px} .title-row button{font-size:var(--fs-sm)}
+.gc-rw{color:var(--accent); font-weight:700} .e4-rw span{white-space:nowrap} .e4-rw .won{color:var(--accent); font-weight:700}
 /* sheet tabs + personalize */
 .sheet-tabs{margin:14px 0 4px}
 .build .field{margin-top:10px}
@@ -1820,7 +1830,7 @@ function cleanUI(u){
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
 const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}});
-const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome()});
+const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
   const int = v => Number.isInteger(v) && v > 0 ? v : 0;
@@ -1832,8 +1842,10 @@ function cleanGames(g){
   for (const [k, v] of Object.entries(obj(g.badges))) if (/^[1-9]$/.test(k) && Number.isInteger(v)) o.badges[k] = v & 255;
   for (const k of Object.keys(obj(g.leagues))) if (/^[1-9]$/.test(k) && g.leagues[k]) o.leagues[k] = true;
   o.vs = {w:int(obj(g.vs).w), l:int(obj(g.vs).l)};
-  for (const k of ["gifs", "cards", "since", "intro", "dailyN", "pp", "ppTotal", "spent", "ecoNew"]) o[k] = int(g[k]);
-  o.ppTotal = Math.max(o.ppTotal, o.pp); o.eco = g.eco === 1 ? 1 : 0;
+  for (const k of ["gifs", "cards", "since", "intro", "dailyN", "pp", "ppTotal", "spent", "ecoNew", "rw2"]) o[k] = int(g[k]);
+  o.ppTotal = Math.max(o.ppTotal, o.pp); o.eco = g.eco === 1 || g.eco === 2 ? g.eco : 0;
+  for (const [k, v] of Object.entries(obj(g.e4))) if (/^[1-9]$/.test(k) && Number.isInteger(v)) o.e4[k] = v & 15;   // Elite Four members beaten (first wins)
+  if (typeof g.title === "string" && /^champ[1-9]$/.test(g.title)) o.title = g.title;
   const own = obj(g.own);
   for (const c of ["bg", "exp", "icon", "ball", "card"]) o.own[c] = Array.isArray(own[c]) ? [...new Set(own[c].filter(id => typeof id === "string" && unlockOf(c, id)))] : [];
   for (const [k, v] of Object.entries(obj(own.furn))) if (unlockOf("furn", k) && int(v)) o.own.furn[k] = Math.min(99, v);
@@ -3259,6 +3271,7 @@ const SCENES = [
   {id:"gym", name:"Gym arena", fx:{type:"confetti"}},
   {id:"lavender", name:"Lavender Town", fx:{type:"wisp"}},
   {id:"spear", name:"Spear Pillar", fx:{type:"sparkle", y:[0,.55]}},
+  ...["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"].map((r, i) => ({id:"hall" + (i + 1), name:`${r} Champion’s Hall`, hall:i + 1, fx:{type:"confetti"}})),
 ];
 const SCENE_BY = new Map(SCENES.map(s => [s.id, s]));
 // "live" follows the clock on this device: day 6:00–17:30, sunset until 19:30, then night
@@ -3710,6 +3723,45 @@ const PAINT = {
     },
   },
 };
+// the nine Champion's Halls: one grand hall, in each region's colours (main, dark, light, metal)
+const HALL_COL = {1:["#d8423a","#5c1410","#ffb3a8","#ffd36b"], 2:["#c9a227","#4d3c08","#ffe9a3","#fff2c4"], 3:["#2f9e62","#0f3f26","#a8f0c8","#ffd36b"], 4:["#5b6fd6","#1c2466","#c7d0ff","#e8ecff"], 5:["#4a4a58","#121218","#d9d9e8","#c9a227"], 6:["#2f8fd6","#103a63","#bfe3ff","#ffd36b"], 7:["#ff8a3d","#7a2c0e","#ffd2b0","#fff2c4"], 8:["#9c3fd6","#38105a","#e3c2ff","#ffd36b"], 9:["#e2413b","#3a1670","#ffc0d6","#ffb347"]};
+function hallPaint(g){
+  const [A, D, Lt, M] = HALL_COL[g];
+  return {
+    sky:(K) => {
+      K.vgrad(0, K.Y(.72), [[0, mix(D, "#000000", .55)], [.55, D], [1, mix(A, D, .5)]]);
+      K.glow(K.W/2, K.Y(.28), K.u*46, A, .35);
+      const cx = K.W/2, cy = K.Y(.28), r = K.u*12; K.ctx.lineWidth = Math.max(1, K.u*.9); K.ctx.strokeStyle = rgba(M, .7);
+      K.ctx.beginPath(); K.ctx.arc(cx, cy, r, 0, 7); K.ctx.stroke(); K.ctx.beginPath(); K.ctx.arc(cx, cy, r*.62, 0, 7); K.ctx.stroke();
+      for (let i = 0; i < 8; i++) { const a = i*Math.PI/4; K.disc(cx + Math.cos(a)*r*.81, cy + Math.sin(a)*r*.81, K.u*.7, rgba(M, .8)); }
+      K.disc(cx, cy, K.u*2.4, rgba(Lt, .85));
+    },
+    land:(K) => {
+      const n = Math.ceil(K.W/(K.u*20)) + 1;
+      for (let i = 0; i < n; i++) {
+        const x = K.W/2 + (i - n/2)*K.u*20 + K.u*10; if (Math.abs(x - K.W/2) < K.u*15) continue;
+        K.vgrad(K.Y(.06), K.Y(.72), [[0, Lt], [.35, mix(Lt, A, .35)], [1, mix(A, D, .55)]], x - K.u*2.4, x + K.u*2.4);
+        K.ctx.fillStyle = M; K.ctx.fillRect(x - K.u*3.2, K.Y(.06), K.u*6.4, K.u*1.4); K.ctx.fillRect(x - K.u*3.2, K.Y(.7), K.u*6.4, K.u*1.4);
+        K.poly([[x + K.u*4.6, K.Y(.12)], [x + K.u*11.4, K.Y(.12)], [x + K.u*11.4, K.Y(.46)], [x + K.u*8, K.Y(.51)], [x + K.u*4.6, K.Y(.46)]], A);
+        K.ctx.fillStyle = M; K.ctx.fillRect(x + K.u*4.6, K.Y(.12), K.u*6.8, K.u*.8);
+        K.disc(x + K.u*8, K.Y(.28), K.u*1.9, M); K.disc(x + K.u*8, K.Y(.28), K.u*1.1, A);
+      }
+      K.vgrad(K.Y(.72), K.H, [[0, mix(D, Lt, .18)], [1, mix(D, "#000000", .5)]]);
+      const vx = K.W/2; K.ctx.strokeStyle = rgba(Lt, .1); K.ctx.lineWidth = Math.max(1, K.u*.15);
+      for (let i = -14; i <= 14; i++) { K.ctx.beginPath(); K.ctx.moveTo(vx + i*K.u*3, K.Y(.72)); K.ctx.lineTo(vx + i*K.u*30, K.H + K.u*20); K.ctx.stroke(); }
+      for (let i = 1; i < 8; i++) { const y = K.Y(.72) + (K.H - K.Y(.72))*Math.pow(i/8, 1.6); K.ctx.beginPath(); K.ctx.moveTo(0, y); K.ctx.lineTo(K.W, y); K.ctx.stroke(); }
+      K.poly([[vx - K.u*6, K.Y(.72)], [vx + K.u*6, K.Y(.72)], [vx + K.u*40, K.H], [vx - K.u*40, K.H]], M);
+      K.poly([[vx - K.u*5.1, K.Y(.72)], [vx + K.u*5.1, K.Y(.72)], [vx + K.u*37, K.H], [vx - K.u*37, K.H]], A);
+      K.poly([[vx - K.u*1.2, K.Y(.72)], [vx + K.u*1.2, K.Y(.72)], [vx + K.u*9, K.H], [vx - K.u*9, K.H]], rgba(M, .55));
+    },
+    anim:(K, tod, t) => {
+      const ctx = K.ctx; ctx.save(); ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 3; i++) { const sx = K.W*(.2 + i*.3), a = Math.sin(t/1700 + i*2)*.45, L = K.S.h*1.1; ctx.fillStyle = rgba(i === 1 ? M : Lt, .08); ctx.beginPath(); ctx.moveTo(sx, -K.u*2); ctx.lineTo(sx + Math.sin(a - .08)*L, Math.cos(a - .08)*L); ctx.lineTo(sx + Math.sin(a + .08)*L, Math.cos(a + .08)*L); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    },
+  };
+}
+for (let g = 1; g <= 9; g++) PAINT["hall" + g] = hallPaint(g);
 const CRYSTALS = [[.08,.86,9,"#5ff3ff"],[.14,.8,6,"#b07bff"],[.92,.84,9,"#b07bff"],[.86,.78,6,"#5ff3ff"],[.3,.69,4,"#5ff3ff"],[.72,.69,4,"#ff8fe0"]];
 const TERA = [[.06,.9,16],[.95,.88,14],[.22,.66,7],[.8,.65,8]];
 function crystal(K, x, y, s, c){
@@ -4996,8 +5048,9 @@ const unlockOf = (cat, id) => ITEM_BY.get(cat + ":" + id);
   .forEach(([id, p]) => addItem({cat:"bg", id, name:SCENE_BY.get(id).name, price:p, free:!p}));
 // --- Poké Balls ---
 const BALL_FREE = ["poke", "great", "ultra", "premier"];
-const BALL_SHOP = {heal:200, luxury:500, net:300, nest:300, dive:300, dusk:400, quick:400, timer:300, repeat:300, fast:400, level:400, lure:400, heavy:400, friend:500};
-const BALL_GYM = ["master", "cherish", "beast", "park", "dream", "safari", "sport", "moon", "love"];   // gym 4 of each region
+// Gym Leaders hand out the rare Poké Balls that fit them (see data/rewards.json); the rest are sold in the Shop
+const REWARDS = /*REWARDS*/;
+const BALL_SHOP = {heal:200, luxury:500, nest:300, quick:400, timer:300, repeat:300};
 BALL_IDS.forEach(id => addItem({cat:"ball", id, name:ballName(id), price:BALL_SHOP[id] || 0, free:BALL_FREE.includes(id)}));
 // --- trainer card designs ---
 const CARD_DESIGNS = {
@@ -5016,26 +5069,43 @@ Object.entries(CARD_DESIGNS).forEach(([id, d]) => addItem({cat:"card", id, name:
 [[152,300],[155,300],[158,300],[252,300],[255,300],[258,300],[39,300],[52,300],[54,300],[129,200],[175,400],[143,500],[147,500],[94,600],[131,600],[196,700],[197,700],
  [282,700],[359,700],[448,800],[445,900],[658,900],[700,700],[778,800],[887,1000],[149,1000],[248,1000],[373,1000],[384,2500],[150,2500],[151,2000],[249,2500],[250,2500],[493,3500]]
   .forEach(([n, p]) => addItem({cat:"icon", id:"p" + n, num:n, name:monName(n), price:p}));
-// --- Gym Leader and Champion exclusives ---
-const BG_GYM = {1:"crater", 2:"ultra", 3:"spear"};   // gym 6 of the first three regions
-const GYM_REWARD = {};
+// --- Gym Leader, Elite Four and Champion exclusives (data/rewards.json, docs/rewards.md) ---
+// Gym Leader: badge + one themed exclusive + a bonus icon of their ace (+ the region's Badge Case with the first badge).
+// Elite Four member: an elite profile icon (animated border) + a signature statue (+ a background for three of them).
+// Champion: the region's card design, Champion's Hall background, trophy and title, plus an icon of their ace.
+const GYM_REWARD = {}, GYM_BONUS = {}, E4_REWARD = {}, BADGE_CASE = {};
 LEAGUES.forEach(L => {
-  const g = L.g;
-  L.gyms.forEach(([nm, , ace], k) => {
-    let it;
-    if (k === 3) it = unlockOf("ball", BALL_GYM[g - 1]);
-    else if (k === 7) { it = {cat:"furn", id:"trophy" + g, name:`${GENS[g - 1].region} trophy`, kind:"trophy", w:1, d:1, region:g}; addItem(it); }
-    else if (k === 5 && BG_GYM[g]) { it = {cat:"bg", id:BG_GYM[g], name:SCENE_BY.get(BG_GYM[g]).name}; addItem(it); }
-    else { it = {cat:"icon", id:`g${g}-${k}`, num:ace, name:`${nm}’s ${monName(ace)}`}; addItem(it); }
-    it.gym = [g, k]; it.price = 0; it.free = false;
+  const g = L.g, R = GENS[g - 1].region;
+  L.gyms.forEach(([nm, ty, ace], k) => {
+    const r = REWARDS.gyms[g][k]; let it;
+    if (r.cat === "ball") it = unlockOf("ball", r.id);
+    else { it = {cat:"furn", id:r.id, name:r.name, kind:r.kind, var:r.var, w:r.w, d:r.d, ty:ty.split("/")[0]}; addItem(it); }
+    Object.assign(it, {gym:[g, k], price:0, free:false, from:nm});
     GYM_REWARD[g + "-" + k] = it;
+    let ic = unlockOf("icon", `g${g}-${k}`); if (!ic) { ic = {cat:"icon", id:`g${g}-${k}`, num:ace, name:`${nm}’s ${monName(ace)}`}; addItem(ic); }
+    Object.assign(ic, {gym:[g, k], price:0, free:false, bonus:true, from:nm});
+    GYM_BONUS[g + "-" + k] = ic;
   });
-  const champAce = L.champ[1][L.champ[1].length - 1];
-  const icon = {cat:"icon", id:"c" + g, num:champAce, name:`${L.champ[0]}’s ${monName(champAce)}`, champ:g, price:0}; addItem(icon);
-  const card = unlockOf("card", "champ" + g); card.champ = g;
-  GYM_REWARD["champ" + g] = [card, icon];
+  const bc = {cat:"furn", id:"badgecase" + g, name:`${R} Badge Case`, kind:"badgecase", w:2, d:1, region:g, gym:[g, -1], price:0, free:false, from:`${R} Gyms`}; addItem(bc); BADGE_CASE[g] = bc;
+  L.e4.forEach(([nm, ty, ace], k) => {
+    const out = [{cat:"icon", id:`e${g}-${k}`, num:ace, name:`${nm}’s ${monName(ace)}`, elite:true}, {cat:"furn", id:`e4s${g}-${k}`, name:`${nm}’s statue`, kind:"statue", var:ty.split("/")[0], w:2, d:2, elite:true}];
+    const bg = REWARDS.e4.bg[g + "-" + k]; if (bg) out.push({cat:"bg", id:bg, name:SCENE_BY.get(bg).name});
+    out.forEach(it => { Object.assign(it, {e4:[g, k], price:0, free:false, from:nm}); addItem(it); });
+    E4_REWARD[g + "-" + k] = out;
+  });
+  const champAce = L.champ[1][L.champ[1].length - 1], who = L.champ[0];
+  const icon = {cat:"icon", id:"c" + g, num:champAce, name:`${who}’s ${monName(champAce)}`}; addItem(icon);
+  const card = unlockOf("card", "champ" + g);
+  const hall = {cat:"bg", id:"hall" + g, name:SCENE_BY.get("hall" + g).name}; addItem(hall);
+  const trophy = {cat:"furn", id:"trophy" + g, name:`${R} trophy`, kind:"trophy", w:1, d:1, region:g}; addItem(trophy);
+  const extra = (REWARDS.champ.extra || {})[g], ex = extra ? unlockOf(extra.cat, extra.id) : null;
+  const set = [card, hall, trophy, icon, ...(ex ? [ex] : [])];
+  set.forEach(it => Object.assign(it, {champ:g, price:0, free:false, from:`Champion ${who}`}));
+  GYM_REWARD["champ" + g] = set;
 });
-const isExclusive = it => !!(it.gym || it.champ);
+const isExclusive = it => !!(it.gym || it.champ || it.e4);
+const TITLES = () => LEAGUES.filter(L => state.games.leagues[L.g]).map(L => ({id:"champ" + L.g, name:`${GENS[L.g - 1].region} Champion`}));
+const myTitle = () => { const t = TITLES().find(x => x.id === state.games.title); return t ? t.name : ""; };
 // a team's own default backdrop is always free to use for that team
 const bgUsable = (id, teamId) => owns("bg", id) || id === (DEFAULT_BG[teamId] || DEFAULT_BG[(TEAM_BY.get(teamId) || {}).base] || "route");
 
@@ -5134,22 +5204,34 @@ function showRewards(title, items, pts){
   paintThumbs(md); Sound.play("up");
   const h = md.querySelector("#rwHome"); if (h) h.onclick = () => { closeModal(); openScreen("home"); };
 }
-// called when a Gym Leader is beaten for the first time
+// called when a Gym Leader is beaten for the first time: their exclusive, the bonus icon, and the region's Badge Case
 function gymRewards(g, k){
-  const it = GYM_REWARD[g + "-" + k]; const got = [];
-  if (it && !owns(it.cat, it.id)) { grant(it); got.push(it); }
+  const got = [];
+  for (const it of [GYM_REWARD[g + "-" + k], GYM_BONUS[g + "-" + k], BADGE_CASE[g]]) if (it && !owns(it.cat, it.id)) { grant(it); got.push(it); }
   return got;
 }
+function e4Rewards(g, k){ const got = []; for (const it of E4_REWARD[g + "-" + k] || []) if (!owns(it.cat, it.id)) { grant(it); got.push(it); } return got; }
 function champRewards(g){ const got = []; for (const it of GYM_REWARD["champ" + g] || []) if (!owns(it.cat, it.id)) { grant(it); got.push(it); } return got; }
-// first run of this version: points for progress so far, gym rewards for badges already earned, and keep anything already in use
+// first run of a new save version: points for progress so far, rewards for what was already won, and keep anything already in use
 function ecoMigrate(){
-  const G = state.games; if (G.eco) return;
-  let pts = 500 + 100*Object.keys(G.ach).filter(id => ACH.some(a => a.id === id)).length + 150*Object.keys(G.wins).length;
-  for (const L of LEAGUES) { for (let k = 0; k < 8; k++) if (hasBadge(L.g, k)) { pts += 200; gymRewards(L.g, k); } if (G.leagues[L.g]) { pts += 1000; champRewards(L.g); } }
-  for (const o of Object.values(state.members)) for (const M of Object.values(o || {})) if (M && M.ball && !owns("ball", M.ball)) grant(unlockOf("ball", M.ball));
-  for (const s of Object.values(state.scenes)) if (s && s.bg && unlockOf("bg", s.bg) && !owns("bg", s.bg)) grant(unlockOf("bg", s.bg));
-  if (G.card && unlockOf("card", G.card) && !owns("card", G.card)) grant(unlockOf("card", G.card));
-  G.pp += pts; G.ppTotal += pts; G.eco = 1; G.ecoNew = pts;
+  const G = state.games;
+  if (!G.eco) {
+    let pts = 500 + 100*Object.keys(G.ach).filter(id => ACH.some(a => a.id === id)).length + 150*Object.keys(G.wins).length;
+    for (const L of LEAGUES) { for (let k = 0; k < 8; k++) if (hasBadge(L.g, k)) pts += 200; if (G.leagues[L.g]) pts += 1000; }
+    for (const o of Object.values(state.members)) for (const M of Object.values(o || {})) if (M && M.ball && !owns("ball", M.ball)) grant(unlockOf("ball", M.ball));
+    for (const s of Object.values(state.scenes)) if (s && s.bg && unlockOf("bg", s.bg) && !owns("bg", s.bg)) grant(unlockOf("bg", s.bg));
+    if (G.card && unlockOf("card", G.card) && !owns("card", G.card)) grant(unlockOf("card", G.card));
+    G.pp += pts; G.ppTotal += pts; G.eco = 1; G.ecoNew = pts;
+  }
+  // v2: the new reward table. Players keep everything they own and get the new rewards for leaders they already beat.
+  if (G.eco < 2) {
+    let n = 0;
+    for (const L of LEAGUES) {
+      for (let k = 0; k < 8; k++) if (hasBadge(L.g, k)) n += gymRewards(L.g, k).length;
+      if (G.leagues[L.g]) { G.e4[L.g] = 15; for (let k = 0; k < 4; k++) n += e4Rewards(L.g, k).length; n += champRewards(L.g).length; }
+    }
+    G.eco = 2; G.rw2 = n;
+  }
 }
 const ownedCount = () => ITEMS_ALL.filter(it => !it.free && owns(it.cat, it.id)).length;
 const exclusivesOwned = () => ITEMS_ALL.filter(it => isExclusive(it) && owns(it.cat, it.id)).length;
@@ -5158,7 +5240,7 @@ const exclusivesOwned = () => ITEMS_ALL.filter(it => isExclusive(it) && owns(it.
 function iconHTML(id, cls = ""){
   const it = unlockOf("icon", id); if (!it) return "";
   const m = NAT_BY.get(it.num), ty = m ? m.types[0] : "Normal";
-  return `<span class="picon${isExclusive(it) ? " ex" : ""} ${cls}" style="--tc:${TC[ty]}"><img class="spr" data-num="${it.num}" data-mode="2d" alt="" draggable="false"></span>`;
+  return `<span class="picon${isExclusive(it) ? " ex" : ""}${it.elite ? " elite" : ""} ${cls}" style="--tc:${TC[ty]}"><img class="spr" data-num="${it.num}" data-mode="2d" alt="" draggable="false"></span>`;
 }
 const myIcon = () => state.games.icon && unlockOf("icon", state.games.icon) && owns("icon", state.games.icon) ? state.games.icon : null;
 
@@ -5173,7 +5255,7 @@ function renderShop(){
     return `<div class="shop-item${have ? " owned" : ""}${hidden ? " mystery" : ""}${ex ? " ex" : ""}">
       ${hidden ? `<span class="it-thumb q">?</span>` : itemThumb(it)}
       <b>${hidden ? "Gym exclusive" : esc(it.name)}</b>
-      <span class="meta">${hidden ? "Beat Gym Leaders to find it" : ex ? "Exclusive reward" : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
+      <span class="meta">${hidden ? "Beat Gym Leaders to find it" : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
       ${ex || it.free || (have && !multi) ? "" : `<button class="btn sm${G.pp >= it.price ? " primary" : ""}" type="button" data-buy="${it.id}">${fmtPP(it.price)}</button>`}
     </div>`;
   };
@@ -5183,7 +5265,8 @@ function renderShop(){
       <p class="note">Earn PokéPoints from quizzes, achievements, rivals, Versus and Gyms. Gym Leaders also give exclusive rewards you can’t buy here.</p></div>
     <div class="segrow shop-tabs" role="tablist">${CAT_ORDER.map(c => `<button type="button" role="tab" data-scat="${c}" aria-pressed="${c === shopCat}">${CAT[c].name}</button>`).join("")}</div>
     ${ex.length ? `<p class="meta shop-ex">Exclusives found: ${exGot} / ${ex.length}</p>` : ""}
-    <div class="shop-grid">${sorted.map(card).join("")}</div>
+    <div class="shop-grid">${sorted.filter(it => !isExclusive(it) || owns(it.cat, it.id)).map(card).join("")}</div>
+    ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four and Champions. They’re never sold here.</p>` : ""}
     ${shopCat === "furn" || shopCat === "exp" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
     ${shopCat === "icon" ? `<p class="note">Choose your profile icon on your Trainer card.</p>` : ""}</div>`;
   paintThumbs($("scBody"));
@@ -5204,7 +5287,7 @@ const homeData = () => state.games.home;
 const homeRooms = () => ROOMS.filter(r => r.free || owns("exp", r.id));
 const homeCap = () => homeRooms().reduce((s, r) => s + r.cap, 0);
 const shadeHex = (hex, f) => { const [r, g, b] = hexRGB(hex); const m = v => Math.max(0, Math.min(255, Math.round(f < 1 ? v*f : v + (255 - v)*(f - 1)))); return "#" + [m(r), m(g), m(b)].map(v => v.toString(16).padStart(2, "0")).join(""); };
-const FLOOR_ITEMS = new Set(["rugr", "rug", "rugball"]);
+const FLOOR_ITEMS = new Set(["rugr", "rug", "rugball", "rugt"]);
 const isFloorItem = it => FLOOR_ITEMS.has(it.kind);
 
 // ---- shape kit for furniture ----
@@ -5229,6 +5312,36 @@ function fkit(c, ts, pixel){
   };
   return K;
 }
+// ---- type emblems for reward furniture: drawn upright on the plane at depth y (or flat on the floor) ----
+const MOTIF = {
+  Fire:[[0,.95],[.3,.45],[.45,0],[.3,-.45],[0,-.58],[-.3,-.45],[-.45,0],[-.18,.3]], Water:[[0,.92],[.33,.25],[.42,-.18],[.26,-.5],[0,-.6],[-.26,-.5],[-.42,-.18],[-.33,.25]],
+  Grass:[[0,.92],[.42,.32],[.36,-.3],[0,-.72],[-.36,-.3],[-.42,.32]], Electric:[[.18,.92],[-.36,.04],[-.02,.04],[-.22,-.92],[.4,.12],[.06,.12],[.32,.92]],
+  Ground:[[-.7,-.42],[-.36,.18],[-.05,.42],[.32,.16],[.7,-.42]], Flying:[[-.62,-.22],[-.22,.5],[.62,.82],[.42,.32],[.62,.12],[.3,-.08],[.5,-.3],[0,-.42]],
+  Rock:[[-.56,-.42],[-.62,0],[-.3,.46],[.2,.52],[.58,.14],[.52,-.42]], Ghost:[[-.45,-.52],[-.45,.18],[-.3,.52],[0,.64],[.3,.52],[.45,.18],[.45,-.52],[.3,-.3],[.15,-.52],[0,-.3],[-.15,-.52],[-.3,-.3]],
+  Dragon:[[0,.92],[.36,.2],[.16,-.82],[0,-.6],[-.16,-.82],[-.36,.2]], Fairy:[[0,.92],[.18,.18],[.9,0],[.18,-.18],[0,-.92],[-.18,-.18],[-.9,0],[-.18,.18]],
+  Fighting:[[-.5,.38],[.5,.38],[.56,.2],[.56,-.36],[-.5,-.36],[-.56,-.2],[-.56,.2]], Dark:[[.1,.86],[-.32,.62],[-.58,.1],[-.42,-.5],[0,-.8],[.42,-.6],[.12,-.42],[-.08,0],[.06,.5]],
+  Poison:[[0,.6],[.36,.06],[.4,-.3],[.22,-.56],[0,-.62],[-.22,-.56],[-.4,-.3],[-.36,.06]],
+};
+function motif(K, type, cx, y, z, s, col, flat){
+  const at = (dx, dz) => flat ? [cx + dx*s, y - dz*s*.9, 0] : [cx + dx*s, y, z + dz*s];
+  const P = (pts, c = col) => K.poly(pts.map(([dx, dz]) => at(dx, dz)), c);
+  const D = (dx, dz, r, c = col) => { const [x, yy, zz] = at(dx, dz); K.disc(x, yy, r*s, c, zz); };
+  const light = shadeHex(col, 1.45), dark = shadeHex(col, .55);
+  switch (type) {
+    case "Ice": for (const [a, b] of [[0, 1], [.87, .5], [.87, -.5]]) P([[-a*.9 - b*.08, -b*.9 + a*.08], [-a*.9 + b*.08, -b*.9 - a*.08], [a*.9 + b*.08, b*.9 - a*.08], [a*.9 - b*.08, b*.9 + a*.08]]); D(0, 0, .18, light); break;
+    case "Psychic": D(0, 0, .62); D(0, 0, .42, light); D(.06, .04, .24); D(.1, .06, .1, light); break;
+    case "Bug": D(0, -.06, .5); P([[-.04, .5], [.04, .5], [.04, -.56], [-.04, -.56]], dark); D(0, .5, .2, dark); D(-.2, .1, .1, light); D(.2, -.2, .1, light); break;
+    case "Steel": for (let i = 0; i < 8; i++) { const a = i*Math.PI/4, c = Math.cos(a), si = Math.sin(a); P([[c*.5 - si*.12, si*.5 + c*.12], [c*.5 + si*.12, si*.5 - c*.12], [c*.8 + si*.12, si*.8 - c*.12], [c*.8 - si*.12, si*.8 + c*.12]]); } D(0, 0, .58); D(0, 0, .26, light); break;
+    case "Normal": D(0, 0, .62); D(0, 0, .38, light); D(0, 0, .2); break;
+    case "fossil": D(0, 0, .6, "#c9b28a"); for (let i = 0; i < 3; i++) D(.14*i, .05*i, .44 - i*.13, i % 2 ? "#c9b28a" : "#8a6f4a"); break;
+    case "gem": P([[-.3, .5], [.3, .5], [.55, .1], [0, -.7], [-.55, .1]], "#5ff3ff"); P([[-.3, .5], [0, .5], [-.18, .1]], "#c9fbff"); P([[-.55, .1], [.55, .1], [0, -.7]], "#2ab8d6"); break;
+    case "icecrystal": P([[0, .95], [.25, .2], [.12, -.8], [-.12, -.8], [-.25, .2]], "#bff3ff"); P([[-.5, .45], [-.32, -.1], [-.4, -.7], [-.62, -.1]], "#8fdcf0"); P([[.5, .4], [.62, -.1], [.4, -.7], [.32, -.1]], "#8fdcf0"); break;
+    case "bone": P([[-.5, .1], [.5, .1], [.5, -.1], [-.5, -.1]], "#f2ead8"); for (const sx of [-.55, .55]) { D(sx, .14, .16, "#f2ead8"); D(sx, -.14, .16, "#f2ead8"); } break;
+    case "belt": P([[-.8, .22], [.8, .22], [.8, -.22], [-.8, -.22]], "#8a2a1c"); D(0, 0, .38, "#ffd36b"); D(0, 0, .24, "#e2a32a"); break;
+    default: if (MOTIF[type]) { P(MOTIF[type]); if (!flat) P(MOTIF[type].map(([a, b]) => [a*.45 - .08, b*.45 + .1]), light); }
+  }
+}
+const typeCol = t => TC[t] || "#a8a77a";
 const HOUSE_DRAW = {
   bed(K, it){ const [a, b, w] = it.col; K.box(0, 0, 2, .35, 1.15, w); K.box(.05, .2, 1.9, 2.75, .42, w); K.box(.12, .25, 1.76, 2.6, .2, b, .42); K.box(.3, .32, .55, .5, .14, "#ffffff", .62); K.box(1.15, .32, .55, .5, .14, "#ffffff", .62); K.box(.08, 1.15, 1.84, 1.82, .24, a, .44); },
   rugr(K, it){ K.oval(it.w/2, it.d/2, it.w*.48, it.d*.48, it.col[0]); K.oval(it.w/2, it.d/2, it.w*.34, it.d*.34, it.col[1]); K.oval(it.w/2, it.d/2, it.w*.22, it.d*.22, it.col[0]); },
@@ -5255,14 +5368,58 @@ const HOUSE_DRAW = {
   tramp(K, it){ K.oval(1, 1.05, .95, .8, it.col[1], 0); K.rect(.12, 1.05, .08, .4, it.col[1], .4); K.rect(1.8, 1.05, .08, .4, it.col[1], .4); K.oval(1, 1, .95, .8, it.col[0], .42); K.oval(1, 1, .75, .62, shadeHex(it.col[0], .6), .43); },
   cushion(K, it){ K.box(.1, .2, .8, .7, .18, it.col[0]); K.box(.2, .3, .6, .5, .02, it.col[1], .18); },
   globe(K, it){ K.box(.35, .45, .3, .25, .35, "#6b4226"); K.rect(.48, .55, .04, .3, it.col[1], .62); K.disc(.5, .55, .3, it.col[0], .95); K.disc(.42, .55, .1, "#3fae5a", 1.02); },
+  display(K, it){ const v = it.var; K.box(.08, .2, .84, .62, .5, "#7b5234"); K.box(.05, .18, .9, .66, .06, "#a8754c", .5); K.box(.12, .25, .76, .52, .82, "#a7d3ea", .56); K.rect(.18, .77, .64, .7, "#cfeaf6", 1.32); motif(K, v === "ice" ? "icecrystal" : v, .5, .62, .96, .28, "#ffffff"); K.box(.08, .22, .84, .58, .06, "#a8754c", 1.38); K.rect(.14, .78, .06, .78, "rgba(255,255,255,.35)", 1.32); },
+  statue(K, it){ const col = typeCol(it.var); K.box(.15, .75, 1.7, 1.15, .28, "#7d7889"); K.box(.3, .88, 1.4, .9, .26, "#a9a3b6", .28); K.box(.62, 1.05, .76, .6, 1.25, "#d8d3e2", .54); K.box(.58, 1.02, .84, .66, .1, "#e2b13c", 1.79); K.box(.58, 1.02, .84, .66, .08, "#e2b13c", .54);
+    K.disc(1, 1.66, .5, "#c9952a", 1.32); K.disc(1, 1.67, .44, "#ffd36b", 1.32); K.disc(1, 1.68, .37, col, 1.32); motif(K, it.var, 1, 1.69, 1.32, .27, "#ffffff");
+    [[.36, 1.82], [1.64, 1.82]].forEach(([x, y]) => motif(K, "Fairy", x, y, .62, .1, "#ffd76a")); },
+  lamp2(K, it){ const v = it.var;
+    if (v === "tesla") { K.box(.2, .42, .6, .45, .25, "#3a3f52"); for (let i = 0; i < 7; i++) K.box(.32, .55, .36, .22, .14, i % 2 ? "#c9783a" : "#e09a52", .25 + i*.14); K.disc(.5, .66, .26, "#c9c9d2", 1.4); K.disc(.46, .66, .08, "#ffffff", 1.42); motif(K, "Electric", .5, .7, 1.75, .18, "#ffe14a"); }
+    else if (v === "lantern") { K.rect(.47, .62, .06, 1.2, "#3a2f40", 1.2); K.box(.36, .5, .28, .24, .06, "#3a2f40", 1.2); K.box(.32, .48, .36, .28, .42, "rgba(150,110,255,.55)", 1.26); K.disc(.5, .62, .12, "#c9a8ff", 1.46); K.box(.3, .46, .4, .32, .06, "#3a2f40", 1.68); motif(K, "Ghost", .5, .7, 1.48, .12, "#ffffff"); }
+    else if (v === "beacon") { K.poly([[.22, .6, 0], [.78, .6, 0], [.66, .6, 1.4], [.34, .6, 1.4]], "#f6f1e7"); [.3, .8].forEach(z => K.poly([[.27 - z*.04, .6, z], [.73 + z*.04 - .08, .6, z], [.71 - z*.04, .6, z + .22], [.29 + z*.04, .6, z + .22]], "#e2413b")); K.box(.3, .5, .4, .2, .3, "#ffe68a", 1.4); K.poly([[.28, .55, 1.7], [.72, .55, 1.7], [.5, .55, 1.95]], "#e2413b"); }
+    else if (v === "lava") { K.box(.32, .5, .36, .3, .18, "#3a3f52"); K.poly([[.34, .65, .18], [.66, .65, .18], [.6, .65, 1.2], [.4, .65, 1.2]], "#ff8a3d"); [[.48, .45], [.54, .75], [.46, 1]].forEach(([x, z]) => K.disc(x, .66, .07, "#e2413b", z)); K.box(.38, .55, .24, .2, .16, "#3a3f52", 1.2); }
+    else if (v === "torch") { for (const x of [.22, .78]) { K.rect(x - .04, .62, .08, 1.2, "#6b4226", 1.2); K.box(x - .1, .55, .2, .14, .12, "#3a2f2a", 1.2); motif(K, "Fire", x, .64, 1.48, .2, "#ff7a1f"); K.disc(x, .64, .06, "#ffe14a", 1.44); } }
+    else { K.box(.32, .5, .36, .3, .08, "#2a2d36"); K.rect(.47, .62, .06, 1, "#2a2d36", 1.08); motif(K, "Dark", .5, .64, 1.45, .36, "#ff5ad0"); motif(K, "Dark", .5, .63, 1.45, .26, "#ffb3ec"); }
+  },
+  arch(K, it){ const v = it.var, leaf = v === "fairy" ? "#f7b6d8" : "#3fae5a", fl = v === "fairy" ? ["#ffffff", "#c9a8ff", "#ffd6ee"] : ["#ff6fa5", "#ffd43b", "#ffffff"];
+    for (const x of [.15, 1.75]) K.box(x, .4, .1, .2, 1.65, "#f6f1e7"); for (let i = 0; i <= 12; i++) { const a = Math.PI*i/12, x = 1 - Math.cos(a)*.86, z = 1.65 + Math.sin(a)*.42; K.disc(x, .5, .13, leaf, z); if (i % 2) K.disc(x, .52, .07, fl[i % 3], z + .06); }
+    for (let z = .2; z < 1.6; z += .28) for (const x of [.2, 1.8]) { K.disc(x, .52, .1, leaf, z); K.disc(x + .03, .54, .05, fl[Math.round(z*7) % 3], z + .03); }
+    if (v === "fairy") motif(K, "Fairy", 1, .52, 2.12, .16, "#ffffff"); },
+  orb(K, it){ const v = it.var, c = v === "cosmic" ? ["#1d1f4a", "#6a5ad6"] : v === "beauty" ? ["#f7a6cf", "#ffe2f1"] : ["#b48cff", "#e9ddff"];
+    K.box(.3, .45, .4, .35, .4, "#4a3a5a"); K.poly([[.28, .6, .4], [.72, .6, .4], [.62, .6, .55], [.38, .6, .55]], "#e2b13c"); K.disc(.5, .62, .36, c[0], .92); K.disc(.42, .62, .22, c[1], 1.02); K.disc(.38, .62, .08, "#ffffff", 1.1);
+    if (v === "cosmic") [[.62, .8], [.56, 1.08], [.36, .86]].forEach(([x, z]) => K.disc(x, .64, .025, "#ffffff", z)); if (v === "beauty") motif(K, "Fairy", .62, .64, 1.08, .08, "#ffffff"); },
+  tub(K, it){ K.oval(1, 1.08, .98, .84, "#3a2f2a"); K.oval(1, 1, .98, .84, "#5a4a42", .32); K.oval(1, 1, .8, .66, "#ff7a2a", .33); K.oval(1, 1.02, .62, .5, "#ffb04a", .34);
+    [[.35, .55], [1.6, .6], [.4, 1.6], [1.62, 1.55], [1, .25]].forEach(([x, y]) => K.disc(x, y, .14, "#2a211d", .4)); [[.8, 1.1, .7], [1.2, .9, .95], [1, 1, 1.2]].forEach(([x, y, z]) => K.disc(x, y, .16, "rgba(255,255,255,.35)", z)); },
+  rugt(K, it){ const col = typeCol(it.var); K.flat(.05, .05, it.w - .1, it.d - .1, shadeHex(col, .55)); K.flat(.15, .15, it.w - .3, it.d - .3, col); K.flat(.28, .28, it.w - .56, it.d - .56, shadeHex(col, 1.25)); motif(K, it.var, it.w/2, it.d/2, 0, .62, shadeHex(col, .5), true); },
+  windvane(K, it){ K.box(.3, .45, .4, .34, .16, "#4a4a52"); K.rect(.46, .62, .08, 1.75, "#5a5a64", 1.91); K.rect(.14, .62, .72, .06, "#5a5a64", 1.5); K.disc(.5, .62, .07, "#ffd36b", 1.5);
+    K.poly([[.02, .62, 1.86], [.26, .62, 1.98], [.26, .62, 1.74]], "#e2413b"); K.rect(.24, .62, .5, .07, "#e2413b", 1.89); motif(K, "Flying", .8, .62, 1.86, .2, "#2f6fd6"); },
+  bag(K, it){ if (it.var === "dummy") { K.box(.42, .5, .16, .16, .9, "#8a5a3c"); K.box(.3, .48, .4, .2, .5, "#e0c27a", .55); K.rect(.12, .58, .76, .1, "#8a5a3c", 1.05); K.disc(.5, .58, .16, "#e0c27a", 1.28); return; }
+    K.box(.1, .5, .08, .1, 1.85, "#3a3f52"); K.box(.82, .5, .08, .1, 1.85, "#3a3f52"); K.box(.1, .5, .8, .1, .08, "#3a3f52", 1.85); K.rect(.49, .55, .02, .25, "#9a9aa8", 1.85); K.box(.33, .45, .34, .24, .9, "#c22e28", .7); K.rect(.33, .69, .34, .05, "#e8e2d6", 1.2); },
+  snowman(K, it){ K.disc(.5, .6, .36, "#eef6ff", .36); K.disc(.5, .6, .26, "#ffffff", .9); K.disc(.5, .6, .19, "#ffffff", 1.3); K.box(.36, .5, .28, .2, .06, "#c22e28", 1.08); K.box(.38, .52, .24, .2, .22, "#22252e", 1.46); K.box(.32, .48, .36, .26, .04, "#22252e", 1.46); K.disc(.56, .7, .04, "#ff8a3d", 1.3); [-.07, .07].forEach(d => K.disc(.5 + d, .7, .025, "#22252e", 1.36)); },
+  banner(K, it){ const col = typeCol(it.var); K.box(.4, .55, .2, .16, .1, "#4a4a52"); K.rect(.47, .65, .05, 1.95, "#c9c9d2", 1.95); K.poly([[.52, .66, 1.9], [.95, .66, 1.9], [.95, .66, 1.05], [.735, .66, 1.18], [.52, .66, 1.05]], col); motif(K, it.var, .735, .67, 1.5, .17, "#ffffff"); K.disc(.495, .66, .05, "#ffd36b", 1.97); },
+  totem(K, it){ const col = typeCol(it.var); for (let i = 0; i < 3; i++) K.box(.22, .35, .56, .5, .58, shadeHex(col, [.6, .85, 1.05][i]), i*.58); K.box(.16, .32, .68, .56, .08, shadeHex(col, .45), 1.74); motif(K, it.var, .5, .86, 1.22, .2, "#ffffff"); [[.38, .6], [.62, .6]].forEach(([x, z]) => K.disc(x, .86, .05, "#22252e", z)); K.rect(.4, .86, .2, .04, "#22252e", .4); },
+  pot2(K, it){ const v = it.var; K.box(.25, .4, .5, .42, .42, "#b9643a"); K.box(.2, .38, .6, .46, .08, "#c97a4a", .42);
+    if (v === "cactus") { K.box(.4, .55, .2, .16, .9, "#3a9e4f", .5); K.box(.24, .58, .12, .1, .3, "#3a9e4f", .82); K.box(.64, .58, .12, .1, .26, "#3a9e4f", .95); K.disc(.5, .62, .06, "#ff6fa5", 1.42); }
+    else if (v === "bonsai") { K.poly([[.46, .62, .5], [.54, .62, .5], [.62, .62, .95], [.56, .62, .98], [.5, .62, .7]], "#6b4226"); [[.36, .95, .2], [.64, 1.05, .22], [.5, 1.2, .2]].forEach(([x, z, r]) => K.disc(x, .62, r, "#2f8a4c", z)); }
+    else if (v === "herb") { for (let i = 0; i < 7; i++) K.disc(.3 + i*.067, .6 + (i % 2)*.06, .1, i % 3 ? "#5fbf4a" : "#3a9e4f", .6 + (i % 3)*.12); }
+    else { for (let i = 0; i < 5; i++) { const x = .32 + i*.09; K.rect(x, .6, .02, .4, "#3a9e4f", .9); K.disc(x + .01, .6, .08, ["#ff6fa5", "#ffd43b", "#ffffff", "#8a55f0", "#ff8a3d"][i], .95 + (i % 2)*.08); } }
+  },
+  terrarium(K, it){ K.box(0, .3, it.w, .6, .2, "#7b5234"); K.box(.06, .34, it.w - .12, .52, .8, "#b9e3c9", .2); K.rect(.1, .86, it.w - .2, .7, "#d6f2e0", .96); [[.4, .45], [.9, .6], [1.5, .4], [1.2, .75]].forEach(([x, z]) => K.disc(x, .7, .14, "#3fae5a", z)); motif(K, "Bug", 1, .72, .62, .16, typeCol("Bug")); K.box(.02, .32, it.w - .04, .56, .04, "#7b5234", 1); },
+  cauldron(K, it){ const liq = it.var === "honey" ? "#ffc23a" : "#a33ea1"; K.oval(.5, .62, .42, .32, "#22252e", .05); K.box(.12, .42, .76, .4, .55, "#2a2d36", .08); K.oval(.5, .62, .4, .3, "#3a3f52", .63); K.oval(.5, .62, .32, .22, liq, .64); [[.42, .78], [.58, .9], [.5, 1.04]].forEach(([x, z]) => K.disc(x, .62, .05, shadeHex(liq, 1.3), z)); },
+  pillowpile(K, it){ [["#ff9ac7", 0, .22], ["#7fc8ff", .14, .2], ["#ffe07a", .28, .18], ["#b48cff", .44, .16]].forEach(([c, z, h], i) => { K.box(.1 + i*.04, .3 + i*.04, .8 - i*.08, .55 - i*.06, h, c, z); K.rect(.2 + i*.04, .82, .6 - i*.08, .02, "rgba(255,255,255,.4)", z + h); }); },
+  shellfountain(K, it){ K.oval(1, 1.15, .98, .78, "#a9b3c6"); K.oval(1, 1.08, .98, .76, "#c9d2e2", .3); K.oval(1, 1.08, .8, .6, "#5ab4ff", .32);
+    for (let i = 0; i < 9; i++) { const a = Math.PI*(.1 + .8*i/8), r = .78; K.poly([[1, .7, .4], [1 + Math.cos(a)*r, .7, .4 + Math.sin(a)*r*1.4], [1 + Math.cos(a + .09)*r, .7, .4 + Math.sin(a + .09)*r*1.4]], i % 2 ? "#ffd6c9" : "#ffb8a6"); }
+    K.disc(1, .9, .12, "#ffffff", .62); [[.7, .55], [1.3, .62], [1, .8]].forEach(([x, z]) => K.disc(x, 1, .05, "rgba(255,255,255,.7)", z)); },
+  badgecase(K, it){ const L = LEAGUES[it.region - 1], bits = badgeOf(it.region); K.box(0, .3, 2, .55, .5, "#6b4226"); K.box(.02, .32, 1.96, .5, .06, "#8a5a3c", .5); K.box(.1, .36, 1.8, .4, .62, "#2a2030", .56); K.box(.06, .34, 1.88, .44, .06, "#8a5a3c", 1.18);
+    L.gyms.forEach(([, ty], k) => { const x = .35 + (k % 4)*.43, z = k < 4 ? 1.02 : .74, on = bits & (1 << k); K.disc(x, .77, .1, on ? typeCol(ty.split("/")[0]) : "#4a3f55", z); if (on) K.disc(x - .03, .78, .04, "#ffffff", z + .03); });
+    K.rect(.1, .77, 1.8, .05, "rgba(255,255,255,.18)", 1.15); },
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
 };
-const FURN_H = {bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
+const FURN_H = {display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
 function furnSprite(it, ts, pixel, flip){
-  const k = [it.id, Math.round(ts*10), pixel, flip].join("|"); if (furnCache.has(k)) return furnCache.get(k);
+  const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : ""].join("|"); if (furnCache.has(k)) return furnCache.get(k);
   const img = pixel && artOf("furn/" + it.id);
   if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
     const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
@@ -5787,6 +5944,7 @@ function showHub(){
   setMusic("title");
   if (!state.games.intro && $("modalWrap").hidden) setTimeout(() => { if (document.documentElement.dataset.view === "hub" && $("modalWrap").hidden && !state.games.intro) showWelcome(); }, 700);
   else if (state.games.ecoNew && $("modalWrap").hidden) setTimeout(() => { if (document.documentElement.dataset.view === "hub" && $("modalWrap").hidden && state.games.ecoNew) showEcoNews(); }, 700);
+  else if (state.games.rw2 && $("modalWrap").hidden) setTimeout(() => { if (document.documentElement.dataset.view === "hub" && $("modalWrap").hidden && state.games.rw2) showRewardNews(); }, 700);
 }
 function renderHub(){
   const done = achDone();
@@ -5830,6 +5988,17 @@ function showEcoNews(){
     <div class="actions"><button class="btn primary" type="button" id="ecoShop">Visit the Shop</button><button class="btn" type="button" id="ecoHome">Go to my Home</button></div>`, {onClose:() => { state.games.ecoNew = 0; save(); }});
   md.querySelector("#ecoShop").onclick = () => { closeModal(); openScreen("shop"); };
   md.querySelector("#ecoHome").onclick = () => { closeModal(); openScreen("home"); };
+}
+
+// shown once to players who beat leaders before the new reward table
+function showRewardNews(){
+  const n = state.games.rw2, owned = ITEMS_ALL.filter(it => isExclusive(it) && owns(it.cat, it.id) && it.cat === "furn").slice(0, 8);
+  const md = openModal(`<h3 class="mt" id="modalTitle">New: Gym, Elite Four and Champion rewards</h3>
+    <p class="note">Every Gym Leader now gives a reward that fits them and their type, every Elite Four member gives an elite reward, and Champions give a full set. You already beat some of them, so <b>${n} new reward${n === 1 ? " is" : "s are"}</b> waiting for you. You keep everything you had.</p>
+    <div class="reward-list">${owned.map(it => `<div class="reward">${itemThumb(it)}<div><b>${esc(it.name)}</b><span class="meta">From ${esc(it.from || "")}</span></div></div>`).join("")}</div>
+    <div class="actions"><button class="btn primary" type="button" id="rwnHome">Go to my Home</button><button class="btn" type="button" data-close>Later</button></div>`, {onClose:() => { state.games.rw2 = 0; save(); }});
+  paintThumbs(md);
+  md.querySelector("#rwnHome").onclick = () => { closeModal(); openScreen("home"); };
 }
 
 // ---- generic screen shell ----
@@ -6007,6 +6176,7 @@ async function drawCard(cv){
   const ico = myIcon(), nx = ico ? 146 : 60;
   if (ico) await drawIconBadge(c, unlockOf("icon", ico), 98, 146, 38, two);
   c.fillStyle = ink; c.font = `700 ${two ? 40 : 40}px ${head}`; const nm = profile && !profile.guest ? profile.name : "Guest"; c.fillText(nm.toUpperCase(), nx, 130);
+  const ttl = myTitle(); if (ttl) { c.font = `700 ${two ? 22 : 17}px ${head}`; c.fillStyle = "#b5841b"; c.fillText(`★ ${ttl}`.toUpperCase(), nx, 196); }
   c.font = `${two ? 22 : 17}px ${body}`; c.fillStyle = mut; c.fillText(state.games.since ? `Adventure started ${new Date(state.games.since).toLocaleDateString()}` : "Adventure just started", nx, 168);
   const rows = cardStats();
   c.font = `${two ? 24 : 18}px ${body}`;
@@ -6057,6 +6227,8 @@ function renderCard(){
   $("scBody").innerHTML = `<div class="card-wrap"><canvas class="tcardcv" id="cardCv" aria-label="Your trainer card"></canvas>
     <div class="card-side">
       <div class="set-sub">Card design</div><div class="card-grid">${shown.map(sw).join("")}${hiddenN ? `<button type="button" class="card-opt mystery" data-cardmore title="Champion designs"><span class="card-sw q">?</span><small>${hiddenN} Champion designs</small></button>` : ""}</div>
+      <div class="set-sub">Title <span class="meta">· Champions earn one per region</span></div>
+      <div class="segrow title-row">${[{id:"", name:"None"}, ...TITLES()].map(t => `<button type="button" data-title="${t.id}" aria-pressed="${(G.title || "") === t.id}">${esc(t.name)}</button>`).join("")}${TITLES().length ? "" : `<span class="meta">Clear a region’s Elite Four and Champion to earn its title.</span>`}</div>
       <div class="set-sub">Profile icon <span class="meta">· shows on your card and save file</span></div>
       <div class="icon-grid"><button type="button" class="icon-opt" data-icon="" aria-pressed="${!myIcon()}" title="Your trainer"><span class="picon none">—</span></button>${icons.map(it => `<button type="button" class="icon-opt" data-icon="${it.id}" aria-pressed="${G.icon === it.id}" title="${esc(it.name)}">${iconHTML(it.id)}</button>`).join("")}<button type="button" class="icon-opt more" data-iconshop title="Get more icons in the Shop"><span class="picon none">+</span></button></div>
       <div class="actions"><button class="btn primary" type="button" id="cardSave">Save as image</button></div>
@@ -6069,6 +6241,8 @@ function renderCard(){
     if (b) { const it = unlockOf("card", b.dataset.card), use = () => { G.card = it.id; save(); renderCard(); };
       Sound.play("select"); if (owns("card", it.id)) use(); else offerUnlock(it, use); return; }
     if (e.target.closest("[data-cardmore]")) { toast("Become a region’s Champion to get its card design."); return; }
+    const tb = e.target.closest("[data-title]");
+    if (tb) { G.title = tb.dataset.title; save(); document.querySelectorAll("[data-title]").forEach(x => x.setAttribute("aria-pressed", x === tb)); Sound.play("select"); draw(); return; }
     const ib = e.target.closest("[data-icon]");
     if (ib) { G.icon = ib.dataset.icon || null; save(); document.querySelectorAll("[data-icon]").forEach(x => x.setAttribute("aria-pressed", x === ib)); Sound.play("select"); renderAcct(); draw(); return; }
     if (e.target.closest("[data-iconshop]")) { shopCat = "icon"; openScreen("shop"); return; }
@@ -6293,10 +6467,10 @@ function renderGym(){
       <button class="btn${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? `✎ Edit ${R} team` : `Build the ${R} team`}</button></div>
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
-      return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small></div>
+      return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small><small class="gc-rw">${on ? `★ ${esc(GYM_REWARD[g + "-" + k].name)}` : "Reward: ?"}</small></div>
         <span class="bdg b${k}" style="--bc:${TC[ty.split("/")[0]]}" title="${esc(badgeName(g, k))}" aria-label="${esc(badgeName(g, k))}${on ? " earned" : ""}"></span>
         <button class="btn sm${isNext ? " primary" : ""}" type="button" data-gym="${k}" ${ok ? "" : "disabled"}>${on ? "Rematch" : "Challenge"}</button></div>`; }).join("")}</div>
-    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
+    <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="meta e4-rw">${L.e4.map(([x], k) => `<span class="${(state.games.e4[g] | 0) & (1 << k) ? "won" : ""}">${(state.games.e4[g] | 0) & (1 << k) ? "★" : "☆"} ${esc(x)}</span>`).join(" ")} <span class="${state.games.leagues[g] ? "won" : ""}">${state.games.leagues[g] ? "★" : "☆"} ${esc(L.champ[0])}</span> · Elite Four members give elite rewards; the Champion gives a full set.</p><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
   paintAll($("scBody"));
   nav.onChange = null;
@@ -6393,7 +6567,10 @@ function e4Battle(){
     leaveNote:"Leaving ends your run. You’ll start again from the first member.", onLeave:() => { e4run = null; },
     onEnd:win => {
       if (!win) { e4run = null; return {text:`Your run ends here. ${esc(nm)} was too strong this time. The ${esc(L.e4label || "Elite Four")} will be waiting.`, buttons:[["Back to the badge case", () => openScreen("battle", "gym"), true]]}; }
-      if (!champ) { e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
+      if (!champ) {
+        const G2 = state.games, first = !((G2.e4[g] | 0) & (1 << step));
+        if (first) { G2.e4[g] = (G2.e4[g] | 0) | (1 << step); const got = e4Rewards(g, step); save(); earn(REWARDS.e4.points, `Beat ${nm}`, true); setTimeout(() => showRewards(`${nm} gave you an elite reward!`, got, REWARDS.e4.points), 1700); }
+        e4run.step++; const nx = e4run.step === 4 ? L.champ[0] : L.e4[e4run.step][0]; const left = e4run.party.filter(m => m.hp > 0).length;
         // no healing between battles: only the run's bag
         const who = e4run.step === 4 ? `Champion ${nx}` : nx;
         return {text:`You defeated <b>${esc(nm)}</b>! ${e4run.step === 4 ? `Only Champion <b>${esc(nx)}</b> is left. ` : ""}${left} of ${e4run.party.length} Pokémon can still fight. Bag: ${bagLine(e4run.bag)}.`,

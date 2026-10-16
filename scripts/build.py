@@ -18,7 +18,7 @@ PLACEHOLDERS = [
     ("DATA", DATA / "data.json"), ("IDX", PACKS / "index.json"), ("TRAINERS", DATA / "trainer_names2.json"),
     ("OLDTRAINERS", DATA / "trainer_names.json"), ("TAGS", DATA / "themes_tags.json"), ("HOFD", DATA / "hofdata.json"),
     ("FORMS", DATA / "forms.json"), ("FE", DATA / "fe.json"), ("MOVES", DATA / "moves_data.json"), ("BALLS", DATA / "balls.json"),
-    ("RIVALS", DATA / "rivals.json"), ("ITEMICONS", DATA / "item_icons.json"), ("LEADERS", DATA / "leaders.json"),
+    ("RIVALS", DATA / "rivals.json"), ("ITEMICONS", DATA / "item_icons.json"), ("REWARDS", DATA / "rewards.json"), ("LEADERS", DATA / "leaders.json"),
 ]
 TITLE = "Dream Team Dex"
 DESC = ("Build Pokémon dream teams for every region, battle Gym Leaders, decorate your own Pokémon Home and stage "
