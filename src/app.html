@@ -6987,9 +6987,9 @@ function drawHomeMon(c, m, now, pixel){
   const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim, ft = footOf(sp), up = Math.max(0, lift - zl), lf = 1/(1 + up/(ts*.9)), sw = Math.max(ts*.2, ft.w*w*.62)*lf;   // the shadow shrinks and fades as it hops or floats
   if (swim) { c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = pixel ? 1 : Math.max(1, ts*.04); c.beginPath(); c.ellipse(Math.round(X), Math.round(Y - zl), Math.max(2, w*.36), Math.max(1, w*.09), 0, 0, 7); c.stroke(); }
-  else softShadow(c, X + ft.cx*w*m.dir + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
+  else softShadow(c, X + ft.cx*w*(bk ? m.dir : -m.dir) + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
-  c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
+  c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (bk ? m.dir < 0 : m.dir > 0) c.scale(-1, 1);   // front sprites face left (back sprites right): mirrored to face the other way
   if (m.act === "nap" && !zz) { c.rotate(.07); c.scale(1.08, .8 + .025*Math.sin(now/900 + m.n)); c.globalAlpha = .96; }   // no sleeping sprite: curled up a little, slow breathing
   if (zz && !pixel) { c.shadowColor = "rgba(20,24,40,.45)"; c.shadowBlur = Math.max(2, ts*.08); }   // 3D: pixel-art sleepers get a soft outline so they sit in the scene
   if (m.eatT > now) c.scale(1 + .03*Math.abs(Math.sin(now/85)), 1 - .07*Math.abs(Math.sin(now/85)));   // munching
@@ -7036,7 +7036,7 @@ function drawHomeTrainer(c, now, pixel){
   softShadow(c, X + ts*.04, Y + ts*.02, ts*.32, ts*.1, .34, pixel);
   if (!sp) return;
   const bb = sp.bb, h = pixel ? bb.h : ts*2.05, w = bb.w*h/bb.h, bob = me.walk ? Math.abs(Math.sin(now/120))*ts*.07 : 0, img = frameAt(sp, now);
-  c.save(); c.translate(Math.round(X), Math.round(Y - bob)); if (me.dir < 0) c.scale(-1, 1);
+  c.save(); c.translate(Math.round(X), Math.round(Y - bob)); if (me.dir > 0) c.scale(-1, 1);   // trainer sprites face left too
   if (me.walk && !pixel) c.rotate(Math.sin(now/120)*.025);
   c.drawImage(img, bb.x, bb.y, bb.w, bb.h, pixel ? Math.round(-w/2) : -w/2, -h, w, h); c.restore();
 }
@@ -7170,6 +7170,7 @@ function homeUpdate(dt, now){
       const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), last = !(m.path && m.path.length > 1);   // through the doorway when it needs another room
       m.v = Math.min(m.spd*(m.follow && me.walk ? 1.25 : 1), (m.v || 0) + m.spd*dt*3.5, last ? Math.max(.3, d*2.4) : 99);   // speeds up, and slows down as it arrives
       const sp = m.v*dt;
+      if (d <= sp && Math.abs(dx) > .01) m.dir = Math.sign(dx);   // the last little step still turns it the right way
       if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
       else if (d <= sp) { m.x = wp.x; m.y = wp.y; m.v = 0; if (m.plan) homeAct(m, m.plan, now); else if (m.follow) { m.follow = false; m.st = "idle"; m.t = 900; if (Math.abs(me.x - m.x) > .1) m.dir = Math.sign(me.x - m.x); } else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
       else {
@@ -7178,7 +7179,7 @@ function homeUpdate(dt, now){
         let nx = m.x + ux*sp, ny = m.y + uy*sp*.8;
         if (blocked(nx, ny, canSwim)) { nx = m.x + dx/d*sp; ny = m.y + dy/d*sp*.8; }   // steering would bump into something: go straight
         if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; m.plan = null; m.spot = null; m.follow = false; m.v = 0; }
-        else { m.x = nx; m.y = ny; if (Math.abs(ux) > .15) m.dir = Math.sign(ux); }   // faces the way it's going
+        else { const mx = nx - m.x; m.x = nx; m.y = ny; if (Math.abs(mx) > sp*.05) m.dir = Math.sign(mx); }   // always faces the way it's really moving (only straight up/down keeps its facing)
       }
     }
     m.swim = !m.fl && !m.z && inPond(roomAt(m.x), m.x, m.y);
@@ -7429,7 +7430,7 @@ function berryCatch(){
     const B = box(), sp = G.sp;
     c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.ellipse(Math.round(G.x), H - 10, B.w*.4, 3, 0, 0, 7); c.fill();
     if (sp) { const img = sp.frames[frameIdx(sp, now)].img, s = Math.min(1, 64/Math.max(sp.bb.w, sp.bb.h)), w = Math.round(sp.bb.w*s), h = Math.round(sp.bb.h*s);
-      c.save(); c.translate(Math.round(G.x), 0); if (G.v < 0) c.scale(-1, 1); c.drawImage(img, sp.bb.x, sp.bb.y, sp.bb.w, sp.bb.h, -Math.round(w/2), H - 10 - h, w, h); c.restore(); }
+      c.save(); c.translate(Math.round(G.x), 0); if (G.v > 0) c.scale(-1, 1); c.drawImage(img, sp.bb.x, sp.bb.y, sp.bb.w, sp.bb.h, -Math.round(w/2), H - 10 - h, w, h); c.restore(); }
     for (const q of G.pops) { const a = 1 - (now - q.t)/600; if (a <= 0) continue; c.globalAlpha = a; c.fillStyle = q.fav ? "#ffd43b" : "#ffffff"; c.font = "bold 12px monospace"; c.fillText(q.fav ? "+1 ♥" : "+1", Math.round(q.x - 8), Math.round(q.y - (1 - a)*16)); c.globalAlpha = 1; }
     G.pops = G.pops.filter(q => now - q.t < 600);
   }
