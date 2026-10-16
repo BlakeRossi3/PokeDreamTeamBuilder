@@ -42,7 +42,10 @@ Everything here is free on Supabase's free plan. It takes about 20 minutes.
 
 1. **Authentication → Sign In / Providers → Email**: make sure **Enable Email provider** is on. Leave **Confirm
    email** on.
-2. **Authentication → Emails → Templates → Magic Link**: replace the body with the text below. The email then shows a
+2. **Without your own email sender** the default email has only a **Sign in** link, and that works: the link signs in
+   whichever browser opens it. To also show a **code** players can type (handy when the link opens in a phone's mail
+   app instead of their browser), Supabase needs custom SMTP first (step 3), and then you can edit the templates.
+   **Authentication → Emails → Templates → Magic Link**: replace the body with the text below. The email then shows a
    code players can type, as well as a link:
 
    ```html
@@ -53,7 +56,12 @@ Everything here is free on Supabase's free plan. It takes about 20 minutes.
    ```
 
    Do the same for the **Confirm signup** template, since a player's first sign-in uses that one.
-3. Supabase's built-in email sender only allows a few emails an hour. That's fine for testing; before telling lots of
+3. **Custom SMTP (free).** With [Brevo](https://brevo.com): sign up, verify your sender email under **Senders, Domains
+   & Dedicated IPs → Senders**, then open **SMTP & API → SMTP** and generate an SMTP key. In Supabase, **Authentication →
+   Emails → SMTP Settings**: turn on custom SMTP; sender email = the address you verified; sender name = Dream Team Dex;
+   host `smtp-relay.brevo.com`; port `587`; username = the SMTP login Brevo shows (looks like `xxxx@smtp-brevo.com`);
+   password = the SMTP key. Save, then edit the templates (step 2). Resend works too but needs your own domain.
+   Supabase's built-in email sender only allows a few emails an hour. That's fine for testing; before telling lots of
    players about it, set up free SMTP. **Authentication → Emails → SMTP Settings** works with, for example,
    [Resend](https://resend.com) or [Brevo](https://brevo.com).
 
