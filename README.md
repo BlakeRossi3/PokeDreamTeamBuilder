@@ -15,10 +15,28 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 (repository Settings → Pages → Source: **GitHub Actions**). Other hosts: see `site/OTHER-HOSTS.md`.
 
 ## Develop
-- Edit `src/app.html` (the whole app) and the JSON in `data/`.
+- Edit `src/app.html` (the whole app), `src/engine.js` (the battle engine) and the JSON in `data/`.
 - `python3 scripts/lint.py` (after `npm install`) and `python3 tests/run_all.py`
   (after `pip install playwright && python3 -m playwright install chromium`).
 - `CLAUDE.md` has the project map and the rules that keep saves and both art styles working.
+
+**Data and asset scripts** (run by hand; the build never needs them):
+| Script | What it makes |
+|---|---|
+| `node scripts/gen_data.mjs` | Pokémon, moves, abilities, items and learnsets from Pokémon Showdown's data (`@pkmn/dex`) |
+| `node scripts/gen_families.mjs` | `data/families.json`: evolution families (Home Pokémon that play together) |
+| `python3 scripts/gen_item_icons.py` | the item icon sheet `packs/items.png` (PokéSprite + PokéAPI bag icons) |
+| `python3 scripts/gen_back_packs.py` | the animated 3D back sprites `packs/s/3db*` (Showdown via PokéAPI) |
+
+**Docs:** [battle audit](docs/battle-audit.md) (what the engine covers) · [rewards table](docs/rewards.md) (every Gym, Elite
+Four and Champion reward) · [3D sprites](docs/3d-sprites.md) (sources compared, gaps) · [online accounts setup](docs/supabase-setup.md)
+(Supabase, click by click) · [roadmap](docs/ROADMAP.md) · [changelog](docs/CHANGELOG.md).
+
+**Tests** (`tests/run_all.py` runs them all): layout audit (every screen, 2D/3D, desktop/phone, no sideways scroll) ·
+Shop and Home · save migration · battles, exports and settings · custom teams · battle engine and battle UI · Pokémon sheet ·
+rewards · online accounts and friends (with a stand-in Supabase in `tests/fake_supabase.js`) · Home life · the engine rules
+and damage-vs-`@smogon/calc` checks in Node. The database rules are checked separately on a local Postgres with
+`sh supabase/tests/run.sh`.
 
 ## PokéPoints and unlockables
 - **Categories:** Hall of Fame backgrounds, Home furniture, Home rooms, profile icons, Poké Balls, trainer card designs.
@@ -62,6 +80,10 @@ players 20 PokéPoints, once a day. No chat or free text; blocking hides you com
 Trainer card screen.
 
 ## Credits
-Full credits are in the app under Settings → Credits. The 2D Hall of Fame backgrounds and Pokémon Home art were made
-with [Retro Diffusion](https://retrodiffusion.ai/). Dream Team Dex is a free, non-profit fan project.
+Full credits are in the app under Settings → Credits. In short: 2D sprites from PokéAPI, Pocketdex and the Animated
+Pokémon System artists; animated 3D front and back sprites from Pokémon Showdown's spriters via PokéAPI; HOME renders via
+PokéAPI; trainers from Pokémon Showdown, the Elite Battle System and Pokémon Masters EX; item icons from PokéSprite and
+PokéAPI; data and battle rules from @pkmn/dex and Pokémon Showdown, checked against @smogon/calc; fonts from Google Fonts;
+gifuct-js, gifenc and supabase-js for GIFs and online accounts. The 2D Hall of Fame backgrounds and Pokémon Home art were
+made with [Retro Diffusion](https://retrodiffusion.ai/). Dream Team Dex is a free, non-profit fan project.
 Pokémon and all related names and images are © Nintendo, Game Freak, Creatures and The Pokémon Company.

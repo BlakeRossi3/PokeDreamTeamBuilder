@@ -25,22 +25,24 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `node scripts/gen_data.mjs` — regenerate Pokémon/move/ability/item/learnset data from Pokémon Showdown (`@pkmn/dex`).
   Run by hand when data should change; the build itself never needs Node.
 - `node scripts/gen_families.mjs` — rebuild `data/families.json` (evolution families, for Home Pokémon that play together).
+- `python3 scripts/gen_back_packs.py` — rebuild the 3D back-sprite packs (`3db`/`3dbs`) from PokéAPI's copy of Showdown's `ani-back`.
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
   (`pip install playwright && python3 -m playwright install chromium` once). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
+- `sh supabase/tests/run.sh` — apply the Supabase migration to a throwaway local Postgres and check its rules.
 - `node tests/test_engine.mjs` (rules, items, Bag, AI, random-battle stress test) and `node tests/test_damage.mjs [n] [seed]`
   (damage vs `@smogon/calc`, all 16 rolls) — both also run from `run_all.py`.
 - No Python packages are needed to build; Playwright is only for tests. If the pre-installed browser doesn't match,
   install the Playwright version that does (e.g. `pip install playwright==1.56.0` for `/opt/pw-browsers/chromium-1194`).
 
 ## Layout
-- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~6,400 lines). Source of truth.
+- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~7,900 lines). Source of truth.
 - `src/engine.js` — the battle engine (pure logic, no DOM), inlined into the page at `/*ENGINE*/`; Node tests load it
   through `tests/engine_harness.mjs`. See `docs/battle-audit.md` for what it covers.
   Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
-  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
+  `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ITEMICONS*/`, `/*REWARDS*/`, `/*FAMILIES*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
   `"/*BUILD*/"` becomes the build hash (cache-busting `?v=` on pack URLs).
 - `data/` — Pokédex, forms, moves, balls, rivals, leaders, trainer names, Hall of Fame tuning, etc. (JSON).
 - `packs/` — sprites. `s/*.wasm` Pokémon packs (`2d`, `2ds`, `3d`, `3ds`, `3db`/`3dbs` = 3D back sprites, `h` = HOME stills,
@@ -57,7 +59,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   the app looks them up with `artOf(key)` and falls back to the canvas drawings. 2D only: 3D still uses canvas art.
 - `art-src/` — how that art was made: `raw/` Retro Diffusion downloads, `jobs.tsv` (image → job id), `process.py`
   (cut-outs, trophy recolours, clear window glass, wood/carpet floors) which writes `art/2d/`. Re-run it after changing `raw/`.
-- `scripts/` — build and lint. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
+- `docs/` — roadmap, battle audit, rewards table, 3D sprite research, Supabase setup, changelog.
+- `scripts/` — build, lint and the data/asset generators. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
 
 ## Map of src/app.html (search for these banners)
 CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overrides), then markup, then JS sections:
