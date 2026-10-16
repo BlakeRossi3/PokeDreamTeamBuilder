@@ -81,6 +81,8 @@ Everything here is free on Supabase's free plan. It takes about 20 minutes.
      Google**. It looks like `https://<your-project-ref>.supabase.co/auth/v1/callback`.
 3. Copy the **Client ID** and **Client secret** into Supabase's Google provider settings, switch it **on** and
    **Save**.
+4. Turn on the app's **Continue with Google** button: add `google: true` to `window.DTD_CONFIG` in `site/config.js`
+   (it's hidden until then).
 
 ## 4. Allowed addresses (redirect URLs)
 
