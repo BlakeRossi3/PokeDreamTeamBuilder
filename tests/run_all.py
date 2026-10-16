@@ -14,7 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = [  # (file, args)
     ("audit.py", []),                                   # every screen, 2D/3D, desktop/phone, sideways-scroll check
-    ("test_layout_lint.py", []),                        # layout checker: nothing sticking out, clipped, overlapping or wrapping unevenly
+    ("test_layout_lint.py", []),
+    ("test_a11y.py", []),                               # accessibility (axe-core): contrast, labels, ARIA; no serious problems                        # layout checker: nothing sticking out, clipped, overlapping or wrapping unevenly
     ("test_shop_home.py", ["1366", "860", "3d"]),       # Shop, Pokémon Home, Hall of Fame menu, unlocks, gym rewards
     ("test_shop_home.py", ["390", "844", "2d"]),
     ("test_save_migration.py", []),                     # old saves get PokéPoints + rewards, locked Poké Balls
