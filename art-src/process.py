@@ -122,7 +122,8 @@ def drop_specks(im, min_px=4):
                     continue
                 seen.add((cx, cy)); blob.append((cx, cy))
                 q.extend([(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)])
-            if len(blob) < min_px:
+            pale = all(min(px[b][:3]) > 180 for b in blob)   # leftover bits of the pale backdrop (not honey drops or sparks)
+            if len(blob) < min_px or (pale and len(blob) <= 8):
                 for b in blob:
                     px[b] = (0, 0, 0, 0)
     return im
@@ -135,6 +136,7 @@ for p in sorted((RAW / "anim").glob("*.gif")):
         im = f.convert("RGBA")
         for _ in range(2):
             im = flood_clear(im, border(im), 40)
+        im = flood_clear(im, border(im), 36, ref=(247, 251, 254))   # the animator's pale backdrop, when it survives
         frames.append(drop_specks(im))
     box = None
     for f in frames:
