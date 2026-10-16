@@ -3402,6 +3402,7 @@ function openAccountMenu(){
 // version it builds on, so two devices can never silently overwrite each other: the player picks.
 const SBC = window.DTD_CONFIG || {};
 const CLOUD_ON = !ON_CLAUDE && !!(SBC.supabaseUrl && SBC.supabaseAnonKey);
+const GOOGLE_ON = SBC.google === true;   // the "Continue with Google" button: add google: true to site/config.js once Google sign-in is set up
 const SB = {client:null, loading:null, user:null, prof:null, timer:null, busy:false, status:"local", quiet:false, edits:0, again:false, bring:null, entering:false, seen:0};
 const SB_MAX = 1e6;   // the database refuses saves over 1 MB
 function sbLoad(){
@@ -3536,7 +3537,7 @@ function onlineCardHTML(){
     <p class="meta">Sign in and your teams, badges and PokéPoints follow you to every browser. Free, and you can add friends.</p>
     ${o.step === "code" ? `<form class="on-row" id="accCode" autocomplete="off"><input id="accCd" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="6-digit code" aria-label="Sign-in code" required><button class="btn primary" type="submit">Sign in</button></form>
       <p class="note">We sent a sign-in code to <b>${esc(o.email)}</b>. Type it here: you can read the email on any device. It can take a minute; check spam too. <button class="linkbtn" type="button" data-acc="emailback">Use a different email</button></p>`
-    : `<div class="on-row"><button class="btn google" type="button" data-acc="google"><span class="g-logo" aria-hidden="true">G</span> Continue with Google</button></div>
+    : `${GOOGLE_ON ? `<div class="on-row"><button class="btn google" type="button" data-acc="google"><span class="g-logo" aria-hidden="true">G</span> Continue with Google</button></div>` : ""}
       <form class="on-row" id="accEmail"><input id="accEm" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" required value="${esc(o.email || "")}"><button class="btn" type="submit">Email me a code</button></form>`}
     ${o.err ? `<p class="acc-err" role="alert">${esc(o.err)}</p>` : ""}
     <p class="note">No password needed. We never show your email to anyone.</p>
