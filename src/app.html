@@ -604,6 +604,22 @@ button.fr-row{cursor:pointer} button.fr-row:hover{background:var(--raised-2, rgb
 .sc-pick{display:flex; gap:8px; flex-wrap:wrap; align-items:center} .sc-pick .select{flex:1 1 180px; min-width:0}
 .hv-note{margin-left:auto}
 @media (max-width:480px){ .lu-st{grid-template-columns:1fr} .fr-top-acts{margin-left:0} }
+/* home life */
+.hm-bag{display:flex; gap:6px; align-items:center; flex-wrap:wrap; min-height:30px}
+.hm-berry{display:inline-flex; align-items:center; gap:2px; padding:2px 8px 2px 2px; color:var(--fg); background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--pill); cursor:pointer; font:inherit}
+.hm-berry[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset}
+:root[data-mode="2d"] .hm-berry{border-radius:0}
+.hm-hold{flex-basis:100%}
+.hm-event{margin:0}
+.hm-photo{position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center; padding:6px 10px; background:rgba(11,18,34,.8); border-radius:var(--r-sm); color:#fff; font-size:var(--fs-xs); max-width:calc(100% - 20px)}
+.home.photo .home-bar, .home.photo .hm-bag, .home.photo .home-res, .home.photo .home-help, .home.photo .hm-event, .home.photo .home-pad{display:none}
+.home-pad{position:absolute; inset:auto 0 0 0; pointer-events:none}
+.hm-joy{position:absolute; left:14px; bottom:14px; width:96px; height:96px; border-radius:50%; background:rgba(11,18,34,.35); border:2px solid rgba(255,255,255,.45); pointer-events:auto; touch-action:none}
+.hm-joy i{position:absolute; left:50%; top:50%; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; background:rgba(255,255,255,.85)}
+.hm-play{position:absolute; right:14px; bottom:22px; width:72px; height:72px; border-radius:50%; border:2px solid #fff; background:var(--accent); color:var(--on-accent); font:700 1rem var(--font-d); pointer-events:auto; touch-action:manipulation}
+:root[data-mode="2d"] .hm-joy, :root[data-mode="2d"] .hm-joy i, :root[data-mode="2d"] .hm-play{border-radius:0}
+.slot-ribbon{position:absolute; right:6px; top:6px; width:26px; height:26px; z-index:2} .slot-ribbon svg{width:100%; height:100%}
+.pill.ev{background:#5a2a8a; color:#fff}
 .acc-head .meta{display:block}
 .chk{display:flex; align-items:center; gap:8px; margin-top:10px; font-size:var(--fs-sm); color:var(--fg); cursor:pointer}
 .chk input{width:18px; height:18px; accent-color:var(--accent)}
@@ -1870,7 +1886,7 @@ function cleanUI(u){
 }
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
-const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}});
+const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0});
 const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:""}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
@@ -1894,7 +1910,15 @@ function cleanGames(g){
   const h = obj(g.home), num = v => Number.isFinite(v) ? v : 0;
   if (g.home) {
     o.home.mons = Array.isArray(h.mons) ? [...new Set(h.mons.filter(n => Number.isInteger(n) && NAT_BY.has(n)))].slice(0, 40) : [];
-    o.home.items = Array.isArray(h.items) ? h.items.filter(p => p && unlockOf("furn", p.id)).slice(0, 300).map(p => ({id:p.id, x:Math.max(0, Math.round(num(p.x))), y:Math.max(0, Math.round(num(p.y))), f:p.f ? 1 : 0})) : [];
+    o.home.items = Array.isArray(h.items) ? h.items.filter(p => p && unlockOf("furn", p.id)).slice(0, 300).map(p => ({id:p.id, x:Math.max(0, Math.round(num(p.x))), y:Math.max(0, Math.round(num(p.y))), f:p.f ? 1 : 0, ...(p.r ? {r:1} : {})})) : [];
+    const day = v => typeof v === "string" && /^\d{4}-\d\d-\d\d$/.test(v);
+    for (const [k, v] of Object.entries(obj(h.bag))) if (/^[a-z]{3,8}$/.test(k) && int(v)) o.home.bag[k] = Math.min(99, v);
+    for (const [k, v] of Object.entries(obj(h.trees))) if (/^\d+,\d+$/.test(k) && v && day(v.d)) o.home.trees[k] = {d:v.d, n:Math.min(3, int(v.n))};
+    for (const [k, v] of Object.entries(obj(h.feed))) if (NAT_BY.has(+k) && v && day(v.d)) o.home.feed[k] = {d:v.d, n:Math.min(3, int(v.n))};
+    for (const [k, v] of Object.entries(obj(h.giftDay))) if (NAT_BY.has(+k) && day(v)) o.home.giftDay[k] = v;
+    o.home.gifts = Array.isArray(h.gifts) ? h.gifts.filter(x => x && NAT_BY.has(x.n) && ["pp", "berry", "furn"].includes(x.k) && (x.k !== "furn" || unlockOf("furn", x.v)) && (x.k !== "pp" || (int(x.v) && x.v <= 100)) && (x.k !== "berry" || /^[a-z]{3,8}$/.test(x.v)))
+      .slice(0, 6).map(x => ({n:x.n, x:Math.max(0, num(x.x)), y:Math.max(0, num(x.y)), k:x.k, v:x.v})) : [];
+    o.home.fedN = int(h.fedN); o.home.photos = int(h.photos);
     for (const [k, v] of Object.entries(obj(h.fr))) if (NAT_BY.has(+k) && int(v)) o.home.fr[k] = Math.min(100, v);
     for (const [k, v] of Object.entries(obj(h.pet))) if (NAT_BY.has(+k) && /^\d{4}-\d\d-\d\d$/.test(v)) o.home.pet[k] = v;
     for (const [k, v] of Object.entries(obj(h.gain))) if (NAT_BY.has(+k) && v && /^\d{4}-\d\d-\d\d$/.test(v.d)) o.home.gain[k] = {d:v.d, n:Math.min(25, int(v.n))};
@@ -1924,6 +1948,8 @@ const Sound = (() => {
       lead:[76,79,84,83,81,79,76,79, 81,0,84,81,76,0,72,76, 77,81,84,81,79,77,76,77, 74,79,83,86,83,0,79,0, 76,79,84,0,86,84,83,84, 81,0,76,0,72,74,76,79, 77,0,81,0,84,0,81,79, 79,77,76,74,72,0,0,0]},
     battle:{bpm:168, chords:[[45,48,52],[41,45,48],[43,47,50],[40,44,47],[45,48,52],[41,45,48],[43,47,50],[40,44,47]], drive:true,
       lead:[81,0,81,79,81,0,76,0, 77,0,77,76,77,0,72,0, 79,0,79,77,79,0,74,0, 76,0,80,0,83,0,80,76, 81,84,88,84,81,0,76,79, 77,81,84,81,77,0,72,76, 79,83,86,83,79,0,74,77, 76,80,83,88,83,80,76,0]},
+    home:{bpm:84, chords:[[48,52,55],[45,48,52],[41,45,48],[43,47,50],[48,52,55],[41,45,48],[43,47,50],[48,52,55]], soft:true,
+      lead:[72,0,76,0,79,0,76,0, 72,0,0,0,74,0,72,0, 69,0,72,0,76,0,74,0, 72,0,0,0,0,0,0,0, 72,0,76,0,79,0,81,0, 79,0,77,0,76,0,74,0, 74,0,77,0,76,0,74,0, 72,0,0,0,0,0,0,0]},
     field:{bpm:100, chords:[[43,47,50],[40,43,47],[36,40,43],[38,42,45],[43,47,50],[40,43,47],[36,40,43],[38,42,45]],
       lead:[74,0,79,0,78,0,76,0, 71,0,76,0,74,0,71,0, 72,0,76,0,79,0,76,0, 74,0,78,0,81,0,0,0, 79,0,78,79,81,0,79,0, 76,0,74,76,79,0,0,0, 72,74,76,79,81,79,76,72, 74,76,78,81,74,0,0,0]},
   };
@@ -1964,13 +1990,13 @@ const Sound = (() => {
     const T = TR[cur], spb = 60/T.bpm/2;
     while (nextT < ctx.currentTime + .2) {
       const bar = Math.floor(step/8) % 8, s8 = step % 8, ch = T.chords[bar], ln = T.lead[(step) % T.lead.length];
-      if (ln) tone(mus, nextT, hz(ln), spb*.92, "p25", .5);
-      tone(mus, nextT, hz(ch[(s8) % 3] + 12), spb*.5, "p12", .16);
+      if (ln) tone(mus, nextT, hz(ln), spb*(T.soft ? 1.6 : .92), T.soft ? "triangle" : "p25", T.soft ? .55 : .5);   // soft: the calm Home track
+      tone(mus, nextT, hz(ch[(s8) % 3] + 12), spb*.5, T.soft ? "sine" : "p12", T.soft ? .22 : .16);
       const root = ch[0] - 12;
       if (T.drive) tone(mus, nextT, hz(s8 % 2 ? root + 12 : root), spb*.8, "triangle", .8);
       else if (s8 % 2 === 0) tone(mus, nextT, hz(s8 % 4 === 0 ? root : root + 7), spb*1.6, "triangle", .8);
       if (T.drive) { if (s8 % 4 === 0) tone(mus, nextT, 150, .09, "sine", .9, .3); if (s8 % 4 === 2) noise(mus, nextT, .09, .45, 1800); noise(mus, nextT, .03, .18, 7000); }
-      else if (s8 % 2 === 1) noise(mus, nextT, .03, .12, 7000);
+      else if (s8 % 2 === 1 && !T.soft) noise(mus, nextT, .03, .12, 7000);
       nextT += spb; step++;
     }
   }
@@ -2002,6 +2028,10 @@ const Sound = (() => {
       case "right": tone(fx, t, 988, .08, "p25", .45); tone(fx, t + .08, 1319, .14, "p25", .45); break;
       case "wrong": tone(fx, t, 196, .28, "square", .4, .85); break;
       case "send": noise(fx, t, .16, .4, 3000); tone(fx, t + .05, 520, .12, "p25", .3, 1.8); break;
+      case "step": noise(fx, t, .025, .12, 2500); break;
+      case "crackle": noise(fx, t, .03, .1, 3000); noise(fx, t + .05 + Math.random()*.08, .02, .08, 4000); break;
+      case "splash": noise(fx, t, .22, .25, 1800); tone(fx, t, 900, .1, "p12", .12, .5); break;
+      case "pick": tone(fx, t, 1047, .05, "p12", .3); tone(fx, t + .05, 1568, .08, "p12", .3); break;
       case "encounter": tone(fx, t, 1047, .05, "p25", .4); tone(fx, t + .06, 1319, .05, "p25", .4); tone(fx, t + .12, 1568, .08, "p25", .4); break;
       default: {
         const J = JINGLE[name]; if (!J) return; const sp = 60/J.bpm/2; let tt = t;
@@ -2247,7 +2277,7 @@ function renderTeam(){
     if (!m) { html += `<div class="slot empty"><span class="ghost" aria-hidden="true"></span><span>Slot ${i+1}</span></div>`; continue; }
     const sh = isShinyMember(state.team, m.num);
     const hi = memberOf(state.team, m.num).item;
-    html += `<div class="slot" data-num="${m.num}" data-sid="${m.num}" title="Tap for moves, item and stats · drag to reorder">${hi ? `<span class="slot-item" title="Holding ${esc(hi)}">${itemIcon(hi)}</span>` : ""}
+    html += `<div class="slot" data-num="${m.num}" data-sid="${m.num}" title="Tap for moves, item and stats · drag to reorder">${hi ? `<span class="slot-item" title="Holding ${esc(hi)}">${itemIcon(hi)}</span>` : ""}${friendOf(m.num) >= 100 ? `<span class="slot-ribbon" title="Friendship ribbon: best friends in your Home">${RIBBON_SVG}</span>` : ""}
       <button class="info" type="button" data-info="${m.num}" aria-label="${esc(m.name)} stats">i</button>
       <button class="x" type="button" data-remove="${m.num}" aria-label="Remove ${esc(m.name)}">✕</button>
       ${spr(m.num, {sh})}<span class="nm" title="${esc(nickOf(state.team, m.num) === m.name ? m.name : nickOf(state.team, m.num) + " (" + m.name + ")")}">${ballImg(ballOf(state.team, m.num))}<span class="nt">${esc(nickOf(state.team, m.num))}</span>${sh || state.shiny ? '<span class="shiny-mark" title="Shiny">✦</span>' : ""}</span></div>`;
@@ -3803,7 +3833,8 @@ const SCENES = [
 ];
 const SCENE_BY = new Map(SCENES.map(s => [s.id, s]));
 // "live" follows the clock on this device: day 6:00–17:30, sunset until 19:30, then night
-const clockTod = () => { const d = new Date(), h = d.getHours() + d.getMinutes()/60; return h >= 6 && h < 17.5 ? "day" : h >= 17.5 && h < 19.5 ? "sunset" : "night"; };
+const clockTod = () => { if (window.DTD_TOD) return window.DTD_TOD;   // tests can pin the time of day
+  const d = new Date(), h = d.getHours() + d.getMinutes()/60; return h >= 6 && h < 17.5 ? "day" : h >= 17.5 && h < 19.5 ? "sunset" : "night"; };
 const todOf = sc => sc.tod === "live" ? clockTod() : sc.tod;
 const DEFAULT_BG = {g1:"route", g2:"forest", g3:"beach", g4:"summit", g5:"city", g6:"city", g7:"beach", g8:"league", g9:"crater", all:"league", starters:"route", pseudo:"summit", legend:"league", myth:"ultra", ub:"ultra", paradox:"crater", fossil:"volcano", baby:"route", eevee:"forest"};
 const SLOTS = [[.30,.87],[.70,.87],[.15,.78],[.85,.78],[.38,.71],[.62,.71],[.05,.9],[.95,.9],[.24,.64],[.76,.64],[.06,.68],[.94,.68]];
@@ -5655,6 +5686,9 @@ const FURN = [
   ["globe", "Desk globe", 350, 1, 1, "globe", ["#3aa0d6","#c9a227"]], ["clock", "Grandfather clock", 750, 1, 1, "clock", ["#6b4226","#f6e7b4"]],
 ];
 FURN.forEach(([id, name, price, w, d, kind, col]) => addItem({cat:"furn", id, name, price, free:!price, w, d, kind, col}));
+// seasonal furniture: sold only while its event runs (see EVENTS); players keep what they bought
+[["pumpkin", "Jack-o’-lantern", 300, 1, 1, "pumpkin", ["#f08a24", "#3a7a2a"], "halloween"], ["cobweb", "Spooky cobweb", 150, 1, 1, "cobweb", ["#e8e8f0", "#5a5a6a"], "halloween"],
+ ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
 // --- Home rooms (each adds space and room for more Pokémon) ---
 const ROOMS = [
   {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4},
@@ -5775,7 +5809,7 @@ const myIcon = () => state.games.icon && unlockOf("icon", state.games.icon) && o
 // ================= SHOP =================
 let shopCat = "furn";
 function renderShop(){
-  const G = state.games, items = ITEMS_ALL.filter(it => it.cat === shopCat);
+  const ev = eventOn(), G = state.games, items = ITEMS_ALL.filter(it => it.cat === shopCat && (!it.event || (ev && ev.id === it.event) || owns(it.cat, it.id)));
   const sorted = [...items].sort((a, b) => (isExclusive(a) - isExclusive(b)) || (b.free - a.free) || (a.price - b.price));
   const card = it => {
     const ex = isExclusive(it), have = owns(it.cat, it.id), multi = it.cat === "furn" && !ex, hidden = ex && !have;
@@ -5783,7 +5817,7 @@ function renderShop(){
     return `<div class="shop-item${have ? " owned" : ""}${hidden ? " mystery" : ""}${ex ? " ex" : ""}">
       ${hidden ? `<span class="it-thumb q">?</span>` : itemThumb(it)}
       <b>${hidden ? "Gym exclusive" : esc(it.name)}</b>
-      <span class="meta">${hidden ? "Beat Gym Leaders to find it" : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
+      <span class="meta">${it.event ? `<span class="pill ev">${esc((EVENTS.find(e => e.id === it.event) || {}).name || "Event")} · limited time</span> ` : ""}${hidden ? "Beat Gym Leaders to find it" : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
       ${ex || it.free || (have && !multi) ? "" : `<button class="btn sm${G.pp >= it.price ? " primary" : ""}" type="button" data-buy="${it.id}">${fmtPP(it.price)}</button>`}
     </div>`;
   };
@@ -5894,6 +5928,13 @@ const HOUSE_DRAW = {
   flowers(K, it){ K.box(0, .2, it.w, .7, .22, "#7a4a2c"); for (let i = 0; i < 10; i++) { const x = .15 + (i % 5)*.42, y = .35 + Math.floor(i/5)*.3; K.rect(x + .03, y, .03, .2, "#3a9e4f", .22 + .2); K.disc(x + .05, y, .09, i % 2 ? it.col[0] : it.col[1], .45); } },
   bench(K, it){ K.box(.1, .5, .12, .3, .4, it.col[1]); K.box(it.w - .22, .5, .12, .3, .4, it.col[1]); K.box(0, .4, it.w, .45, .1, it.col[0], .4); for (let i = 0; i < 3; i++) K.box(0, .3, it.w, .08, .1, it.col[0], .6 + i*.18); },
   tramp(K, it){ K.oval(1, 1.05, .95, .8, it.col[1], 0); K.rect(.12, 1.05, .08, .4, it.col[1], .4); K.rect(1.8, 1.05, .08, .4, it.col[1], .4); K.oval(1, 1, .95, .8, it.col[0], .42); K.oval(1, 1, .75, .62, shadeHex(it.col[0], .6), .43); },
+  pumpkin(K, it){ const [o, g] = it.col; K.oval(.5, .6, .4, .32, shadeHex(o, .8), .02); K.oval(.5, .58, .38, .3, o, .22); K.oval(.3, .58, .14, .26, shadeHex(o, .9), .24); K.oval(.7, .58, .14, .26, shadeHex(o, .9), .24);
+    K.rect(.47, .6, .07, .16, g, .62); K.poly([[.32, .6, .4], [.4, .6, .5], [.42, .6, .4]], "#3a1a08"); K.poly([[.58, .6, .4], [.6, .6, .5], [.68, .6, .4]], "#3a1a08"); K.poly([[.33, .6, .3], [.67, .6, .3], [.6, .6, .22], [.4, .6, .22]], "#ffd36b"); },
+  cobweb(K, it){ const c = it.col[0], z = 1.6; for (let i = 0; i < 6; i++) { const a = -Math.PI/2 + (i - 2.5)*.32; K.poly([[.5, .1, z + .85], [.5 + Math.cos(a)*.62 + .01, .1, z + .85 + Math.sin(a)*.62], [.5 + Math.cos(a)*.62 - .01, .1, z + .85 + Math.sin(a)*.62]], c); }
+    for (const r of [.2, .38, .56]) for (let i = 0; i < 5; i++) { const a = -Math.PI/2 + (i - 2.5)*.32, b = a + .32; K.poly([[.5 + Math.cos(a)*r, .1, z + .85 + Math.sin(a)*r], [.5 + Math.cos(b)*r, .1, z + .85 + Math.sin(b)*r], [.5 + Math.cos(b)*r, .1, z + .85 + Math.sin(b)*r + .02], [.5 + Math.cos(a)*r, .1, z + .85 + Math.sin(a)*r + .02]], c); }
+    K.disc(.5, .1, .06, it.col[1], z + .45); K.rect(.495, .1, .01, .4, c, z + .85); },
+  holtree(K, it){ const [g, r] = it.col; K.box(.38, .45, .24, .2, .25, "#8a5a3c"); [[.48, .25], [.38, .9], [.28, 1.5]].forEach(([w, z], i) => K.poly([[.5 - w, .55, z], [.5 + w, .55, z], [.5, .55, z + .85 - i*.08]], shadeHex(g, 1 + i*.08)));
+    [[.3, .5], [.66, .62], [.42, 1.1], [.6, 1.25], [.46, 1.7]].forEach(([x, z], i) => K.disc(x, .56, .05, i % 2 ? r : "#ffd43b", z)); K.poly([[.5, .55, 2.25], [.56, .55, 2.12], [.5, .55, 2.0], [.44, .55, 2.12]], "#ffd43b"); },
   cushion(K, it){ K.box(.1, .2, .8, .7, .18, it.col[0]); K.box(.2, .3, .6, .5, .02, it.col[1], .18); },
   globe(K, it){ K.box(.35, .45, .3, .25, .35, "#6b4226"); K.rect(.48, .55, .04, .3, it.col[1], .62); K.disc(.5, .55, .3, it.col[0], .95); K.disc(.42, .55, .1, "#3fae5a", 1.02); },
   display(K, it){ const v = it.var; K.box(.08, .2, .84, .62, .5, "#7b5234"); K.box(.05, .18, .9, .66, .06, "#a8754c", .5); K.box(.12, .25, .76, .52, .82, "#a7d3ea", .56); K.rect(.18, .77, .64, .7, "#cfeaf6", 1.32); motif(K, v === "ice" ? "icecrystal" : v, .5, .62, .96, .28, "#ffffff"); K.box(.08, .22, .84, .58, .06, "#a8754c", 1.38); K.rect(.14, .78, .06, .78, "rgba(255,255,255,.35)", 1.32); },
@@ -5943,12 +5984,12 @@ const HOUSE_DRAW = {
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
 };
-const FURN_H = {display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
+const FURN_H = {pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
 function furnSprite(it, ts, pixel, flip){
-  const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : ""].join("|"); if (furnCache.has(k)) return furnCache.get(k);
-  const img = pixel && artOf("furn/" + it.id);
+  const k = [it.id, Math.round(ts*10), pixel, flip, it.kind === "badgecase" ? badgeOf(it.region) : "", it.rot ? "r" : ""].join("|"); if (furnCache.has(k)) return furnCache.get(k);
+  const img = pixel && !it.rot && artOf("furn/" + it.id);   // a turned rug is drawn from shapes
   if (img) {   // 2D pixel art at its own pixel size (32 px per tile): centred on the footprint, standing on its front edge
     const s = ts/32*Math.min(1, it.w*32/img.width), w = img.width*s, h = img.height*s, floorD = it.d*ts*HM.SQ, pad = Math.ceil(ts*.25);
     const off = isFloorItem(it) ? (floorD - h)/2 : floorD - h;   // rugs sit in the middle of their footprint
@@ -6068,12 +6109,12 @@ function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are draw
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
 
 // ---- state of the running Home ----
-const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null};
+const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0};
 function homeLayout(){
   let x = 0; HS.rooms = homeRooms().map(r => { const o = {...r, x0:x}; x += r.w; return o; }); HS.W = x;
 }
 const roomAt = x => HS.rooms.find(r => x >= r.x0 && x < r.x0 + r.w) || HS.rooms[HS.rooms.length - 1];
-function placedItems(){ return homeData().items.map(p => ({...p, it:unlockOf("furn", p.id)})).filter(p => p.it && p.x + p.it.w <= HS.W); }
+function placedItems(){ return homeData().items.map(p => { const it = unlockOf("furn", p.id); return {...p, it:it && p.r && canRotate(it) ? rotItem(it, 1) : it}; }).filter(p => p.it && p.x + p.it.w <= HS.W); }
 function blocked(x, y, swim){
   if (x < .3 || x > HS.W - .3 || y < .35 || y > HM.D - .15 || inWall(x, y)) return true;
   const r = roomAt(x); if (inPond(r, x, y) && !swim) return true;
@@ -6114,36 +6155,50 @@ function renderHome(){
       <button class="btn sm primary" type="button" id="hmPick">Pokémon · ${mons.length}/${cap}</button>
       <button class="btn sm" type="button" id="hmDeco" aria-pressed="${HS.edit}">${HS.edit ? "✓ Done decorating" : "Decorate"}</button>
       <button class="btn sm" type="button" id="hmShop">Shop</button>
+      <button class="btn sm" type="button" id="hmCam" title="Photo mode">📷 Photo</button>
       <span class="home-pp">${fmtPP(state.games.pp)}</span>
     </div>
+    ${HS.edit ? "" : `<div class="hm-bag" id="hmBag"></div>`}
     <div class="home-stage" id="hmStage"><canvas id="hmCv" tabindex="0" aria-label="Your Pokémon Home. Use the arrow keys or WASD to walk, E to play with a Pokémon, or tap where to go."></canvas>
       <div class="home-msg" id="hmMsg" hidden></div>
+      <div class="hm-photo" id="hmPhoto" ${HS.photo ? "" : "hidden"}><span>Drag or use the arrow keys to look around</span><button class="btn sm primary" type="button" data-ph="png">Save PNG</button><button class="btn sm" type="button" data-ph="gif">Save GIF</button><button class="btn sm" type="button" data-ph="exit">Done</button></div>
       <div class="home-pad" aria-hidden="true"></div></div>
     ${HS.edit ? `<div class="home-deco" id="hmDecoBar"></div>` : `<div class="home-res" id="hmRes"></div>`}
-    <p class="note home-help">${HS.edit ? "Pick an item, then tap the floor to place it. Tap a placed item to flip, move or put it away." : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
+    ${eventOn() && !HS.edit ? `<p class="note hm-event">${eventOn().id === "halloween" ? "🎃" : "❄"} <b>${esc(eventOn().name)}</b> is on: limited-time furniture in the Shop${eventOn().visitors ? ", and visitors after dark" : ""}.</p>` : ""}
+    <p class="note home-help">${HS.edit ? "Pick an item, then tap the floor to place it. Drag a placed item to move it, or tap it to flip, turn or put it away." : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
   </div>`;
   HS.cv = $("hmCv"); HS.ctx = HS.cv.getContext("2d");
   if (!HS.me || HS.me.x > HS.W) HS.me = {x:Math.min(3, HS.W/2), y:4.6, dir:1, path:null, walk:0, target:null};
+  HS.weather = weatherToday();
   homeSyncMons();
-  if (HS.edit) renderDecoBar(); else renderResidents();
-  homeResize();
+  if (HS.edit) renderDecoBar(); else { renderResidents(); renderHomeBag(); }
+  $("scBody").querySelector(".home").classList.toggle("photo", HS.photo);
+  homeResize(); homePad();
+  if (HS.introPending && !HS.edit) { HS.intro = {t0:performance.now()}; HS.introPending = false; }
   HS.layerKey = ""; cancelAnimationFrame(HS.raf); HS.last = performance.now(); HS.raf = requestAnimationFrame(homeFrame);
   if (HS.ro) HS.ro.disconnect(); const ro = HS.ro = new ResizeObserver(() => homeResize()); ro.observe($("hmStage"));
   HS.cv.addEventListener("pointerdown", homePointerDown); HS.cv.addEventListener("pointermove", homePointerMove);
-  nav.cleanup = () => { cancelAnimationFrame(HS.raf); ro.disconnect(); HS.ro = null; HS.keys.clear(); HS.place = null; HS.sel = null; save(); };
+  HS.cv.addEventListener("pointerup", homePointerUp); HS.cv.addEventListener("pointercancel", homePointerUp);
+  HS.cv.style.touchAction = HS.edit || HS.photo ? "none" : "";
+  nav.cleanup = () => { cancelAnimationFrame(HS.raf); ro.disconnect(); HS.ro = null; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
   nav.onClick = e => {
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
     if (e.target.closest("#hmDeco")) { HS.edit = !HS.edit; HS.place = null; HS.sel = null; Sound.play("select"); renderHome(); return; }
     if (e.target.closest("#hmShop")) { shopCat = "furn"; openScreen("shop"); return; }
+    if (e.target.closest("#hmCam")) { HS.photo = true; HS.pcam = HS.cam; HS.edit = false; Sound.play("select"); renderHome(); return; }
+    const ph = e.target.closest("[data-ph]"); if (ph) { if (ph.dataset.ph === "exit") { HS.photo = false; renderHome(); } else homePhoto(ph.dataset.ph); return; }
+    const hb = e.target.closest("[data-hold]"); if (hb) { HS.hold = HS.hold === hb.dataset.hold ? null : hb.dataset.hold; Sound.play("select"); renderHomeBag(); return; }
     const r = e.target.closest("[data-hres]"); if (r) { const m = HS.mons.find(x => x.n === +r.dataset.hres); if (m) homeGoTo(m); return; }
     const p = e.target.closest("[data-hplace]"); if (p) { HS.place = HS.place && HS.place.id === p.dataset.hplace ? null : {id:p.dataset.hplace, f:0}; HS.sel = null; Sound.play("select"); renderDecoBar(); return; }
     const a = e.target.closest("[data-hact]"); if (a) { homeEditAct(a.dataset.hact); return; }
   };
-  setMusic("field");
+  setMusic("home");
 }
 function homeSyncMons(){
-  const want = homeMons(), have = new Map(HS.mons.map(m => [m.n, m]));
-  HS.mons = want.map((n, i) => have.get(n) || (() => { const s = randomSpot(false) || {x:1 + i, y:4}; const m = NAT_BY.get(n); return {n, x:s.x, y:s.y, dir:Math.random() < .5 ? -1 : 1, st:"idle", t:Math.random()*2000, spd:1.2 + Math.random()*.8, fl:floatsOf(n), water:m.types.includes("Water"), sp:null, hop:0, emote:null, swim:false}; })());
+  const res = homeMons(), vis = eventVisitors().filter(n => !res.includes(n)), want = [...res, ...vis], have = new Map(HS.mons.map(m => [m.n, m]));
+  HS.evKey = vis.join(",");
+  HS.followers = res.filter(n => friendOf(n) >= 50).sort((a, b) => friendOf(b) - friendOf(a)).slice(0, 2);
+  HS.mons = want.map((n, i) => have.get(n) || (() => { const s = randomSpot(false) || {x:1 + i, y:4}; const m = NAT_BY.get(n); return {n, x:s.x, y:s.y, dir:Math.random() < .5 ? -1 : 1, st:"idle", t:Math.random()*2000, spd:1.2 + Math.random()*.8, fl:floatsOf(n), water:m.types.includes("Water"), sp:null, hop:0, emote:null, swim:false, z:0, visitor:vis.includes(n)}; })());
   for (const m of HS.mons) if (!m.sp && !m.loading) { m.loading = true; getSprite(spKey(m.n, false, state.mode), m.n).then(sp => { m.sp = sp; m.loading = false; }).catch(() => { m.loading = false; }); }
   // visiting a friend, you walk around as yourself
   const tr = VISIT ? VISIT.myTr : trainerOf("all"); HS.trSp = null; getSprite(state.mode === "2d" ? "t2d" : "t3f", tr).then(sp => { HS.trSp = sp; }).catch(() => {});
@@ -6189,31 +6244,40 @@ function homeFrame(now){
   const pixel = state.mode === "2d", c = pixel ? HS.lctx : HS.ctx, V = HS.V, ts = HS.ts, tod = clockTod();
   homeUpdate(dt, now);
   // camera follows the trainer
-  const view = V.W/ts, want = HS.W <= view ? (HS.W - view)/2 : Math.max(0, Math.min(HS.W - view, HS.me.x - view/2));
-  HS.cam += (want - HS.cam)*Math.min(1, dt*6); if (Math.abs(want - HS.cam) < .001) HS.cam = want;
+  const view = V.W/ts, fit = HS.W <= view, follow = fit ? (HS.W - view)/2 : Math.max(0, Math.min(HS.W - view, HS.me.x - view/2));
+  let want = follow;
+  if (HS.photo) want = HS.pcam = fit ? follow : Math.max(0, Math.min(HS.W - view, HS.pcam));   // photo mode: you steer the camera
+  else if (HS.intro) {   // walking in: a slow look across the whole house, then back to you
+    const t = (now - HS.intro.t0)/3200, ease = v => v*v*(3 - 2*v);
+    if (fit || t >= 1) HS.intro = null; else want = t < .55 ? ease(t/.55)*(HS.W - view) : (HS.W - view) + (follow - (HS.W - view))*ease((t - .55)/.45);
+  }
+  HS.cam += (want - HS.cam)*Math.min(1, dt*(HS.intro || HS.photo ? 12 : 6)); if (Math.abs(want - HS.cam) < .001) HS.cam = want;
   c.imageSmoothingEnabled = !pixel;
   if (HS.cam < 0 || HS.cam + V.W/ts > HS.W) {   // a dim corridor either side of a small house
     const wy = Math.round(scrY(0)); c.fillStyle = "#3a2f2a"; c.fillRect(0, 0, V.W, wy); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, V.H - wy);
     c.fillStyle = "rgba(0,0,0,.25)"; for (let i = 0; i < 8; i++) c.fillRect(0, wy + Math.round(i*ts*HM.SQ), V.W, 1);
   }
   c.drawImage(homeLayer(tod), Math.round(-HS.cam*ts), -HS.camY - (HS.head || 0));
+  drawWeather(c, now, pixel, "win");
   if (HS.cam < 0) { const g = c.createLinearGradient(scrX(0) - ts*.5, 0, scrX(0), 0); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); c.fillStyle = g; c.fillRect(scrX(0) - ts*.5, 0, ts*.5, V.H); }
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
   for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
     if (!pixel) { c.fillStyle = "rgba(0,0,0,.16)"; c.beginPath(); c.ellipse(scrX(p.x + p.it.w/2), scrY(p.y + p.it.d) - ts*.04, p.it.w*ts*.55, ts*.16, 0, 0, 7); c.fill(); }
-    c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel);
+    c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
     if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
   for (const d of dividers()) for (const y of DOOR) list.push({y, draw:() => drawDivPost(c, d, y, pixel)});
-  for (const m of HS.mons) list.push({y:m.y, draw:() => drawHomeMon(c, m, now, pixel)});
+  for (const m of HS.mons) list.push({y:m.depth || m.y, draw:() => drawHomeMon(c, m, now, pixel)});
+  for (const g of homeData().gifts) list.push({y:g.y, draw:() => drawGift(c, g, now, pixel)});
   list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
   list.sort((a, b) => a.y - b.y).forEach(d => d.draw());
   // prompts and emotes on top
   for (const m of HS.mons) drawEmote(c, m, now, pixel);
-  if (!HS.edit) { const near = nearestMon(1.7); if (near && near.sp) promptBubble(c, near, pixel); }
+  drawWeather(c, now, pixel, "out");
+  if (!HS.edit && !HS.photo) { const t = nearestThing(); if (t) promptFor(c, t, pixel); }
   if (HS.edit) drawDecoOverlay(c, pixel);
-  if (tod !== "day") { c.fillStyle = tod === "night" ? "rgba(20,30,80,.32)" : "rgba(255,140,80,.1)"; c.fillRect(0, 0, V.W, V.H); }
+  if (tod !== "day") { const ev = eventOn(); c.fillStyle = tod === "night" ? (ev && ev.night || "rgba(20,30,80,.32)") : "rgba(255,140,80,.1)"; c.fillRect(0, 0, V.W, V.H); drawGlows(c, now, pixel, tod); }
   if (pixel) { HS.ctx.imageSmoothingEnabled = false; HS.ctx.drawImage(HS.low, 0, 0, HS.low.width*HS.k, HS.low.height*HS.k); }
   HS.raf = requestAnimationFrame(homeFrame);
 }
@@ -6228,11 +6292,13 @@ function monScale(m){ if (!m.sp) return 1; const pixel = state.mode === "2d", bb
 function drawHomeMon(c, m, now, pixel){
   const sp = m.sp; if (!sp) return;
   const ts = HS.ts, bb = sp.bb, s = monScale(m), w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
-  const lift = (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*.5 : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
+  const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim;
-  c.fillStyle = swim ? "rgba(255,255,255,.35)" : `rgba(0,0,0,${m.fl ? .14 : .22})`; c.beginPath(); c.ellipse(Math.round(X), Math.round(Y), Math.max(2, w*.32), Math.max(1, w*.08), 0, 0, 7); c.fill();
+  c.fillStyle = swim ? "rgba(255,255,255,.35)" : `rgba(0,0,0,${m.fl ? .14 : .22})`; c.beginPath(); c.ellipse(Math.round(X), Math.round(Y - zl), Math.max(2, w*.32), Math.max(1, w*.08), 0, 0, 7); c.fill();
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
   c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
+  if (m.act === "nap") c.scale(1.04, .9 + .02*Math.sin(now/700 + m.n));   // breathing while asleep
+  if (m.visitor) c.globalAlpha = .82 + .12*Math.sin(now/500 + m.n);
   if (swim) { c.beginPath(); c.rect(-w, -h, w*2, h*.72); c.clip(); }
   if (Number.isInteger(s)) c.imageSmoothingEnabled = false;
   c.drawImage(img, bb.x, bb.y, bb.w, bb.h, Math.round(-w/2), -Math.round(h), Math.round(w), Math.round(h));
@@ -6248,17 +6314,23 @@ function drawHomeTrainer(c, now, pixel){
   if (me.walk && !pixel) c.rotate(Math.sin(now/120)*.025);
   c.drawImage(img, bb.x, bb.y, bb.w, bb.h, pixel ? Math.round(-w/2) : -w/2, -h, w, h); c.restore();
 }
-const EMO = {heart:"♥", note:"♪", zz:"z", bang:"!", star:"★"};
+const EMO = {heart:"♥", note:"♪", zz:"z", bang:"!", star:"★", fav:"★", sig:"✦", drop:"≈", dots:"…"};
 function drawEmote(c, m, now, pixel){
   if (!m.emote || !m.box) return; const e = m.emote, age = now - e.t0; if (age > e.dur) { m.emote = null; return; }
   const ts = HS.ts, x = m.box.x + m.box.w/2 + ts*.35, y = m.box.y - ts*.15 - Math.min(1, age/300)*ts*.25, r = ts*.32;
   c.globalAlpha = age > e.dur - 300 ? (e.dur - age)/300 : 1;
   c.fillStyle = "#ffffff"; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.beginPath(); c.moveTo(x - r*.5, y + r*.7); c.lineTo(x - r*.9, y + r*1.2); c.lineTo(x - r*.1, y + r*.9); c.fill();
-  c.fillStyle = e.k === "heart" ? "#e2413b" : e.k === "zz" ? "#5b6fd6" : "#1d2631"; c.font = `700 ${Math.round(r*1.25)}px ${pixel ? '"VT323", monospace' : '"Rubik", sans-serif'}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(EMO[e.k], x, y + 1);
+  c.fillStyle = e.k === "heart" ? "#e2413b" : e.k === "zz" ? "#5b6fd6" : e.k === "fav" ? "#e2a32a" : e.k === "drop" ? "#3a8fd6" : e.k === "sig" ? TC[NAT_BY.get(m.n).types[0]] : "#1d2631"; c.font = `700 ${Math.round(r*1.25)}px ${pixel ? '"VT323", monospace' : '"Rubik", sans-serif'}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(EMO[e.k], x, y + 1);
   c.globalAlpha = 1;
 }
-function promptBubble(c, m, pixel){
-  if (!m.box) return; const ts = HS.ts, touch = matchMedia("(pointer:coarse)").matches, txt = touch ? "Tap to play" : "E · Play";
+function promptFor(c, t, pixel){
+  const ts = HS.ts, touch = matchMedia("(pointer:coarse)").matches, k = touch ? "Play · " : "E · ";
+  if (t.k === "mon") { if (t.m.sp) promptBubble(c, t.m.box, k + (HS.hold && !t.m.visitor && !VISIT ? "Feed" : "Play"), pixel); return; }
+  if (t.k === "gift") { promptBubble(c, {x:scrX(t.x) - ts*.3, y:scrY(t.y) - ts*.5, w:ts*.6, h:ts*.5}, k + "Open gift", pixel); return; }
+  if (t.k === "tree") { const p = t.p; promptBubble(c, {x:scrX(p.x), y:scrY(p.y + p.it.d*.5) - 2.6*ts, w:p.it.w*ts, h:ts}, k + (treeLeft(p) > 0 ? "Pick berry" : "No berries"), pixel); }
+}
+function promptBubble(c, box, txt, pixel){
+  if (!box) return; const ts = HS.ts, m = {box};
   c.font = `700 ${Math.round(ts*.3)}px ${pixel ? '"VT323", monospace' : '"Rubik", sans-serif'}`; const w = c.measureText(txt).width + ts*.4, x = m.box.x + m.box.w/2 - w/2, y = m.box.y - ts*.75;
   c.fillStyle = "rgba(11,18,34,.85)"; c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(ts*.46)); c.fillStyle = "#ffd43b"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(txt, x + w/2, y + ts*.24);
 }
@@ -6267,18 +6339,26 @@ function homeUpdate(dt, now){
   const me = HS.me; let vx = 0, vy = 0;
   if (!HS.edit && $("modalWrap").hidden) {
     if (HS.keys.has("left")) vx -= 1; if (HS.keys.has("right")) vx += 1; if (HS.keys.has("up")) vy -= 1; if (HS.keys.has("down")) vy += 1;
+    if (HS.joy) { vx += HS.joy.x; vy += HS.joy.y; }
   }
-  if (vx || vy) { me.path = null; me.target = null; const l = Math.hypot(vx, vy), sp = 3.4*dt; tryMove(me, vx/l*sp, vy/l*sp*.8); if (vx) me.dir = vx; me.walk = 1; }
+  if (HS.photo) { HS.pcam += vx*dt*6; vx = vy = 0; }   // photo mode: the arrows move the camera, not you
+  if (me.walk && now - HS.stepT > 320) { HS.stepT = now; Sound.play("step"); }
+  if (now > HS.crackT) { HS.crackT = now + 350 + Math.random()*900; if (placedItems().some(p => p.it.kind === "fire" && Math.hypot(p.x + 1 - me.x, p.y + 1 - me.y) < 3.2)) Sound.play("crackle"); }
+  if (now > HS.evT) { HS.evT = now + 5000; if (eventVisitors().filter(n => !homeMons().includes(n)).join(",") !== HS.evKey) homeSyncMons(); }   // visitors come at night and leave by day
+  if (vx || vy) { me.path = null; me.target = null; HS.pickAt = null; const l = Math.hypot(vx, vy), sp = 3.4*dt; tryMove(me, vx/l*sp, vy/l*sp*.8); if (vx) me.dir = vx; me.walk = 1; }
   else if (me.path && me.path.length) {
     const p = me.path[0], dx = p.x - me.x, dy = p.y - me.y, d = Math.hypot(dx, dy), sp = 3.4*dt;
     if (d <= sp) { me.x = p.x; me.y = p.y; me.path.shift(); } else { me.x += dx/d*sp; me.y += dy/d*sp; if (Math.abs(dx) > .05) me.dir = Math.sign(dx); }
     me.walk = 1;
-    if (!me.path.length) { me.path = null; me.walk = 0; if (me.target) { const m = me.target; me.target = null; if (Math.hypot(m.x - me.x, (m.y - me.y)*1.4) < 2.2) homeInteract(m); } }
+    if (!me.path.length) { me.path = null; me.walk = 0; if (me.target) { const m = me.target; me.target = null; if (Math.hypot(m.x - me.x, (m.y - me.y)*1.4) < 2.2) homeUseThing({k:"mon", m}); }
+      if (HS.pickAt) { const t = HS.pickAt; HS.pickAt = null; if (Math.hypot(t.x + t.it.w/2 - me.x, (t.y + t.it.d + .45 - me.y)*1.4) < 1.8) pickBerry(t); } }
   } else me.walk = 0;
   for (const m of HS.mons) {
     if (m.hop > 0) m.hop = Math.max(0, m.hop - dt*1.8);
     m.t -= dt*1000; if (me.target === m && m.st === "idle") m.t = Math.max(m.t, 500);
-    if (m.st === "idle" && m.t <= 0) {
+    if (m.st === "act") homeActTick(m, now);
+    else if (m.st === "idle" && m.t <= 0 && homeDecide(m, now)) { /* off to use furniture, play, follow you or leave a gift */ }
+    else if (m.st === "idle" && m.t <= 0) {
       const near = Math.random() < .3 && friendOf(m.n) >= 40 ? me : null, swimTrip = m.water && HS.rooms.some(r => r.pond) && Math.random() < .5;
       const t = swimTrip ? randomSpot("only") : randomSpot(m.fl || m.swim, near);
       if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null; } else m.t = 1500;
@@ -6286,11 +6366,11 @@ function homeUpdate(dt, now){
     } else if (m.st === "walk") {
       const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), sp = m.spd*dt;   // through the doorway when it needs another room
       if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
-      else if (d <= sp) { m.st = "idle"; m.t = 1500 + Math.random()*4000; }
+      else if (d <= sp) { if (m.plan) homeAct(m, m.plan, now); else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
       else { const nx = m.x + dx/d*sp, ny = m.y + dy/d*sp*.8, canSwim = m.fl || (m.water && m.swimTrip) || m.swim;
-        if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; } else { m.x = nx; m.y = ny; if (Math.abs(dx) > .02) m.dir = Math.sign(dx); } }
+        if (blocked(nx, ny, canSwim)) { m.st = "idle"; m.t = 600; m.plan = null; m.spot = null; } else { m.x = nx; m.y = ny; if (Math.abs(dx) > .02) m.dir = Math.sign(dx); } }
     }
-    m.swim = !m.fl && inPond(roomAt(m.x), m.x, m.y);
+    m.swim = !m.fl && !m.z && inPond(roomAt(m.x), m.x, m.y);
   }
   if (HS.msgT && now > HS.msgT) { HS.msgT = 0; const el = $("hmMsg"); if (el) el.hidden = true; }
 }
@@ -6302,8 +6382,9 @@ function homeGoTo(m){
 }
 function homeInteract(m){
   const D = homeData(), day = todayKey(), now = performance.now(), name = monName(m.n);
-  m.hop = 1; m.st = "idle"; m.t = 2500; m.dir = HS.me.x < m.x ? -1 : 1; HS.me.dir = m.x > HS.me.x ? 1 : -1;
-  m.emote = {k:"heart", t0:now, dur:1800}; Sound.play("heal");
+  m.hop = 1; if (m.st !== "act") { m.st = "idle"; m.t = 2500; } m.dir = HS.me.x < m.x ? -1 : 1; HS.me.dir = m.x > HS.me.x ? 1 : -1;
+  m.emote = {k:!VISIT && !m.visitor && friendOf(m.n) >= 25 ? "sig" : "heart", t0:now, dur:1800}; Sound.play("heal");   // from 25 friendship, its own sparkle
+  if (m.visitor) { homeMsg(`A visiting <b>${esc(monName(m.n))}</b> ${eventOn() && eventOn().id === "halloween" ? "says “Boo!”" : "waves hello!"} It will leave by morning.`); return; }
   if (VISIT) { homeMsg(`<b>${esc(nickFor(m.n))}</b> ${["is happy to meet you!", "says hello!", "wants to play!"][Math.floor(Math.random()*3)]}`); return; }   // a friend's Pokémon: just a hello
   const g = D.gain[m.n] && D.gain[m.n].d === day ? D.gain[m.n] : (D.gain[m.n] = {d:day, n:0});
   let up = 0; if (g.n < 25) { up = Math.min(5, 25 - g.n); g.n += up; D.fr[m.n] = Math.min(100, friendOf(m.n) + up); }
@@ -6337,17 +6418,24 @@ function renderDecoBar(){
   const used = {}; homeData().items.forEach(p => used[p.id] = (used[p.id] | 0) + 1);
   const owned = ITEMS_ALL.filter(it => it.cat === "furn" && furnCount(it.id) > 0);
   box.innerHTML = `<div class="hm-items">${owned.map(it => { const left = furnCount(it.id) - (used[it.id] | 0); return `<button type="button" class="hm-it" data-hplace="${it.id}" aria-pressed="${HS.place && HS.place.id === it.id}" ${left <= 0 ? "disabled" : ""}>${itemThumb(it)}<span>${esc(it.name)}</span><small>${left} left</small></button>`; }).join("")}</div>
-    ${HS.sel ? `<div class="actions hm-selact"><b>${esc(HS.sel.it.name)}</b><button class="btn sm" type="button" data-hact="flip">Flip</button><button class="btn sm" type="button" data-hact="move">Move</button><button class="btn sm" type="button" data-hact="store">Put away</button></div>` : ""}
-    <div class="actions"><button class="btn sm" type="button" data-hact="shop">Get more furniture</button><span class="meta">Rooms: ${HS.rooms.map(r => esc(r.name)).join(" · ")}</span></div>`;
+    ${HS.sel ? `<div class="actions hm-selact"><b>${esc(HS.sel.it.name)}</b><button class="btn sm" type="button" data-hact="flip">Flip</button>${canRotate(unlockOf("furn", HS.sel.id)) ? `<button class="btn sm" type="button" data-hact="rotate">Turn</button>` : ""}<button class="btn sm" type="button" data-hact="move">Move</button><button class="btn sm" type="button" data-hact="store">Put away</button></div>` : ""}
+    <div class="actions"><button class="btn sm" type="button" data-hact="undo" ${HS.undo.length ? "" : "disabled"}>↶ Undo</button><button class="btn sm" type="button" data-hact="shop">Get more furniture</button><span class="meta">Rooms: ${HS.rooms.map(r => esc(r.name)).join(" · ")}</span></div>`;
   paintThumbs(box);
 }
 function homeEditAct(a){
   const D = homeData(), s = HS.sel;
   if (a === "shop") { shopCat = "furn"; openScreen("shop"); return; }
+  if (a === "undo") { decoUndo(); return; }
   if (!s) return; const i = D.items.findIndex(p => p.x === s.x && p.y === s.y && p.id === s.id);
+  if (i >= 0 && ["flip", "store", "move", "rotate"].includes(a)) decoSnap();
   if (a === "flip" && i >= 0) { D.items[i].f = D.items[i].f ? 0 : 1; HS.sel = {...s, f:D.items[i].f}; }
+  if (a === "rotate" && i >= 0) {   // turn a long rug a quarter: only if it still fits
+    const q = D.items.splice(i, 1)[0], r = q.r ? 0 : 1, it = rotItem(unlockOf("furn", q.id), r);
+    if (fits(it, q.x, q.y)) { if (r) q.r = 1; else delete q.r; } else { HS.undo.pop(); toast("There isn’t room to turn it here. Move it first."); }
+    D.items.splice(i, 0, q); HS.sel = {...q, it};
+  }
   if (a === "store" && i >= 0) { D.items.splice(i, 1); HS.sel = null; }
-  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0}; HS.sel = null; }
+  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0, r:s.r || 0}; HS.sel = null; }
   HS.layerKey = ""; save(); Sound.play("select"); renderDecoBar();
 }
 function fits(it, x, y, ignore){
@@ -6363,7 +6451,7 @@ function drawDecoOverlay(c, pixel){
   for (let x = Math.max(0, Math.floor(HS.cam)); x <= HS.W; x++) { c.beginPath(); c.moveTo(Math.round(scrX(x)) + .5, scrY(0)); c.lineTo(Math.round(scrX(x)) + .5, scrY(HM.D)); c.stroke(); }
   for (let y = 0; y <= HM.D; y++) { c.beginPath(); c.moveTo(scrX(0), Math.round(scrY(y)) + .5); c.lineTo(scrX(HS.W), Math.round(scrY(y)) + .5); c.stroke(); }
   const g = HS.ghost; if (HS.place && g) {
-    const it = unlockOf("furn", HS.place.id), ok = fits(it, g.x, g.y), s = furnSprite(it, ts, pixel, !!HS.place.f);
+    const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), ok = fits(it, g.x, g.y), s = furnSprite(it, ts, pixel, !!HS.place.f);
     c.globalAlpha = .7; c.drawImage(s.c, Math.round(scrX(g.x) - s.pad), Math.round(scrY(g.y) - s.pad - s.h*ts)); c.globalAlpha = 1;
     c.fillStyle = ok ? "rgba(80,220,120,.25)" : "rgba(240,70,70,.35)"; c.fillRect(scrX(g.x), scrY(g.y), it.w*ts, it.d*ts*HM.SQ);
   }
@@ -6372,29 +6460,364 @@ function homeWorldPoint(e){
   const r = HS.cv.getBoundingClientRect(), px = (e.clientX - r.left)*HS.cv.width/r.width/HS.k, py = (e.clientY - r.top)*HS.cv.height/r.height/HS.k;
   return {px, py, x:px/HS.ts + HS.cam, y:(py + HS.camY - HM.WALL*HS.ts)/(HS.ts*HM.SQ)};
 }
-function homePointerMove(e){ if (!HS.edit || !HS.place) return; const p = homeWorldPoint(e), it = unlockOf("furn", HS.place.id); HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(p.x - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - it.d/2)))}; }
+function homePointerMove(e){
+  if (HS.photo && HS.pdrag) { HS.pcam = HS.pdrag.cam - (e.clientX - HS.pdrag.x)*HS.cv.width/HS.cv.getBoundingClientRect().width/HS.k/HS.ts; return; }
+  if (HS.edit && HS.drag && !HS.place) { const p = homeWorldPoint(e); if (Math.abs(p.x - HS.drag.px) > .6 || Math.abs(p.y - HS.drag.py) > .9) decoDragStart(); }
+  if (!HS.edit || !HS.place) return; const p = homeWorldPoint(e), it = rotItem(unlockOf("furn", HS.place.id), HS.place.r);
+  const ox = HS.place.ox ?? it.w/2, oy = HS.place.oy ?? it.d/2;
+  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(p.x - ox))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - oy)))};
+}
+// drag a placed item: it lifts off the floor once the pointer has moved, and lands where you let go (or back where it was)
+function decoDragStart(){
+  const d = HS.drag, D = homeData(), i = D.items.findIndex(q => q.x === d.item.x && q.y === d.item.y && q.id === d.item.id); if (i < 0) { HS.drag = null; return; }
+  decoSnap(); D.items.splice(i, 1); HS.layerKey = "";
+  HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item}; HS.sel = null; Sound.play("select");
+}
+function homePointerUp(e){
+  if (HS.pdrag) { HS.pdrag = null; return; }
+  const d = HS.drag; HS.drag = null;
+  if (!HS.edit || !HS.place || !HS.place.drag) return;
+  homePointerMove(e);
+  const P = HS.place, it = rotItem(unlockOf("furn", P.id), P.r), g = HS.ghost, ok = g && fits(it, g.x, g.y), at = ok ? {x:g.x, y:g.y} : {x:P.from.x, y:P.from.y};
+  homeData().items.push({id:P.id, x:at.x, y:at.y, f:P.f, ...(P.r ? {r:1} : {})});
+  if (!ok) HS.undo.pop();
+  HS.place = null; HS.ghost = null; HS.layerKey = ""; save(); Sound.play(ok ? "add" : "back");
+  HS.sel = ok ? {...homeData().items[homeData().items.length - 1], it} : null; renderDecoBar();
+  if (d) for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const sp = randomSpot(m.fl); if (sp) { m.x = sp.x; m.y = sp.y; } }
+}
 function homePointerDown(e){
   HS.cv.focus({preventScroll:true});
   const p = homeWorldPoint(e);
+  if (HS.photo) { HS.pdrag = {x:e.clientX, cam:HS.pcam}; HS.cv.setPointerCapture(e.pointerId); return; }
   if (HS.edit) {
-    if (HS.place) { homePointerMove(e); const it = unlockOf("furn", HS.place.id), g = HS.ghost; if (g && fits(it, g.x, g.y)) { homeData().items.push({id:it.id, x:g.x, y:g.y, f:HS.place.f || 0}); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
+    if (HS.place && HS.place.drag) return;
+    if (HS.place) { homePointerMove(e); const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), g = HS.ghost; if (g && fits(it, g.x, g.y)) { decoSnap(); homeData().items.push({id:it.id, x:g.x, y:g.y, f:HS.place.f || 0, ...(HS.place.r ? {r:1} : {})}); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
     const hit = placedItems().reverse().find(q => p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) && p.y <= q.y + q.it.d);
-    HS.sel = hit ? homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id) && {...hit} : null; if (HS.sel) Sound.play("select"); renderDecoBar(); return;
+    HS.sel = hit ? homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id) && {...hit} : null; if (HS.sel) Sound.play("select"); renderDecoBar();
+    if (hit) { HS.drag = {item:homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id), px:p.x, py:p.y}; HS.cv.setPointerCapture(e.pointerId); }
+    return;
   }
+  const D = homeData(), gi = VISIT ? -1 : D.gifts.findIndex(g => Math.abs(g.x - p.x) < .45 && p.y > g.y - 1.2 && p.y < g.y + .3);
+  if (gi >= 0) { const g = D.gifts[gi]; if (Math.hypot(g.x - HS.me.x, (g.y - HS.me.y)*1.4) < 1.3) openGift(gi); else { HS.me.path = findPath(HS.me, {x:g.x, y:Math.min(HM.D - .2, g.y + .5)}); HS.me.target = null; } return; }
   const hitMon = HS.mons.find(m => m.box && p.px >= m.box.x && p.px <= m.box.x + m.box.w && p.py >= m.box.y && p.py <= m.box.y + m.box.h);
   if (hitMon) { homeGoTo(hitMon); return; }
+  const tree = placedItems().find(q => q.it.kind === "tree" && p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - 3 && p.y <= q.y + q.it.d);
+  if (tree) { const at = {x:tree.x + tree.it.w/2, y:Math.min(HM.D - .2, tree.y + tree.it.d + .45)}; if (Math.hypot(at.x - HS.me.x, (at.y - HS.me.y)*1.4) < 1.6) pickBerry(tree); else { HS.me.path = findPath(HS.me, at); HS.me.target = null; HS.pickAt = tree; } return; }
   if (p.y < 0) return;
   const to = {x:Math.max(.4, Math.min(HS.W - .4, p.x)), y:Math.max(.5, Math.min(HM.D - .2, p.y))};
   HS.me.path = findPath(HS.me, to); HS.me.target = null;
 }
 const HM_KEYS = {ArrowLeft:"left", a:"left", A:"left", ArrowRight:"right", d:"right", D:"right", ArrowUp:"up", w:"up", W:"up", ArrowDown:"down", s:"down", S:"down"};
 document.addEventListener("keydown", e => {
-  if (nav.screen !== "home" || $("screen").hidden || !$("modalWrap").hidden || e.target.closest("input, select, textarea")) return;
+  const inHome = nav.screen === "home" || (nav.screen === "friends" && nav.sub && nav.sub.startsWith("h:"));
+  if (!inHome || $("screen").hidden || !$("modalWrap").hidden || e.target.closest("input, select, textarea")) return;
   if (HM_KEYS[e.key]) { HS.keys.add(HM_KEYS[e.key]); e.preventDefault(); return; }
-  if ((e.key === "e" || e.key === "E" || e.key === " " || e.key === "Enter") && !e.target.closest("button") && !HS.edit) { const m = nearestMon(1.7); if (m) { e.preventDefault(); homeInteract(m); } }
+  if (HS.edit && (e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); decoUndo(); return; }
+  if ((e.key === "e" || e.key === "E" || e.key === " " || e.key === "Enter") && !e.target.closest("button") && !HS.edit && !HS.photo) { const t = nearestThing(); if (t) { e.preventDefault(); homeUseThing(t); } }
 });
 document.addEventListener("keyup", e => { if (HM_KEYS[e.key]) HS.keys.delete(HM_KEYS[e.key]); });
 addEventListener("blur", () => HS.keys.clear());
+
+// ================= HOME LIFE =================
+const RIBBON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13l-3 9 4-2 2 3 2-8z" fill="#e2413b"/><path d="M16 13l3 9-4-2-2 3-2-8z" fill="#c22f2a"/><circle cx="12" cy="9" r="6.5" fill="#ffd43b" stroke="#b8860b" stroke-width="1.5"/><path d="M12 5.8l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z" fill="#fff"/></svg>';
+function drawRibbon(c, x, y, s){   // a friendship ribbon on a canvas (trainer card)
+  c.save(); c.translate(x, y); c.scale(s/24, s/24);
+  c.fillStyle = "#e2413b"; c.beginPath(); c.moveTo(8, 13); c.lineTo(5, 22); c.lineTo(9, 20); c.lineTo(11, 23); c.lineTo(13, 15); c.fill();
+  c.fillStyle = "#c22f2a"; c.beginPath(); c.moveTo(16, 13); c.lineTo(19, 22); c.lineTo(15, 20); c.lineTo(13, 23); c.lineTo(11, 15); c.fill();
+  c.fillStyle = "#ffd43b"; c.strokeStyle = "#b8860b"; c.lineWidth = 1.5; c.beginPath(); c.arc(12, 9, 6.5, 0, 7); c.fill(); c.stroke(); c.restore();
+}
+// Pokémon use furniture (spots), follow type preferences and the clock (nap at night, nocturnal Pokémon wake up),
+// meet up to play, follow you once they like you, eat berries and leave gifts. Plus daily weather, seasonal events,
+// photo mode, phone controls and decorating helpers (drag, undo, rotate). State that must survive lives in
+// state.games.home (bag, trees, feed, gifts, giftDay, fedN, photos); everything else is per visit in HS.
+const FAMILY = /*FAMILIES*/;
+const famOf = n => FAMILY[baseOf(n)] || baseOf(n);
+const NOCTURNAL = new Set([41, 42, 169, 92, 93, 94, 163, 164, 197, 198, 430, 200, 429, 302, 353, 354, 355, 356, 477, 491, 714, 715, 527, 528]);
+const isNocturnal = n => NOCTURNAL.has(baseOf(n)) || NAT_BY.get(n).types.some(t => t === "Ghost" || t === "Dark");
+// where Pokémon can use furniture: on it (nap/sit/bounce, with a lift z in tiles) or in front of it
+const SPOT_OF = {
+  bed:{act:"nap", pts:[[.65, 1.5], [1.35, 1.7]], z:.55}, bean:{act:"nap", pts:[[.5, .55]], z:.32}, cushion:{act:"nap", pts:[[.5, .55]], z:.2}, pillowpile:{act:"nap", pts:[[.5, .55]], z:.35},
+  sofa:{act:"sit", pts:"row", z:.42}, chair:{act:"sit", pts:[[.5, .62]], z:.42}, bench:{act:"sit", pts:"row", z:.48},
+  tv:{act:"watch", front:true}, arcade:{act:"watch", front:true}, desk:{act:"watch", front:true}, piano:{act:"watch", front:true},
+  fire:{act:"warm", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
+  fountain:{act:"splash", front:true}, tank:{act:"splash", front:true}, shellfountain:{act:"splash", front:true},
+  plant:{act:"sniff", front:true}, flowers:{act:"sniff", front:true}, tree:{act:"sniff", front:true}, palm:{act:"sniff", front:true}, flowerarch:{act:"sniff", front:true},
+};
+const ACT_EMO = {nap:"zz", sit:"note", watch:"star", warm:"heart", bounce:"note", splash:"drop", sniff:"heart", lurk:"dots", play:"note"};
+function homeSpots(){
+  const out = [];
+  for (const p of placedItems()) {
+    const S = SPOT_OF[p.it.kind]; if (!S) continue;
+    const pts = S.front ? [[p.it.w/2, p.it.d + .55]] : S.pts === "row" ? Array.from({length:p.it.w}, (_, i) => [i + .5, .6]) : S.pts;
+    pts.forEach(([dx, dy], i) => {
+      const s = {key:`${p.id}@${p.x},${p.y}#${i}`, act:S.act, kind:p.it.kind, x:p.x + (p.f && !S.front ? p.it.w - dx : dx), y:p.y + dy, z:S.front ? 0 : S.z, on:!S.front, depth:p.y + p.it.d + .02, ax:p.x + (p.f && !S.front ? p.it.w - dx : dx), ay:p.y + p.it.d + .45};
+      if (S.front && blocked(s.x, s.y)) return;
+      if (s.on && blocked(s.ax, s.ay)) { s.ay = Math.min(HM.D - .3, s.ay + .5); if (blocked(s.ax, s.ay)) return; }
+      out.push(s);
+    });
+  }
+  if (clockTod() === "night") for (const r of HS.rooms) if (r.wall) for (const x of [r.x0 + .9, r.x0 + r.w - .9]) if (!blocked(x, .75)) out.push({key:`corner${x}`, act:"lurk", kind:"corner", x, y:.75, z:0, on:false});
+  return out;
+}
+function spotWeight(m, s, night){
+  const T = NAT_BY.get(m.n).types, has = t => T.includes(t), noct = isNocturnal(m.n);
+  let w = 1;
+  if (s.act === "nap") w = night ? (noct ? .3 : 8) : (noct ? 3 : .5);
+  if (s.act === "lurk") w = noct && (has("Ghost") || has("Dark")) ? 7 : 0;
+  if (has("Fire") && s.kind === "fire") w *= 6;
+  if (has("Water") && s.act === "splash") w *= 6;
+  if ((has("Grass") || has("Bug")) && s.act === "sniff") w *= 6;
+  if (has("Electric") && ["tv", "arcade", "desk"].includes(s.kind)) w *= 6;
+  if ((has("Fairy") || has("Normal")) && (s.act === "sit" || s.kind === "cushion" || s.kind === "bean")) w *= 3;
+  if (s.act === "warm" && night) w *= 1.6;
+  if (night && !noct && s.act !== "nap") w *= .35;
+  return w;
+}
+const pickWeighted = list => { const tot = list.reduce((a, x) => a + x.w, 0); if (tot <= 0) return null; let r = Math.random()*tot; for (const x of list) { r -= x.w; if (r <= 0) return x; } return list[list.length - 1]; };
+// an idle Pokémon decides what to do next; returns true if it found something (otherwise it wanders as before)
+function homeDecide(m, now){
+  if (m.visitor) return false;
+  const tod = clockTod(), night = tod === "night", me = HS.me, f = friendOf(m.n);
+  // friends follow you around (the two who like you most, from 50 friendship)
+  if (f >= 50 && !VISIT && HS.followers.includes(m.n) && !(night && !isNocturnal(m.n)) && Math.hypot(me.x - m.x, me.y - m.y) > 2.2 && Math.random() < .75) {   // at night they'd rather sleep
+    const t = randomSpot(m.fl, {x:me.x, y:me.y}); if (t && Math.hypot(t.x - me.x, t.y - me.y) < 2.6) { homeWalk(m, t); return true; }
+  }
+  // gifts: at 60+ friendship, once a day, sometimes leave a little present
+  const D = homeData(), day = todayKey();
+  if (!VISIT && f >= 60 && D.giftDay[m.n] !== day && D.gifts.length < 6 && Math.random() < .12) { homeGift(m, day); return true; }
+  // meet up and play (same evolution family or type first)
+  if (Math.random() < (night ? .05 : .16)) {
+    const T = NAT_BY.get(m.n).types, others = HS.mons.filter(o => o !== m && !o.visitor && o.st === "idle" && !o.act);
+    const pick = pickWeighted(others.map(o => ({o, w:(famOf(o.n) === famOf(m.n) ? 6 : 1)*(NAT_BY.get(o.n).types.some(t => T.includes(t)) ? 2.5 : 1)})));
+    if (pick) {
+      const o = pick.o, mid = {x:(m.x + o.x)/2, y:(m.y + o.y)/2}, a = randomSpot(m.fl, mid) || mid;
+      if (!blocked(a.x + .9, a.y) && !blocked(a.x, a.y)) { homeWalk(m, a, {act:"play", with:o}); homeWalk(o, {x:a.x + .9, y:a.y}, {act:"play", with:m}); return true; }
+    }
+  }
+  const taken = new Set(HS.mons.filter(o => o.spot).map(o => o.spot.key));
+  // bedtime: most Pokémon find a bed or cushion (or curl up on the floor); nocturnal ones stay up
+  if (night && !isNocturnal(m.n) && Math.random() < .85) {
+    const beds = homeSpots().filter(s => s.act === "nap" && !taken.has(s.key)), s = beds.length ? pickOne(beds) : null;
+    if (s) { homeWalk(m, {x:s.ax, y:s.ay}, {act:"nap", spot:s}); return true; }
+    homeAct(m, {act:"nap"}, now); return true;
+  }
+  // use furniture
+  if (Math.random() < (night ? .85 : .45)) {
+    const c = pickWeighted(homeSpots().filter(s => !taken.has(s.key)).map(s => ({s, w:spotWeight(m, s, night)})));
+    if (c) { const s = c.s; homeWalk(m, s.on ? {x:s.ax, y:s.ay} : {x:s.x, y:s.y}, {act:s.act, spot:s}); return true; }
+    if (night && !isNocturnal(m.n) && Math.random() < .5) { homeAct(m, {act:"nap"}, now); return true; }   // no bed free: curl up on the floor
+  }
+  return false;
+}
+function homeWalk(m, t, plan){
+  m.tx = t.x; m.ty = t.y; m.st = "walk"; m.plan = plan || null; m.spot = plan && plan.spot || null; m.swimTrip = false;
+  m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null;
+}
+// arrived: start the planned activity
+function homeAct(m, plan, now){
+  const s = plan.spot, night = clockTod() === "night";
+  m.act = plan.act; m.st = "act"; m.with = plan.with || null;
+  m.t = plan.act === "nap" ? (night ? 25000 + Math.random()*25000 : 9000 + Math.random()*8000) : plan.act === "play" ? 4500 : 7000 + Math.random()*9000;
+  if (s && s.on) { m.x = s.x; m.y = s.y; m.z = s.z; m.depth = s.depth; m.hop = 1; }
+  if (s && s.act === "warm" || s && s.act === "watch" || s && s.act === "splash" || s && s.act === "sniff") m.dir = 1;
+  if (m.with) m.dir = m.with.x > m.x ? 1 : -1;
+  m.emote = {k:ACT_EMO[m.act] || "note", t0:now, dur:1800}; m.emoT = now;
+  if (m.act === "splash") Sound.play("splash");
+}
+function homeActEnd(m){
+  const s = m.spot;
+  if (s && s.on) { m.x = s.ax; m.y = s.ay; m.hop = 1; }
+  m.z = 0; m.depth = null; m.act = null; m.spot = null; m.with = null; m.plan = null; m.st = "idle"; m.t = 1500 + Math.random()*3000;
+}
+// per-frame activity upkeep (emotes, bouncing, play hops)
+function homeActTick(m, now){
+  if (m.st !== "act") return;
+  if (m.act === "bounce" && m.hop <= 0) m.hop = 1;
+  if (m.act === "play" && m.hop <= 0 && Math.random() < .03) { m.hop = 1; if (m.with) m.dir = m.with.x > m.x ? 1 : -1; }
+  if (now - m.emoT > (m.act === "nap" ? 2600 : 4200)) { m.emoT = now; if (m.act === "nap" || Math.random() < .5) m.emote = {k:ACT_EMO[m.act] || "note", t0:now, dur:1600}; }
+  if (m.t <= 0) homeActEnd(m);
+}
+// ---- berries ----
+const BERRIES = [{id:"cheri", name:"Cheri Berry", fl:"spicy", col:"#e2413b"}, {id:"chesto", name:"Chesto Berry", fl:"dry", col:"#6b5bd6"}, {id:"pecha", name:"Pecha Berry", fl:"sweet", col:"#f39ac7"}, {id:"rawst", name:"Rawst Berry", fl:"bitter", col:"#3fae5a"}, {id:"aspear", name:"Aspear Berry", fl:"sour", col:"#ffd43b"}];
+const BERRY_BY = new Map(BERRIES.map(b => [b.id, b]));
+const treeBerry = p => BERRIES[Math.abs(p.x*7 + p.y*13) % BERRIES.length];
+const favBerry = n => BERRIES[(n*7 + 3) % BERRIES.length];   // each Pokémon's hidden favourite flavour
+const treeKey = p => `${p.x},${p.y}`;
+function treeLeft(p){ const t = homeData().trees[treeKey(p)]; return 3 - (t && t.d === todayKey() ? t.n : 0); }
+const bagTotal = () => Object.values(homeData().bag).reduce((a, n) => a + n, 0);
+function pickBerry(p){
+  if (VISIT) { homeMsg("These berries belong to your friend."); return; }
+  const D = homeData(), k = treeKey(p), day = todayKey(), left = treeLeft(p), b = treeBerry(p);
+  if (left <= 0) { homeMsg("No berries left on this tree today. More will grow tomorrow!"); return; }
+  if (bagTotal() >= 99) { homeMsg("Your berry pouch is full."); return; }
+  D.trees[k] = {d:day, n:3 - left + 1}; D.bag[b.id] = (D.bag[b.id] | 0) + 1;
+  Sound.play("pick"); homeMsg(`You picked a <b>${b.name}</b>! ${itemIcon(b.name)} <span class="meta">(${left - 1} left on this tree today)</span>`);
+  save(); renderHomeBag();
+}
+function feedMon(m, bid){
+  const D = homeData(), day = todayKey(), b = BERRY_BY.get(bid), now = performance.now();
+  if (!b || !(D.bag[bid] > 0)) { HS.hold = null; renderHomeBag(); return; }
+  const fd = D.feed[m.n] && D.feed[m.n].d === day ? D.feed[m.n] : (D.feed[m.n] = {d:day, n:0});
+  if (fd.n >= 3) { homeMsg(`<b>${esc(nickFor(m.n))}</b> is full for today.`); return; }
+  const fav = favBerry(m.n).id === bid, up = fav ? 15 : 8;
+  D.bag[bid]--; if (!D.bag[bid]) { delete D.bag[bid]; HS.hold = null; }
+  fd.n++; D.fedN++; D.fr[m.n] = Math.min(100, friendOf(m.n) + up);
+  m.hop = 1; m.st = m.st === "act" ? m.st : "idle"; m.t = Math.max(m.t, 2000); m.dir = HS.me.x < m.x ? -1 : 1;
+  m.emote = {k:fav ? "fav" : "heart", t0:now, dur:2200}; Sound.play(fav ? "up" : "heal");
+  homeMsg(fav ? `<b>${esc(nickFor(m.n))}</b> loved the ${b.name}! It’s its favourite flavour. <span class="hm-f">♥ ${friendOf(m.n)}/100</span>` : `<b>${esc(nickFor(m.n))}</b> ate the ${b.name}. <span class="hm-f">♥ ${friendOf(m.n)}/100</span>`);
+  save(); renderResidents(); renderHomeBag(); checkAch();
+}
+function renderHomeBag(){
+  const el = $("hmBag"); if (!el) return; const D = homeData(), n = bagTotal();
+  el.innerHTML = n ? BERRIES.filter(b => D.bag[b.id] > 0).map(b => `<button type="button" class="hm-berry" data-hold="${b.id}" aria-pressed="${HS.hold === b.id}" title="${HS.hold === b.id ? "Put away" : "Hold to feed a Pokémon"}">${itemIcon(b.name)}<b>${D.bag[b.id]}</b></button>`).join("") + (HS.hold ? `<span class="meta hm-hold">Holding a ${esc(BERRY_BY.get(HS.hold).name)}: walk up to a Pokémon to feed it</span>` : "")
+    : `<span class="meta">No berries yet${placedItems().some(p => p.it.kind === "tree") ? ": pick some from your Berry tree" : ": a Berry tree in the Shop grows 3 a day"}</span>`;
+}
+// ---- gifts ----
+const GIFT_FURN = () => ITEMS_ALL.filter(it => it.cat === "furn" && !isExclusive(it) && !it.event && it.price && it.price <= 500);
+function homeGift(m, day){
+  const D = homeData(), r = Math.random(), now = performance.now();
+  const g = r < .05 ? {k:"furn", v:pickOne(GIFT_FURN()).id} : r < .35 ? {k:"berry", v:pickOne(BERRIES).id} : {k:"pp", v:20 + Math.floor(Math.random()*5)*10};
+  D.gifts.push({n:m.n, x:+m.x.toFixed(2), y:+m.y.toFixed(2), ...g}); D.giftDay[m.n] = day;
+  m.emote = {k:"bang", t0:now, dur:1800}; m.hop = 1; m.st = "idle"; m.t = 2500; save();
+}
+function openGift(i){
+  const D = homeData(), g = D.gifts[i]; if (!g || VISIT) return;
+  D.gifts.splice(i, 1); const who = esc(nickFor(g.n)); Sound.play("pick");
+  if (g.k === "pp") { earn(g.v, `A gift from ${nickFor(g.n)}`); homeMsg(`<b>${who}</b> left you a gift: <b>${g.v} PokéPoints</b>!`); }
+  else if (g.k === "berry") { const b = BERRY_BY.get(g.v); D.bag[g.v] = Math.min(99, (D.bag[g.v] | 0) + 1); homeMsg(`<b>${who}</b> left you a gift: a <b>${b.name}</b>! ${itemIcon(b.name)}`); renderHomeBag(); }
+  else { const it = unlockOf("furn", g.v); if (it) { grant(it); homeMsg(`<b>${who}</b> left you a gift: a <b>${esc(it.name)}</b>! Find it in Decorate.`); Sound.play("up"); } }
+  save();
+}
+function drawGift(c, g, now, pixel){
+  const ts = HS.ts, X = scrX(g.x), Y = scrY(g.y), s = ts*.32, b = Math.abs(Math.sin(now/500 + g.x))*ts*.05, R = v => pixel ? Math.round(v) : v;
+  c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.ellipse(R(X), R(Y), s*.7, s*.22, 0, 0, 7); c.fill();
+  c.fillStyle = "#e2413b"; c.fillRect(R(X - s/2), R(Y - s - b), R(s), R(s)); c.fillStyle = "#ffd43b"; c.fillRect(R(X - s*.09), R(Y - s - b), R(s*.18), R(s)); c.fillRect(R(X - s/2), R(Y - s*.6 - b), R(s), R(s*.16));
+  c.beginPath(); c.ellipse(R(X - s*.18), R(Y - s - b - s*.12), s*.2, s*.12, -.5, 0, 7); c.ellipse(R(X + s*.18), R(Y - s - b - s*.12), s*.2, s*.12, .5, 0, 7); c.fill();
+}
+// the pickable berries on each tree
+function drawTreeBerries(c, p, pixel){
+  const left = treeLeft(p); if (left <= 0) return; const b = treeBerry(p), ts = HS.ts, R = v => pixel ? Math.round(v) : v;
+  [[.62, 1.25, 1.35], [1.38, 1.3, 1.45], [1.0, 1.25, 1.05]].slice(0, left).forEach(([dx, dy, z]) => {
+    const x = scrX(p.x + (p.f ? p.it.w - dx : dx)), y = scrY(p.y + dy) - z*ts, r = ts*.11;
+    c.fillStyle = "#28323f"; c.beginPath(); c.arc(R(x), R(y), r + Math.max(1, ts*.02), 0, 7); c.fill();
+    c.fillStyle = b.col; c.beginPath(); c.arc(R(x), R(y), r, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(R(x - r*.4), R(y - r*.5), Math.max(1, R(r*.35)), Math.max(1, R(r*.35)));
+  });
+}
+// what's in reach of the trainer: a gift, a Pokémon or a tree with berries
+function nearestThing(){
+  const me = HS.me, D = homeData();
+  for (let i = 0; i < D.gifts.length; i++) { const g = D.gifts[i]; if (!VISIT && Math.hypot(g.x - me.x, (g.y - me.y)*1.4) < 1.2) return {k:"gift", i, x:g.x, y:g.y}; }
+  const m = nearestMon(1.7); if (m) return {k:"mon", m};
+  for (const p of placedItems()) if (p.it.kind === "tree" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.8) return {k:"tree", p};
+  return null;
+}
+function homeUseThing(t){
+  if (!t) return;
+  if (t.k === "gift") openGift(t.i);
+  else if (t.k === "tree") pickBerry(t.p);
+  else if (t.k === "mon") { if (HS.hold && !VISIT && !t.m.visitor) feedMon(t.m, HS.hold); else homeInteract(t.m); }
+}
+// ---- weather and seasonal events ----
+// Events run every year between two dates (month, day); add more here. `furn` items are only sold while it runs.
+const EVENTS = [
+  {id:"halloween", name:"Halloween", from:[10, 15], to:[11, 1], night:"rgba(70,20,110,.38)", visitors:[92, 93, 200, 353, 355, 425, 562, 592, 607, 708, 710, 778, 854, 885], furn:["pumpkin", "cobweb"]},
+  {id:"winter", name:"Winter holidays", from:[12, 15], to:[1, 5], night:"rgba(30,50,120,.3)", weather:"snow", visitors:[225, 361, 459, 582, 712, 872, 875], furn:["holtree"]},
+];
+function eventOn(date = new Date()){
+  const md = (date.getMonth() + 1)*100 + date.getDate();
+  return EVENTS.find(e => { const a = e.from[0]*100 + e.from[1], b = e.to[0]*100 + e.to[1]; return a <= b ? md >= a && md <= b : md >= a || md <= b; }) || null;
+}
+function weatherToday(){
+  const d = new Date(), key = todayKey(), R = rng([...key].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261)), ev = eventOn(d), winter = [11, 0, 1].includes(d.getMonth());
+  if (ev && ev.weather) return ev.weather;
+  const r = R(); return r < .5 ? "sun" : r < .72 ? "cloud" : winter ? "snow" : "rain";
+}
+// screen rectangles where the outside shows: window panes, and the open sky/ground of outdoor rooms
+function skyRects(pixel){
+  const ts = HS.ts, out = [], wallH = HM.WALL*ts, ox = -HS.cam*ts, oy = -HS.camY;
+  for (const r of HS.rooms) {
+    const X0 = r.x0*ts, W = r.w*ts;
+    if (!r.wall) { out.push({x:X0 + ox, y:0, w:W, h:HS.V.H, out:true}); continue; }
+    const A = pixel && roomArt(r);
+    for (let i = 1; i < W/ts - 1.5; i += 4.5) {
+      if (A && A.win) { const k = ts/32, w = A.win.width*k, h = A.win.height*k; out.push({x:X0 + (i + 1.4)*ts - w/2 + 3*k + ox, y:wallH*.13 + 3*k + oy, w:w - 6*k, h:h - 6*k}); }
+      else out.push({x:X0 + i*ts + ts*.6 + ox, y:wallH*.18 + oy, w:ts*1.6, h:wallH*.42});
+    }
+  }
+  return out.filter(q => q.x + q.w > 0 && q.x < HS.V.W);
+}
+// which = "win": through the windows (drawn before furniture); "out": over outdoor rooms (drawn over everything)
+function drawWeather(c, now, pixel, which){
+  const w = HS.weather; if (w === "sun") return;
+  for (const q of skyRects(pixel)) {
+    if (!!q.out !== (which === "out")) continue;
+    c.save(); c.beginPath(); c.rect(q.x, q.y, q.w, q.h); c.clip();
+    if (w === "cloud" || w === "rain") { c.fillStyle = w === "rain" ? "rgba(60,70,90,.28)" : "rgba(120,130,150,.18)"; c.fillRect(q.x, q.y, q.w, q.h); }
+    const n = Math.ceil(q.w*q.h/(HS.ts*HS.ts)*(q.out ? 1.2 : 6)), ts = HS.ts;
+    for (let i = 0; i < n; i++) {
+      const sx = (i*73.13) % 1, sy = (i*37.71) % 1;
+      if (w === "rain") { const y = q.y + ((sy*q.h + now*.6*ts/32*6) % (q.h + ts)) - ts*.5, x = q.x + ((sx*q.w + y*.15) % q.w); c.fillStyle = "rgba(200,220,255,.55)"; c.fillRect(pixel ? Math.round(x) : x, pixel ? Math.round(y) : y, Math.max(1, ts*.03), ts*.28); }
+      else if (w === "snow") { const y = q.y + ((sy*q.h + now*.05*ts/32*6) % (q.h + ts)) - ts*.3, x = q.x + ((sx*q.w + Math.sin(now/900 + i)*ts*.3 + q.w) % q.w), s = Math.max(1, ts*(.04 + (i % 3)*.02)); c.fillStyle = "rgba(255,255,255,.85)"; c.fillRect(pixel ? Math.round(x) : x, pixel ? Math.round(y) : y, s, s); }
+    }
+    c.restore();
+  }
+}
+// night lights: lamps, the fireplace, the TV and pumpkins glow after dark
+const GLOW = {lamp:[.5, 1.75, 2.4, "255,214,140"], lamp2:[.5, 1.8, 2.4, "255,214,140"], fire:[1, .9, 3, "255,150,70"], tv:[1, 1.0, 2.2, "120,190,255"], arcade:[.5, 1.2, 1.8, "120,240,255"], desk:[1, 1.3, 1.6, "120,190,255"], pumpkin:[.5, .45, 1.6, "255,150,40"], holtree:[.5, 1.4, 2.2, "255,220,150"], tank:[1, .9, 1.6, "120,200,255"]};
+function drawGlows(c, now, pixel, tod){
+  if (tod !== "night") return;
+  const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
+  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G) continue;
+    const x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*(1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" ? 140 : 900) + p.x));
+    const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${G[3]},.42)`); g.addColorStop(1, `rgba(${G[3]},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r*2, r*2); }
+  c.restore();
+}
+function eventVisitors(){
+  const ev = eventOn(); if (!ev || !ev.visitors || clockTod() !== "night") return [];
+  const R = rng([...todayKey()].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 99)), pool = ev.visitors.filter(n => NAT_BY.has(n));
+  const a = pool[Math.floor(R()*pool.length)], b = pool[Math.floor(R()*pool.length)];
+  return [...new Set([a, b])];
+}
+// ---- photo mode: hide the UI, pan around, save a PNG or a short GIF with a caption ----
+function homeCaption(c, W, H){
+  const who = VISIT ? VISIT.who.username : (profile && !profile.guest ? (profile.sb ? profile.uname || profile.name : profile.name) : "My"), txt = `${who}’s Pokémon Home`, pixel = state.mode === "2d", s = Math.max(14, Math.round(H*.05));
+  c.font = `700 ${s}px ${pixel ? '"Pixelify Sans", monospace' : '"Chakra Petch", sans-serif'}`; c.textBaseline = "alphabetic"; c.textAlign = "left";
+  const tw = c.measureText(txt).width; c.fillStyle = "rgba(11,18,34,.72)"; c.fillRect(s*.6, H - s*2.1, tw + s*1.2, s*1.6); c.fillStyle = "#ffd43b"; c.fillText(txt, s*1.2, H - s*.9);
+}
+async function homePhoto(kind){
+  const cv = HS.cv; if (!cv) return;
+  const fname = `pokemon-home-${todayKey()}.${kind}`, done = async blob => { if (!VISIT) { homeData().photos++; save(); checkAch(); } if (!(await saveFile(fname, blob))) homeMsg("Saving files isn’t available here. Try another browser."); };
+  if (kind === "png") { const o = mkCanvas(cv.width, cv.height), x = o.getContext("2d"); x.drawImage(cv, 0, 0); homeCaption(x, o.width, o.height); done(await new Promise(r => o.toBlob(r, "image/png"))); return; }
+  if (!window.GifKit) { homeMsg("The GIF maker didn’t load. Save a PNG instead."); return; }
+  const W = Math.min(640, cv.width), H = Math.round(cv.height*W/cv.width), o = mkCanvas(W, H), x = o.getContext("2d", {willReadFrequently:true}); x.imageSmoothingEnabled = state.mode !== "2d";
+  const frames = [], n = 30, step = 80;
+  homeMsg("Recording… hold still!");
+  for (let i = 0; i < n; i++) { x.drawImage(cv, 0, 0, W, H); homeCaption(x, W, H); frames.push(x.getImageData(0, 0, W, H).data); await new Promise(r => setTimeout(r, step)); }
+  const sample = new Uint8Array(W*H*4*3); [0, 15, 29].forEach((f, k) => sample.set(frames[f], k*W*H*4));
+  const palette = GifKit.quantize(sample, 256, {format:"rgb565"}), enc = GifKit.GIFEncoder();
+  frames.forEach((d, i) => enc.writeFrame(GifKit.applyPalette(d, palette, "rgb565"), W, H, i ? {delay:step} : {palette, delay:step}));
+  enc.finish(); homeMsg("Saved your Home GIF!"); done(new Blob([enc.bytes()], {type:"image/gif"}));
+}
+// ---- phone controls: a joystick and a Play button (tap-to-walk still works) ----
+function homePad(){
+  const pad = $("scBody").querySelector(".home-pad"); if (!pad || !matchMedia("(pointer:coarse)").matches) return;
+  pad.removeAttribute("aria-hidden");
+  pad.innerHTML = `<div class="hm-joy" id="hmJoy" aria-label="Walk"><i></i></div><button class="hm-play" type="button" id="hmPlay">Play</button>`;
+  const joy = $("hmJoy"), knob = joy.querySelector("i");
+  const move = e => { const r = joy.getBoundingClientRect(), dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2), l = Math.hypot(dx, dy), max = r.width*.38, k = l > max ? max/l : 1;
+    knob.style.transform = `translate(${dx*k}px, ${dy*k}px)`; HS.joy = l > 6 ? {x:dx/Math.max(l, max), y:dy/Math.max(l, max)} : null; };
+  joy.addEventListener("pointerdown", e => { joy.setPointerCapture(e.pointerId); HS.me.path = null; move(e); e.preventDefault(); });
+  joy.addEventListener("pointermove", e => { if (joy.hasPointerCapture(e.pointerId)) move(e); });
+  const stop = () => { HS.joy = null; knob.style.transform = ""; };
+  joy.addEventListener("pointerup", stop); joy.addEventListener("pointercancel", stop);
+  $("hmPlay").addEventListener("click", () => homeUseThing(nearestThing()));
+}
+// ---- decorating helpers: undo (last 20 changes), rotate (rugs), drag to move ----
+const ROTATES = new Set(["rug", "rugr", "rugt"]);
+const canRotate = it => it && ROTATES.has(it.kind) && it.w !== it.d;
+const rotItem = (it, r) => r ? {...it, w:it.d, d:it.w, rot:1} : it;
+function decoSnap(){ HS.undo.push(JSON.stringify(homeData().items)); if (HS.undo.length > 20) HS.undo.shift(); }
+function decoUndo(){ if (!HS.undo.length) return; homeData().items = JSON.parse(HS.undo.pop()); HS.sel = null; HS.place = null; HS.layerKey = ""; save(); Sound.play("back"); renderDecoBar(); }
 
 // ================= HALL OF FAME GALLERY =================
 // Every team's Hall of Fame scene as a card. 2D and 3D scenes are staged separately, so each tab shows that style.
@@ -6665,6 +7088,9 @@ const ACH = [
   {id:"spender", name:"Big spender", desc:"Spend 5,000 PokéPoints in the Shop.", p:() => [Math.min(5000, state.games.spent), 5000]},
   {id:"collector", name:"Collector", desc:"Unlock 30 items from the Shop or Gym Leaders.", p:() => [Math.min(30, ownedCount()), 30]},
   {id:"exclusive", name:"Leader’s favorite", desc:"Collect 10 Gym Leader exclusives.", p:() => [Math.min(10, exclusivesOwned()), 10]},
+  {id:"berries", name:"Berry good", desc:"Feed 10 berries to Pokémon in your Home.", p:() => [Math.min(10, homeData().fedN), 10]},
+  {id:"ribbons", name:"Ribbon collector", desc:"Earn three friendship ribbons (100 friendship).", p:() => [Math.min(3, Object.values(homeData().fr).filter(v => v >= 100).length), 3]},
+  {id:"photo", name:"Home photographer", desc:"Take a photo in your Home.", p:() => [Math.min(1, homeData().photos), 1]},
   {id:"friend1", name:"First friend", desc:"Add a friend with an online account.", p:() => [Math.min(1, state.games.social.friends), 1]},
   {id:"friend5", name:"Social circle", desc:"Have five friends.", p:() => [Math.min(5, state.games.social.friends), 5]},
   {id:"visits", name:"House guest", desc:"Visit 10 friends’ Homes.", p:() => [Math.min(10, state.games.social.vis.length), 10]},
@@ -6734,7 +7160,8 @@ async function drawCard(cv, who){
   c.fillStyle = mut; c.font = `${two ? 22 : 15}px ${body}`; c.fillText("All-gen dream team", 60, 500);
   for (let i = 0; i < 6; i++) { const x = 60 + i*72, y = 520; c.fillStyle = "rgba(0,0,0,.07)"; if (two) c.fillRect(x, y, 64, 64); else { rr(x, y, 64, 64, 14); c.fill(); }
     const n = t[i]; if (!n) continue;
-    try { const sh = isShinyMember("all", n) || state.shiny, sp = await getSprite(spKey(n, sh, two ? "2d" : "3d"), n), img = frameAt(sp, 0), bb = sp.bb, k = Math.min(56/bb.w, 56/bb.h); c.drawImage(img, bb.x, bb.y, bb.w, bb.h, x + 32 - bb.w*k/2, y + 60 - bb.h*k, bb.w*k, bb.h*k); } catch(e){} }
+    try { const sh = isShinyMember("all", n) || state.shiny, sp = await getSprite(spKey(n, sh, two ? "2d" : "3d"), n), img = frameAt(sp, 0), bb = sp.bb, k = Math.min(56/bb.w, 56/bb.h); c.drawImage(img, bb.x, bb.y, bb.w, bb.h, x + 32 - bb.w*k/2, y + 60 - bb.h*k, bb.w*k, bb.h*k); } catch(e){}
+    if (friendOf(n) >= 100) drawRibbon(c, x + 42, y - 4, 24); }
 }
 // card design patterns, drawn over the coloured border
 function cardPattern(c, D, W, H, two){
