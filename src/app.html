@@ -1817,7 +1817,8 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 // The same page runs as a claude.ai artifact (cloud sync, claude.ai downloads) and as a normal website.
 const ON_CLAUDE = !!(window.claude && window.claude.use);
 const BUILD = "/*BUILD*/"; // set for the website build so updated sprite packs never mix with cached old ones
-const packUrl = path => BUILD ? `${path}?v=${BUILD}` : path;
+const PACKV = {}/*PACKV*/;   // the website build fills in a short hash of each pack, so unchanged packs stay cached across deploys
+const packUrl = path => { const v = PACKV[path] || BUILD; return v ? `${path}?v=${v}` : path; };
 
 // ================= DATA (filled in at build time) =================
 const DATA = /*DATA*/;
@@ -2562,6 +2563,16 @@ function filtered(){
   else if (/^s[0-5]$/.test(state.sort)) { const k = +state.sort[1]; list = [...list].sort((a,b) => b.stats[k] - a.stats[k] || a.num - b.num); }
   return list;
 }
+// while the browser is idle, fetch (but don't unpack) the sprite packs of the next team in the list, so switching to it
+// is instant; the service worker keeps them. Skipped on data saver and very slow connections.
+const warmed = new Set();
+function warmNextTeam(){
+  const C = navigator.connection; if (C && (C.saveData || /2g/.test(C.effectiveType || ""))) return;
+  const ts = orderedTeams(), i = ts.findIndex(t => t.id === state.team), T = ts[(i + 1) % ts.length]; if (!T) return;
+  const keys = [...new Set(T.mons.slice(0, 60).map(m => spKey(m.num, false, state.mode)))].filter(k => IDX[k] && !packs.has(k) && !warmed.has(k)).slice(0, 4);
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 1500));
+  keys.forEach((k, j) => idle(() => { if (warmed.has(k) || packs.has(k)) return; warmed.add(k); fetch(packUrl(k[0] === "t" ? `t/${k.slice(1)}.wasm` : `s/${k}.wasm`), {priority:"low"}).then(r => r.arrayBuffer()).catch(() => warmed.delete(k)); }, {timeout:4000 + j*1000}));
+}
 let io = null;
 function observeGrid(){
   if (io) io.disconnect();
@@ -2573,6 +2584,7 @@ function observeGrid(){
     }
   }, {root: matchMedia("(min-width:921px)").matches ? $("dexPanel") : null, rootMargin:"400px 0px"});
   $("grid").querySelectorAll(".card").forEach(c => io.observe(c));
+  clearTimeout(observeGrid.w); observeGrid.w = setTimeout(warmNextTeam, 2500);
 }
 function renderGrid(){
   const T = G(), list = filtered(), t = new Set(team());
@@ -4260,11 +4272,16 @@ function artReady(){   // drop anything that was drawn before the art arrived
   for (const st of [typeof hofStage !== "undefined" && hofStage, typeof startStage !== "undefined" && startStage]) if (st) st.bgKey = "";
 }
 let artTimer = 0;
-for (const [k, src] of Object.entries(ART_SRC)) {
-  const img = new Image();
-  img.onload = () => { ART.set(k, img); clearTimeout(artTimer); artTimer = setTimeout(artReady, 30); };
-  img.src = src;
+function artLoad(src){
+  for (const [k, url] of Object.entries(src || {})) {
+    const img = new Image();
+    img.onload = () => { ART.set(k, img); clearTimeout(artTimer); artTimer = setTimeout(artReady, 30); };
+    img.src = url;
+  }
 }
+// the website keeps the art in its own cached file (fetched right away, after the page); the single-page build has it inline
+if (ART_SRC) artLoad(ART_SRC);
+else fetch(packUrl("art2d.json")).then(r => r.ok ? r.json() : null).then(artLoad).catch(() => {});   // without it the canvas drawings are used
 // the image for a scene at a time of day, falling back to its daytime picture
 const hofArt = (id, tod) => artOf(`hof/${id}_${tod}`) || artOf(`hof/${id}`);
 
@@ -6763,10 +6780,11 @@ function renderHome(){
   if (HS.introPending && !HS.edit) { HS.intro = {t0:performance.now()}; HS.introPending = false; }
   HS.layerKey = ""; cancelAnimationFrame(HS.raf); HS.last = performance.now(); HS.raf = requestAnimationFrame(homeFrame);
   if (HS.ro) HS.ro.disconnect(); const ro = HS.ro = new ResizeObserver(() => homeResize()); ro.observe($("hmStage"));
+  if (HS.vis) HS.vis.disconnect(); HS.offscreen = false; const vis = HS.vis = new IntersectionObserver(es => { HS.offscreen = !es[es.length - 1].isIntersecting; }); vis.observe($("hmStage"));
   HS.cv.addEventListener("pointerdown", homePointerDown); HS.cv.addEventListener("pointermove", homePointerMove);
   HS.cv.addEventListener("pointerup", homePointerUp); HS.cv.addEventListener("pointercancel", homePointerUp); HS.cv.addEventListener("pointerleave", () => { HS.hover = null; });
   HS.cv.style.touchAction = HS.edit || HS.photo ? "none" : "";
-  nav.cleanup = () => { seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
+  nav.cleanup = () => { seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; vis.disconnect(); HS.vis = null; HS.offscreen = false; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
   nav.onClick = e => {
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
     if (e.target.closest("#hmDeco")) { HS.edit = !HS.edit; HS.place = null; HS.sel = null; Sound.play("select"); renderHome(); return; }
@@ -6827,6 +6845,7 @@ function homeLayer(tod){
 const scrX = x => x*HS.ts - (HS.camPx ?? Math.round(HS.cam*HS.ts)), scrY = y => HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY;
 function homeFrame(now){
   if (!HS.cv || !HS.cv.isConnected) return;
+  if (HS.offscreen) { HS.last = now; HS.raf = requestAnimationFrame(homeFrame); return; }   // scrolled out of view: nothing to draw
   const dt = HS.dt = Math.min(.05, (now - HS.last)/1000); HS.last = now;
   const pixel = state.mode === "2d", c = pixel ? HS.lctx : HS.ctx, V = HS.V, ts = HS.ts, tod = clockTod();
   homeUpdate(dt, now);
