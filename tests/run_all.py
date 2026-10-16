@@ -30,6 +30,8 @@ TESTS = [  # (file, args)
     ("test_online.py", ["390", "844"]),
     ("test_friends.py", ["1280", "860"]),                 # friends: profiles, lineup, Home visits, Likes, friend battles
     ("test_friends.py", ["390", "844"]),
+    ("test_home_life.py", ["1280", "860", "3d"]),        # Home: furniture spots, night naps, berries, gifts, drag/undo/turn, photo mode
+    ("test_home_life.py", ["390", "844", "2d"]),
     ("test_engine.mjs", []),                            # engine rules: stats, crits, status, PP, items, Bag, AI (Node)
     ("test_damage.mjs", ["1500"]),                      # damage vs @smogon/calc (Node)
 ]

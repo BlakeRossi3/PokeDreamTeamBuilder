@@ -24,6 +24,7 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once). Must be clean.
 - `node scripts/gen_data.mjs` — regenerate Pokémon/move/ability/item/learnset data from Pokémon Showdown (`@pkmn/dex`).
   Run by hand when data should change; the build itself never needs Node.
+- `node scripts/gen_families.mjs` — rebuild `data/families.json` (evolution families, for Home Pokémon that play together).
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
@@ -64,7 +65,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
 `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
-`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `HOME LIFE` (`SPOT_OF`, `homeDecide`, `BERRIES`, `EVENTS`, `homePhoto`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
 
@@ -101,6 +102,11 @@ Boot code is at the very end of the script.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
   outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
   everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
+- **Home life** (`HOME LIFE` section): Pokémon use furniture through `SPOT_OF` (kind → nap/sit/watch/… spots), weighted
+  by type and time in `spotWeight`/`homeDecide`; new furniture kinds that Pokémon should use need an entry there.
+  Berries, feeding, gifts, `fedN` and `photos` live in `state.games.home` (validated in `cleanGames`). Seasonal events are
+  data in `EVENTS` (dates, night tint, visitors, `furn` ids sold only while it runs: give the item `event:"<id>"`).
+  Tests pin the time of day with `window.DTD_TOD = "night"`.
 - **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
