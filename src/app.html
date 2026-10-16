@@ -927,6 +927,13 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 .tw-rws{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px}
 .tw-rw{display:flex; flex-direction:column; gap:2px; padding:10px 12px; background:var(--raised); border:var(--bw) dashed var(--line-2); border-radius:var(--r-sm)}
 .tw-rw span, .tw-rw small{color:var(--muted)} .tw-rw.got{border-style:solid; border-color:var(--accent)} .tw-rw.got small{color:var(--accent)}
+.hg-list{display:grid; gap:10px}
+.hg-card{display:flex; flex-direction:column; align-items:flex-start; gap:3px; padding:12px 14px; text-align:left; color:var(--fg); background:var(--raised); border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); cursor:pointer; font:inherit}
+.hg-card:hover:not(:disabled){border-color:var(--accent)} .hg-card:disabled{opacity:.6; cursor:default}
+.hg-card span{color:var(--muted)} .hg-card small{color:var(--accent)}
+.bc-wrap{position:relative; margin:4px auto 0; width:100%; max-width:640px}
+.bc-cv{display:block; width:100%; aspect-ratio:4/3; image-rendering:pixelated; border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); background:#9fd8ff; touch-action:none}
+.bc-hud{position:absolute; top:8px; left:10px; right:10px; display:flex; justify-content:space-between; pointer-events:none; color:#14202e; font-weight:700; text-shadow:0 1px 0 rgba(255,255,255,.7)}
 .code-row{display:flex; gap:8px; align-items:center}
 .sd-text{display:block; width:100%; min-height:220px; resize:vertical; padding:10px 12px; background:var(--raised); color:var(--fg); border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); font-family:ui-monospace, "SFMono-Regular", Menlo, monospace; font-size:13px; line-height:1.45; white-space:pre; overflow:auto}
 .sd-where{display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 0 0}
@@ -2024,7 +2031,7 @@ function cleanUI(u){
 }
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
-const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0});
+const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}});
 const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
@@ -2057,6 +2064,7 @@ function cleanGames(g){
     o.home.gifts = Array.isArray(h.gifts) ? h.gifts.filter(x => x && NAT_BY.has(x.n) && ["pp", "berry", "furn"].includes(x.k) && (x.k !== "furn" || unlockOf("furn", x.v)) && (x.k !== "pp" || (int(x.v) && x.v <= 100)) && (x.k !== "berry" || /^[a-z]{3,8}$/.test(x.v)))
       .slice(0, 6).map(x => ({n:x.n, x:Math.max(0, num(x.x)), y:Math.max(0, num(x.y)), k:x.k, v:x.v})) : [];
     o.home.fedN = int(h.fedN); o.home.photos = int(h.photos);
+    const hg = obj(h.games); o.home.games = {d:day(hg.d) ? hg.d : "", catchN:Math.min(9, int(hg.catchN)), seekN:Math.min(9, int(hg.seekN)), catchBest:Math.min(999, int(hg.catchBest)), found:int(hg.found)};
     for (const [k, v] of Object.entries(obj(h.fr))) if (NAT_BY.has(+k) && int(v)) o.home.fr[k] = Math.min(100, v);
     for (const [k, v] of Object.entries(obj(h.pet))) if (NAT_BY.has(+k) && /^\d{4}-\d\d-\d\d$/.test(v)) o.home.pet[k] = v;
     for (const [k, v] of Object.entries(obj(h.gain))) if (NAT_BY.has(+k) && v && /^\d{4}-\d\d-\d\d$/.test(v.d)) o.home.gain[k] = {d:v.d, n:Math.min(25, int(v.n))};
@@ -6233,11 +6241,12 @@ const FURN = [
   ["flowers", "Flower bed", 400, 2, 1, "flowers", ["#f39ac7","#ffd43b"]], ["bench", "Garden bench", 450, 2, 1, "bench", ["#9a6a3c","#5e3c24"]],
   ["tramp", "Trampoline", 1300, 2, 2, "tramp", ["#2f6fd6","#1d1f26"]], ["cushion", "Floor cushion", 200, 1, 1, "cushion", ["#ffd43b","#d9a412"]],
   ["globe", "Desk globe", 350, 1, 1, "globe", ["#3aa0d6","#c9a227"]], ["clock", "Grandfather clock", 750, 1, 1, "clock", ["#6b4226","#f6e7b4"]],
+  ["hammock", "Hammock", 700, 3, 1, "hammock", ["#c9423a","#f3dfb0","#7a4a2a"]],
 ];
 FURN.forEach(([id, name, price, w, d, kind, col]) => addItem({cat:"furn", id, name, price, free:!price, w, d, kind, col}));
 // seasonal furniture: sold only while its event runs (see EVENTS); players keep what they bought
 [["pumpkin", "Jack-o’-lantern", 300, 1, 1, "pumpkin", ["#f08a24", "#3a7a2a"], "halloween"], ["cobweb", "Spooky cobweb", 150, 1, 1, "cobweb", ["#e8e8f0", "#5a5a6a"], "halloween"],
- ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
+ ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"], ["giftpile", "Holiday gifts", 350, 1, 1, "giftpile", ["#e2413b", "#2f8a4a"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
 // --- Home rooms (each adds space and room for more Pokémon) ---
 const ROOMS = [
   {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4},
@@ -6512,6 +6521,14 @@ const HOUSE_DRAW = {
     K.poly([[.02, .62, 1.86], [.26, .62, 1.98], [.26, .62, 1.74]], "#e2413b"); K.rect(.24, .62, .5, .07, "#e2413b", 1.89); motif(K, "Flying", .8, .62, 1.86, .2, "#2f6fd6"); },
   bag(K, it){ if (it.var === "dummy") { K.box(.42, .5, .16, .16, .9, "#8a5a3c"); K.box(.3, .48, .4, .2, .5, "#e0c27a", .55); K.rect(.12, .58, .76, .1, "#8a5a3c", 1.05); K.disc(.5, .58, .16, "#e0c27a", 1.28); return; }
     K.box(.1, .5, .08, .1, 1.85, "#3a3f52"); K.box(.82, .5, .08, .1, 1.85, "#3a3f52"); K.box(.1, .5, .8, .1, .08, "#3a3f52", 1.85); K.rect(.49, .55, .02, .25, "#9a9aa8", 1.85); K.box(.33, .45, .34, .24, .9, "#c22e28", .7); K.rect(.33, .69, .34, .05, "#e8e2d6", 1.2); },
+  hammock(K, it){ const w = it.w, c = it.col, N = 12, top = t => 1.2 - .42*Math.sin(t*Math.PI), bot = t => 1.08 - .66*Math.sin(t*Math.PI);
+    [[.08, 0], [w - .2, 0]].forEach(([x]) => { K.box(x, .38, .12, .14, 1.35, c[2]); K.box(x - .02, .36, .16, .18, .06, shadeHex(c[2], 1.2), 1.33); });
+    for (let i = 0; i < N; i++) { const a = i/N, b = (i + 1)/N, x0 = .3 + a*(w - .6), x1 = .3 + b*(w - .6);
+      K.poly([[x0, .3, top(a) + .04], [x1, .3, top(b) + .04], [x1, .45, top(b)], [x0, .45, top(a)]], shadeHex(i % 2 ? c[1] : c[0], .7));   // the far rim
+      K.poly([[x0, .45, top(a)], [x1, .45, top(b)], [x1, .45, bot(b)], [x0, .45, bot(a)]], i % 2 ? c[1] : c[0]); }
+    K.poly([[.2, .45, 1.32], [.3, .45, 1.2], [.3, .45, 1.1]], "#d9c08a"); K.poly([[w - .2, .45, 1.32], [w - .3, .45, 1.2], [w - .3, .45, 1.1]], "#d9c08a"); },
+  giftpile(K, it){ const c = it.col; K.box(.1, .45, .48, .4, .36, c[0]); K.box(.3, .38, .1, .4, .36, "#ffd43b", .001); K.box(.48, .5, .42, .34, .28, c[1]); K.box(.64, .5, .09, .34, .28, "#f6f1e7", .001);
+    K.box(.24, .42, .4, .3, .26, "#5b6fd6", .36); K.box(.4, .42, .08, .3, .26, "#f6f1e7", .362); K.disc(.44, .55, .07, "#ffd43b", .66); },
   snowman(K, it){ K.disc(.5, .6, .36, "#eef6ff", .36); K.disc(.5, .6, .26, "#ffffff", .9); K.disc(.5, .6, .19, "#ffffff", 1.3); K.box(.36, .5, .28, .2, .06, "#c22e28", 1.08); K.box(.38, .52, .24, .2, .22, "#22252e", 1.46); K.box(.32, .48, .36, .26, .04, "#22252e", 1.46); K.disc(.56, .7, .04, "#ff8a3d", 1.3); [-.07, .07].forEach(d => K.disc(.5 + d, .7, .025, "#22252e", 1.36)); },
   banner(K, it){ const col = typeCol(it.var); K.box(.4, .55, .2, .16, .1, "#4a4a52"); K.rect(.47, .65, .05, 1.95, "#c9c9d2", 1.95); K.poly([[.52, .66, 1.9], [.95, .66, 1.9], [.95, .66, 1.05], [.735, .66, 1.18], [.52, .66, 1.05]], col); motif(K, it.var, .735, .67, 1.5, .17, "#ffffff"); K.disc(.495, .66, .05, "#ffd36b", 1.97); },
   totem(K, it){ const col = typeCol(it.var); for (let i = 0; i < 3; i++) K.box(.22, .35, .56, .5, .58, shadeHex(col, [.6, .85, 1.05][i]), i*.58); K.box(.16, .32, .68, .56, .08, shadeHex(col, .45), 1.74); motif(K, it.var, .5, .86, 1.22, .2, "#ffffff"); [[.38, .6], [.62, .6]].forEach(([x, z]) => K.disc(x, .86, .05, "#22252e", z)); K.rect(.4, .86, .2, .04, "#22252e", .4); },
@@ -6533,7 +6550,7 @@ const HOUSE_DRAW = {
   clock(K, it){ K.box(.15, .25, .7, .55, 2.15, it.col[0]); K.disc(.5, .8, .22, it.col[1], 1.75); K.rect(.49, .8, .02, .16, "#1d1f26", 1.85); K.rect(.35, .8, .3, .7, shadeHex(it.col[0], .7), 1.25); },
   trophy(K, it){ const rc = REGION_COL[it.region]; K.box(.15, .3, .7, .55, .55, rc[1]); K.box(.22, .35, .56, .45, .06, rc[0], .55); K.poly([[.28, .6, 1.45], [.72, .6, 1.45], [.6, .6, .95], [.4, .6, .95]], "#e2b13c"); K.rect(.44, .6, .12, .32, "#c9952a", .95); K.oval(.5, .6, .24, .1, "#ffe28a", 1.45); K.disc(.25, .6, .1, "#c9952a", 1.3); K.disc(.75, .6, .1, "#c9952a", 1.3); },
 };
-const FURN_H = {pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
+const FURN_H = {hammock:1.45, giftpile:.75, pumpkin:.8, cobweb:2.6, holtree:2.4, display:1.5, statue:2.3, lamp2:2, arch:2.2, orb:1.4, tub:1.3, windvane:2.05, bag:1.95, snowman:1.6, banner:2.05, totem:1.85, pot2:1.5, terrarium:1.1, cauldron:1.1, pillowpile:.9, shellfountain:1.6, badgecase:1.25, bed:1.2, plant:1.5, tabler:.75, sofa:1, chair:1, shelf:2, tv:1.35, lamp:1.9, palm:2.4, bean:.75, desk:1.45, tank:1.45, fire:1.5, piano:1.3, arcade:1.75, fountain:1.25, tree:2.7, flowers:.7, bench:1.1, tramp:.5, cushion:.25, globe:1.3, clock:2.2, trophy:1.6};
 // one cached canvas per item look; anchor = back-left floor corner at (pad, pad + h*ts)
 const furnCache = new Map();
 function furnSprite(it, ts, pixel, flip){
@@ -6724,6 +6741,7 @@ function renderHome(){
       <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture" aria-label="${HS.edit ? "Done decorating" : "Decorate"}">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
       <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms" aria-label="Shop">${ic("shop")}<span>Shop</span></button>
       <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode" aria-label="Photo mode">${ic("camera")}<span>Photo</span></button>
+      ${VISIT || HS.edit ? "" : `<button class="btn sm hm-tb" type="button" id="hmPlay" title="Berry Catch and Hide-and-seek" aria-label="${HS.hide && !HS.hide.found ? "Stop Hide-and-seek" : "Games"}">${ic("quiz")}<span>${HS.hide && !HS.hide.found ? "Stop" : "Games"}</span></button>`}
       <span class="home-pp" title="Your PokéPoints">${fmtPP(state.games.pp)}</span>
     </div>
     ${HS.edit ? "" : `<div class="hm-bag" id="hmBag"></div>`}
@@ -6748,11 +6766,12 @@ function renderHome(){
   HS.cv.addEventListener("pointerdown", homePointerDown); HS.cv.addEventListener("pointermove", homePointerMove);
   HS.cv.addEventListener("pointerup", homePointerUp); HS.cv.addEventListener("pointercancel", homePointerUp); HS.cv.addEventListener("pointerleave", () => { HS.hover = null; });
   HS.cv.style.touchAction = HS.edit || HS.photo ? "none" : "";
-  nav.cleanup = () => { cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
+  nav.cleanup = () => { seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
   nav.onClick = e => {
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
     if (e.target.closest("#hmDeco")) { HS.edit = !HS.edit; HS.place = null; HS.sel = null; Sound.play("select"); renderHome(); return; }
     if (e.target.closest("#hmShop")) { shopCat = "furn"; openScreen("shop"); return; }
+    if (e.target.closest("#hmPlay")) { if (HS.hide && !HS.hide.found) seekStop(); else homeGames(); return; }
     if (e.target.closest("#hmCam")) { HS.photo = true; HS.pcam = HS.cam; HS.edit = false; Sound.play("select"); renderHome(); return; }
     const ph = e.target.closest("[data-ph]"); if (ph) { if (ph.dataset.ph === "exit") { HS.photo = false; renderHome(); } else homePhoto(ph.dataset.ph); return; }
     const hb = e.target.closest("[data-hold]"); if (hb) { HS.hold = HS.hold === hb.dataset.hold ? null : hb.dataset.hold; Sound.play("select"); renderHomeBag(); return; }
@@ -6908,9 +6927,10 @@ function monAltSprites(m){
 }
 function drawHomeMon(c, m, now, pixel){
   if (!m.sp) return;
+  if (HS.hide && HS.hide.n === m.n && !HS.hide.found) { m.box = null; return; }   // hiding (Hide-and-seek)
   const zz = m.act === "nap" && m.zz, bk = !pixel && (m.act === "watch" || m.act === "warm") && m.bk, sp = zz || bk || m.sp;
   // a sleeping sprite is pixel art drawn at a whole-number scale close to the awake size; the rest as usual
-  const s = zz ? Math.max(1, Math.min(4, Math.round(m.sp.bb.w*monScale(m)*.6/zz.bb.w))) : monScale(m, sp);
+  const s = zz ? Math.max(1, Math.min(4, Math.round(Math.max(m.sp.bb.w*.62, m.sp.bb.h*.5)*monScale(m)/Math.max(zz.bb.w, zz.bb.h)))) : monScale(m, sp);
   const ts = HS.ts, bb = sp.bb, w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
   const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim, ft = footOf(sp), up = Math.max(0, lift - zl), lf = 1/(1 + up/(ts*.9)), sw = Math.max(ts*.2, ft.w*w*.62)*lf;   // the shadow shrinks and fades as it hops or floats
@@ -6918,7 +6938,8 @@ function drawHomeMon(c, m, now, pixel){
   else softShadow(c, X + ft.cx*w*m.dir + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
   c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (m.dir < 0) c.scale(-1, 1);
-  if (m.act === "nap" && !zz) c.scale(1.04, .9 + .02*Math.sin(now/700 + m.n));   // no sleeping sprite: breathe, squashed
+  if (m.act === "nap" && !zz) { c.rotate(.07); c.scale(1.08, .8 + .025*Math.sin(now/900 + m.n)); c.globalAlpha = .96; }   // no sleeping sprite: curled up a little, slow breathing
+  if (zz && !pixel) { c.shadowColor = "rgba(20,24,40,.45)"; c.shadowBlur = Math.max(2, ts*.08); }   // 3D: pixel-art sleepers get a soft outline so they sit in the scene
   if (m.eatT > now) c.scale(1 + .03*Math.abs(Math.sin(now/85)), 1 - .07*Math.abs(Math.sin(now/85)));   // munching
   if (m.visitor) c.globalAlpha = .82 + .12*Math.sin(now/500 + m.n);
   if (swim) { c.beginPath(); c.rect(-w, -h, w*2, h*.72); c.clip(); }
@@ -7074,6 +7095,7 @@ function homeUpdate(dt, now){
   if (now > (HS.furnT || 0)) { HS.furnT = now + 500; const sig = JSON.stringify(homeData().items); if (HS.furnSig !== undefined && sig !== HS.furnSig) homeFurnChanged(); HS.furnSig = sig; }
   const night = clockTod() === "night";
   for (const m of HS.mons) {
+    if (HS.hide && HS.hide.n === m.n && !HS.hide.found) continue;
     if (m.hop > 0) m.hop = Math.max(0, m.hop - dt*1.8);
     // followers trail a little behind you, and stop when you stop
     const fi = HS.followers.indexOf(m.n);
@@ -7278,6 +7300,7 @@ function homePointerDown(e){
     if (hit) { HS.drag = {item:homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id), px:p.x, py:p.y}; HS.cv.setPointerCapture(e.pointerId); }
     return;
   }
+  if (HS.hide && !HS.hide.found) { const hit = placedItems().reverse().find(q => !isFloorItem(q.it) && p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - 1.6 && p.y <= q.y + q.it.d); if (hit) { seekAt(hit); return; } }
   const D = homeData(), gi = VISIT ? -1 : D.gifts.findIndex(g => Math.abs(g.x - p.x) < .45 && p.y > g.y - 1.2 && p.y < g.y + .3);
   if (gi >= 0) { const g = D.gifts[gi]; if (Math.hypot(g.x - HS.me.x, (g.y - HS.me.y)*1.4) < 1.3) openGift(gi); else { HS.me.path = findPath(HS.me, {x:g.x, y:Math.min(HM.D - .2, g.y + .5)}); HS.me.target = null; } return; }
   const hitMon = HS.mons.find(m => m.box && p.px >= m.box.x && p.px <= m.box.x + m.box.w && p.py >= m.box.y && p.py <= m.box.y + m.box.h);
@@ -7299,6 +7322,127 @@ document.addEventListener("keydown", e => {
 document.addEventListener("keyup", e => { if (HM_KEYS[e.key]) HS.keys.delete(HM_KEYS[e.key]); });
 addEventListener("blur", () => HS.keys.clear());
 
+// ================= HOME GAMES: Berry Catch, Hide-and-seek =================
+// Berry Catch: one of your Pokémon catches falling berries for 30 seconds; the first 3 rounds a day you keep up to 5 of
+// them. Hide-and-seek: a Pokémon hides behind a piece of furniture; tap the right one to find it (friendship, 3 a day).
+const CATCH_KEEP = 5, GAMES_A_DAY = 3, catchSecs = () => window.DTD_CATCH || 30;   // tests shorten a round with window.DTD_CATCH
+function homeGamesDay(){ const D = homeData(), day = todayKey(); if (!D.games) D.games = {d:"", catchN:0, seekN:0, catchBest:0, found:0}; if (D.games.d !== day) Object.assign(D.games, {d:day, catchN:0, seekN:0}); return D.games; }
+const hideSpots = () => placedItems().filter(p => !isFloorItem(p.it));
+const homeResidents = () => HS.mons.filter(m => !m.visitor && m.sp);
+function homeGames(){
+  const Gd = homeGamesDay(), res = homeResidents(), spots = hideSpots(), canSeek = res.length && spots.length >= 2;
+  const left = n => Math.max(0, GAMES_A_DAY - n);
+  const md = openModal(`<h3 class="mt" id="modalTitle">Games</h3>
+    <div class="hg-list">
+      <button class="hg-card" type="button" data-hg="catch" ${res.length ? "" : "disabled"}><b>Berry Catch</b><span>Catch falling berries with one of your Pokémon. ${left(Gd.catchN) ? `You keep up to ${CATCH_KEEP} of them (${left(Gd.catchN)} more ${left(Gd.catchN) === 1 ? "round" : "rounds"} today).` : "Just for fun for the rest of today."}</span>${Gd.catchBest ? `<small>Best: ${Gd.catchBest}</small>` : ""}</button>
+      <button class="hg-card" type="button" data-hg="seek" ${canSeek ? "" : "disabled"}><b>Hide-and-seek</b><span>${canSeek ? `A Pokémon hides behind your furniture. Find it to grow your friendship${left(Gd.seekN) ? ` (${left(Gd.seekN)} more today)` : ""}.` : "Needs a Pokémon at home and at least two pieces of furniture to hide behind."}</span>${Gd.found ? `<small>Found ${Gd.found} times</small>` : ""}</button>
+    </div>${res.length ? "" : `<p class="note">Invite Pokémon to your Home first.</p>`}
+    <div class="actions"><button class="btn" type="button" data-close>Close</button></div>`);
+  md.onclick = e => { const b = e.target.closest("[data-hg]"); if (!b || b.disabled) return; Sound.play("select"); closeModal(); if (b.dataset.hg === "catch") berryCatch(); else seekStart(); };
+}
+function berryCatch(){
+  const res = homeResidents(); if (!res.length) return;
+  const m = [...res].sort((a, b) => friendOf(b.n) - friendOf(a.n))[0], name = nickFor(m.n), fav = favBerry(m.n);
+  const W = 320, H = 240;
+  const md = openModal(`<h3 class="mt" id="modalTitle">Berry Catch</h3>
+    <p class="note" id="bcNote">Move ${esc(name)} with ← → (or A D), or drag. ${esc(name)}’s favourite, the ${esc(fav.name)}, makes it extra happy.</p>
+    <div class="bc-wrap"><canvas class="bc-cv" id="bcCv" width="${W}" height="${H}" tabindex="0" aria-label="Berry Catch: move left and right to catch berries"></canvas>
+      <div class="bc-hud"><span>Caught <b id="bcScore">0</b></span><span><b id="bcTime">${catchSecs()}</b>s</span></div></div>
+    <div class="actions"><button class="btn primary" type="button" id="bcGo">Start</button><button class="btn" type="button" data-close>Close</button></div>`, {wide:true, onClose:() => stop()});
+  const cv = md.querySelector("#bcCv"), c = cv.getContext("2d"); c.imageSmoothingEnabled = false;
+  const G = {x:W/2, v:0, keys:new Set(), drag:null, berries:[], got:[], run:false, t0:0, last:0, next:0, raf:0, sp:null, pops:[]};
+  getSprite(spKey(m.n, false, "2d"), m.n).then(sp => { G.sp = sp; draw(performance.now()); }).catch(() => {});
+  const key = (e, on) => { const k = {ArrowLeft:-1, a:-1, A:-1, ArrowRight:1, d:1, D:1}[e.key]; if (k === undefined || !G.run) return; e.preventDefault(); if (on) G.keys.add(k); else G.keys.delete(k); };
+  const kd = e => key(e, true), ku = e => key(e, false);
+  document.addEventListener("keydown", kd); document.addEventListener("keyup", ku);
+  const px = e => { const r = cv.getBoundingClientRect(); return (e.clientX - r.left)/r.width*W; };
+  cv.addEventListener("pointerdown", e => { G.drag = px(e); cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointermove", e => { if (G.drag !== null) G.drag = px(e); });
+  cv.addEventListener("pointerup", () => { G.drag = null; }); cv.addEventListener("pointercancel", () => { G.drag = null; });
+  function stop(){ cancelAnimationFrame(G.raf); G.run = false; document.removeEventListener("keydown", kd); document.removeEventListener("keyup", ku); }
+  const box = () => { const sp = G.sp, w = sp ? Math.min(64, sp.bb.w) : 40, h = sp ? Math.min(64, sp.bb.h) : 40; return {w, h, y:H - 10 - h}; };
+  function drawBerry(b){
+    const x = Math.round(b.x), y = Math.round(b.y);
+    c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.arc(x, y + 1, 6, 0, 7); c.fill();
+    c.fillStyle = b.col; c.beginPath(); c.arc(x, y, 6, 0, 7); c.fill();
+    c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(x - 3, y - 3, 2, 2);
+    c.fillStyle = "#3a8a3a"; c.fillRect(x - 1, y - 9, 2, 4); c.fillRect(x + 1, y - 9, 3, 2);
+    if (b.fav) { c.strokeStyle = "#ffd43b"; c.lineWidth = 1; c.beginPath(); c.arc(x, y, 8.5, 0, 7); c.stroke(); }
+  }
+  function draw(now){
+    const two = state.mode === "2d", g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, two ? "#8fd0ff" : "#9fd8ff"); g.addColorStop(.75, "#d9f2ff"); g.addColorStop(.75, "#5cbf5c"); g.addColorStop(1, "#3f9a46"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = "rgba(255,255,255,.8)"; [[40, 30], [210, 50], [130, 18]].forEach(([x, y], i) => { const xx = Math.round((x + now*.006*(i + 1)) % (W + 60) - 30); c.fillRect(xx, y, 34, 8); c.fillRect(xx + 6, y - 5, 20, 5); });
+    for (const b of G.berries) drawBerry(b);
+    const B = box(), sp = G.sp;
+    c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.ellipse(Math.round(G.x), H - 10, B.w*.4, 3, 0, 0, 7); c.fill();
+    if (sp) { const img = sp.frames[frameIdx(sp, now)].img, s = Math.min(1, 64/Math.max(sp.bb.w, sp.bb.h)), w = Math.round(sp.bb.w*s), h = Math.round(sp.bb.h*s);
+      c.save(); c.translate(Math.round(G.x), 0); if (G.v < 0) c.scale(-1, 1); c.drawImage(img, sp.bb.x, sp.bb.y, sp.bb.w, sp.bb.h, -Math.round(w/2), H - 10 - h, w, h); c.restore(); }
+    for (const q of G.pops) { const a = 1 - (now - q.t)/600; if (a <= 0) continue; c.globalAlpha = a; c.fillStyle = q.fav ? "#ffd43b" : "#ffffff"; c.font = "bold 12px monospace"; c.fillText(q.fav ? "+1 ♥" : "+1", Math.round(q.x - 8), Math.round(q.y - (1 - a)*16)); c.globalAlpha = 1; }
+    G.pops = G.pops.filter(q => now - q.t < 600);
+  }
+  function frame(now){
+    const dt = Math.min(.05, (now - G.last)/1000); G.last = now;
+    const el = (now - G.t0)/1000, left = Math.max(0, catchSecs() - el);
+    const dir = [...G.keys].reduce((a, k) => a + k, 0), B = box();
+    if (G.drag !== null) G.v = Math.max(-260, Math.min(260, (G.drag - G.x)*10)); else G.v = dir*230;
+    G.x = Math.max(B.w/2, Math.min(W - B.w/2, G.x + G.v*dt));
+    if (now >= G.next && left > .8) { const r = Math.random() < .2 ? fav : BERRIES[Math.floor(Math.random()*BERRIES.length)];
+      G.berries.push({x:12 + Math.random()*(W - 24), y:-10, vy:70 + el*2.6 + Math.random()*40, col:r.col, id:r.id, fav:r.id === fav.id}); G.next = now + Math.max(260, 700 - el*14); }
+    for (const b of G.berries) { b.y += b.vy*dt;
+      if (!b.done && b.y >= B.y + 6 && b.y <= H - 12 && Math.abs(b.x - G.x) < B.w*.45 + 5) { b.done = true; G.got.push(b.id); G.pops.push({x:b.x, y:b.y, t:now, fav:b.fav}); if (b.fav) G.fav = (G.fav || 0) + 1; Sound.play(b.fav ? "up" : "pick"); md.querySelector("#bcScore").textContent = G.got.length; } }
+    G.berries = G.berries.filter(b => !b.done && b.y < H + 12);
+    md.querySelector("#bcTime").textContent = Math.ceil(left);
+    draw(now);
+    if (left <= 0) { finish(); return; }
+    G.raf = requestAnimationFrame(frame);
+  }
+  function finish(){
+    stop(); const Gd = homeGamesDay(), D = homeData(), n = G.got.length, keep = Gd.catchN < GAMES_A_DAY;
+    Gd.catchN++; const best = n > Gd.catchBest; Gd.catchBest = Math.max(Gd.catchBest, n);
+    const kept = []; if (keep) for (const id of G.got) { if (kept.length >= CATCH_KEEP || bagTotal() >= 99) break; D.bag[id] = (D.bag[id] | 0) + 1; kept.push(id); }
+    const up = keep && n >= 8 ? Math.min(100 - friendOf(m.n), 2 + Math.min(3, G.fav || 0)) : 0; if (up > 0) D.fr[m.n] = friendOf(m.n) + up;
+    save(); renderHomeBag(); renderResidents(); checkAch(); Sound.play(n >= 8 ? "up" : "select");
+    const cnt = {}; kept.forEach(id => { cnt[id] = (cnt[id] || 0) + 1; });
+    const bag = kept.length ? `You keep ${Object.entries(cnt).map(([id, k]) => `${k} × ${esc(BERRY_BY.get(id).name)}`).join(", ")}.` : keep ? "" : "No berries to keep after 3 rounds today, but well played!";
+    md.querySelector("#bcNote").innerHTML = `<b>${esc(name)} caught ${n} ${n === 1 ? "berry" : "berries"}!</b>${best && n ? " A new best!" : ""} ${bag}${up > 0 ? ` Friendship +${up}.` : ""}`;
+    const go = md.querySelector("#bcGo"); go.textContent = "Play again"; go.disabled = false;
+  }
+  md.querySelector("#bcGo").onclick = () => { if (G.run) return; Object.assign(G, {berries:[], got:[], fav:0, pops:[], x:W/2, run:true, t0:performance.now(), last:performance.now(), next:performance.now() + 300});
+    md.querySelector("#bcScore").textContent = "0"; md.querySelector("#bcGo").disabled = true; cv.focus({preventScroll:true}); G.raf = requestAnimationFrame(frame); };
+  draw(performance.now());
+}
+function seekStart(){
+  const res = homeResidents(), spots = hideSpots(); if (!res.length || spots.length < 2) return;
+  const m = res[Math.floor(Math.random()*res.length)], p = spots[Math.floor(Math.random()*spots.length)];
+  if (m.st === "act") homeActEnd(m);
+  Object.assign(m, {st:"idle", t:2000, path:null, plan:null, follow:false, v:0});
+  HS.hide = {n:m.n, p:{x:p.x, y:p.y, id:p.id}, tries:0, t0:performance.now()};
+  Sound.play("select"); renderHome();
+  homeMsg(`Is hiding behind something… Tap the furniture you think it’s behind!`, {n:m.n, tag:"Hide-and-seek"});
+}
+function seekStop(quiet){
+  if (!HS.hide || HS.hide.found) { HS.hide = null; return; }
+  const m = HS.mons.find(x => x.n === HS.hide.n), p = HS.hide.p; HS.hide = null;
+  if (m && p) { const it = unlockOf("furn", p.id); m.x = Math.max(.4, Math.min(HS.W - .4, p.x + (it ? it.w/2 : .5))); m.y = Math.min(HM.D - .3, p.y + (it ? it.d : 1) + .4); m.hop = 1; }
+  if (!quiet) { renderHome(); if (m) homeMsg(`Was hiding behind the ${esc((unlockOf("furn", p.id) || {}).name || "furniture")}!`, {n:m.n, tag:"Hide-and-seek"}); }
+}
+function seekAt(q){
+  const H2 = HS.hide, m = HS.mons.find(x => x.n === H2.n); if (!m) { HS.hide = null; return; }
+  if (q.id === H2.p.id && q.x === H2.p.x && q.y === H2.p.y) {
+    H2.found = true; m.x = Math.max(.4, Math.min(HS.W - .4, q.x + q.it.w/2)); m.y = Math.min(HM.D - .3, q.y + q.it.d + .4); m.hop = 1; m.st = "idle"; m.t = 2500; m.dir = HS.me.x < m.x ? -1 : 1;
+    const Gd = homeGamesDay(), D = homeData(), reward = Gd.seekN < GAMES_A_DAY; Gd.seekN++; Gd.found++;
+    const up = reward ? Math.min(100 - friendOf(m.n), H2.tries === 0 ? 6 : 4) : 0; if (up > 0) D.fr[m.n] = friendOf(m.n) + up;
+    m.emote = {k:"heart", t0:performance.now(), dur:2000}; burst("heart", m, 8, {sp:1, dur:1200}); Sound.play("up");
+    save(); HS.hide = null; renderHome();
+    homeMsg(`Found! It was behind the ${esc(q.it.name)}${H2.tries === 0 ? " — first try!" : "."}${reward ? "" : ` <span class="meta">That’s plenty of games for today.</span>`}`, {n:m.n, f:friendOf(m.n), f0:friendOf(m.n) - up});
+    checkAch(); return;
+  }
+  H2.tries++; Sound.play("wrong");
+  const hint = H2.tries >= 3 ? (() => { const it = unlockOf("furn", H2.p.id), hx = H2.p.x + (it ? it.w/2 : .5); fx("spark", hx, H2.p.y + (it ? it.d : 1)*.5, 1.2, {col:"#ffd43b"}); return " You hear a giggle… look for the sparkle!"; })() : H2.tries === 2 ? ` It’s ${Math.abs((H2.p.x) - HS.me.x) < 4 ? "close by" : "further away"}.` : "";
+  homeMsg(`Not behind the ${esc(q.it.name)}.${hint}`, {tag:"Hide-and-seek"});
+}
+
 // ================= HOME LIFE =================
 const RIBBON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13l-3 9 4-2 2 3 2-8z" fill="#e2413b"/><path d="M16 13l3 9-4-2-2 3-2-8z" fill="#c22f2a"/><circle cx="12" cy="9" r="6.5" fill="#ffd43b" stroke="#b8860b" stroke-width="1.5"/><path d="M12 5.8l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z" fill="#fff"/></svg>';
 function drawRibbon(c, x, y, s){   // a friendship ribbon on a canvas (trainer card)
@@ -7318,6 +7462,7 @@ const isNocturnal = n => NOCTURNAL.has(baseOf(n)) || NAT_BY.get(n).types.some(t 
 // where Pokémon can use furniture: on it (nap/sit/bounce, with a lift z in tiles) or in front of it
 const SPOT_OF = {
   bed:{act:"nap", pts:[[.65, 1.5], [1.35, 1.7]], z:.55}, bean:{act:"nap", pts:[[.5, .55]], z:.32}, cushion:{act:"nap", pts:[[.5, .55]], z:.2}, pillowpile:{act:"nap", pts:[[.5, .55]], z:.35},
+  hammock:{act:"nap", pts:[[1.5, .5]], z:.42},
   sofa:{act:"sit", pts:"row", z:.42}, chair:{act:"sit", pts:[[.5, .62]], z:.42}, bench:{act:"sit", pts:"row", z:.48},
   tv:{act:"watch", front:true}, arcade:{act:"watch", front:true}, desk:{act:"watch", front:true}, piano:{act:"watch", front:true},
   fire:{act:"warm", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
