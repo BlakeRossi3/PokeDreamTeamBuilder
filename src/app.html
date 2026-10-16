@@ -917,6 +917,16 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
 .stars button.on{color:var(--hi)}
 :root[data-mode="2d"] .stars button.on{color:var(--accent)}
 .stars button:hover{transform:scale(1.15)}
+.tw-head{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin:0 0 12px}
+.tw-stat{display:flex; flex-direction:column; align-items:center; padding:10px 6px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
+.tw-stat small{color:var(--muted)} .tw-stat b{font-size:28px; line-height:1.1}
+.tw-next{display:flex; gap:12px; align-items:center; padding:12px 14px; margin:0 0 12px; border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); background:var(--raised)}
+.tw-next > div{display:flex; flex-direction:column; gap:2px; min-width:0} .tw-next span{color:var(--muted)}
+.tw-next.tyc{border-color:var(--accent)}
+.tw-next .stage{flex:none; width:64px; height:64px}
+.tw-rws{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px}
+.tw-rw{display:flex; flex-direction:column; gap:2px; padding:10px 12px; background:var(--raised); border:var(--bw) dashed var(--line-2); border-radius:var(--r-sm)}
+.tw-rw span, .tw-rw small{color:var(--muted)} .tw-rw.got{border-style:solid; border-color:var(--accent)} .tw-rw.got small{color:var(--accent)}
 .code-row{display:flex; gap:8px; align-items:center}
 .sd-text{display:block; width:100%; min-height:220px; resize:vertical; padding:10px 12px; background:var(--raised); color:var(--fg); border:var(--bw) solid var(--line-2); border-radius:var(--r-sm); font-family:ui-monospace, "SFMono-Regular", Menlo, monospace; font-size:13px; line-height:1.45; white-space:pre; overflow:auto}
 .sd-where{display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 0 0}
@@ -2015,7 +2025,7 @@ function cleanUI(u){
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[]});
 const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0});
-const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null});
+const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
   const int = v => Number.isInteger(v) && v > 0 ? v : 0;
@@ -2057,6 +2067,9 @@ function cleanGames(g){
   if (typeof g.card === "string" && unlockOf("card", g.card)) o.card = g.card;
   const sc = obj(g.showcase); o.showcase = {team:typeof sc.team === "string" && /^[a-z0-9]{1,16}$/.test(sc.team) ? sc.team : "all", style:sc.style === "2d" ? "2d" : "3d"};
   const bw = obj(g.botw); o.botw = typeof bw.code === "string" && /^[zj][A-Za-z0-9_-]{20,16000}$/.test(bw.code) ? {code:bw.code, ti:String(bw.ti || "Battle").slice(0, 60), w:bw.w ? 1 : 0, at:Number.isFinite(bw.at) ? bw.at : 0} : null;
+  const tw = obj(g.tower);   // Battle Tower: current and best streak, total wins, the locked team of a streak in progress, rewards given (bits)
+  o.tower = {cur:int(tw.cur), best:Math.max(int(tw.best), int(tw.cur)), won:int(tw.won), team:typeof tw.team === "string" ? tw.team.slice(0, 40) : "", size:tw.size === 6 ? 6 : 3,
+    nums:Array.isArray(tw.nums) ? [...new Set(tw.nums.filter(n => NAT_BY.has(n)))].slice(0, 6) : [], rw:int(tw.rw) & 7};
   const so = obj(g.social);
   o.social = {vis:Array.isArray(so.vis) ? [...new Set(so.vis.filter(v => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v)))].slice(-200) : [], likes:int(so.likes), friends:int(so.friends), fbN:int(so.fbN), fbW:int(so.fbW),
     likeAt:typeof so.likeAt === "string" && !isNaN(Date.parse(so.likeAt)) ? so.likeAt : ""};
@@ -4265,6 +4278,7 @@ const SCENES = [
   {id:"gym", name:"Gym arena", fx:{type:"confetti"}},
   {id:"lavender", name:"Lavender Town", fx:{type:"wisp"}},
   {id:"spear", name:"Spear Pillar", fx:{type:"sparkle", y:[0,.55]}},
+  {id:"tower", name:"Battle Tower", fx:{type:"confetti"}},
   ...["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"].map((r, i) => ({id:"hall" + (i + 1), name:`${r} Champion’s Hall`, hall:i + 1, fx:{type:"confetti"}})),
 ];
 const SCENE_BY = new Map(SCENES.map(s => [s.id, s]));
@@ -4719,7 +4733,7 @@ const PAINT = {
   },
 };
 // the nine Champion's Halls: one grand hall, in each region's colours (main, dark, light, metal)
-const HALL_COL = {1:["#d8423a","#5c1410","#ffb3a8","#ffd36b"], 2:["#c9a227","#4d3c08","#ffe9a3","#fff2c4"], 3:["#2f9e62","#0f3f26","#a8f0c8","#ffd36b"], 4:["#5b6fd6","#1c2466","#c7d0ff","#e8ecff"], 5:["#4a4a58","#121218","#d9d9e8","#c9a227"], 6:["#2f8fd6","#103a63","#bfe3ff","#ffd36b"], 7:["#ff8a3d","#7a2c0e","#ffd2b0","#fff2c4"], 8:["#9c3fd6","#38105a","#e3c2ff","#ffd36b"], 9:["#e2413b","#3a1670","#ffc0d6","#ffb347"]};
+const HALL_COL = {1:["#d8423a","#5c1410","#ffb3a8","#ffd36b"], 2:["#c9a227","#4d3c08","#ffe9a3","#fff2c4"], 3:["#2f9e62","#0f3f26","#a8f0c8","#ffd36b"], 4:["#5b6fd6","#1c2466","#c7d0ff","#e8ecff"], 5:["#4a4a58","#121218","#d9d9e8","#c9a227"], 6:["#2f8fd6","#103a63","#bfe3ff","#ffd36b"], 7:["#ff8a3d","#7a2c0e","#ffd2b0","#fff2c4"], 8:["#9c3fd6","#38105a","#e3c2ff","#ffd36b"], 9:["#e2413b","#3a1670","#ffc0d6","#ffb347"], 10:["#8a96ad","#1b2233","#e4ebf7","#ffd36b"]};
 function hallPaint(g){
   const [A, D, Lt, M] = HALL_COL[g];
   return {
@@ -4757,6 +4771,7 @@ function hallPaint(g){
   };
 }
 for (let g = 1; g <= 9; g++) PAINT["hall" + g] = hallPaint(g);
+PAINT.tower = hallPaint(10);   // the Battle Tower's hall: steel and gold
 const CRYSTALS = [[.08,.86,9,"#5ff3ff"],[.14,.8,6,"#b07bff"],[.92,.84,9,"#b07bff"],[.86,.78,6,"#5ff3ff"],[.3,.69,4,"#5ff3ff"],[.72,.69,4,"#ff8fe0"]];
 const TERA = [[.06,.9,16],[.95,.88,14],[.22,.66,7],[.8,.65,8]];
 function crystal(K, x, y, s, c){
@@ -6150,7 +6165,7 @@ const CARD_DESIGNS = {
   grid:{name:"Pixel grid", c:["#5b5fe0","#2b2f9e","#f1f1ff"], price:800, pat:"grid"}, aurora:{name:"Aurora", c:["#29c7a3","#6a3fd6","#effffb"], price:1200, pat:"glow"},
   galaxy:{name:"Galaxy", c:["#2a1d5c","#0b0a1f","#f4f1ff"], price:1500, pat:"stars"}, holo:{name:"Holo foil", c:["#9fd8ff","#ffb3e6","#fbfbff"], price:1800, pat:"holo"},
 };
-const REGION_COL = {1:["#d8423a","#7a1a14"], 2:["#c9a227","#6b5310"], 3:["#2f9e62","#164e33"], 4:["#5b6fd6","#25307a"], 5:["#3a3a44","#111116"], 6:["#2f8fd6","#174a7a"], 7:["#ff8a3d","#a23c16"], 8:["#9c3fd6","#4a1670"], 9:["#e2413b","#6a2bd6"]};
+const REGION_COL = {1:["#d8423a","#7a1a14"], 2:["#c9a227","#6b5310"], 3:["#2f9e62","#164e33"], 4:["#5b6fd6","#25307a"], 5:["#3a3a44","#111116"], 6:["#2f8fd6","#174a7a"], 7:["#ff8a3d","#a23c16"], 8:["#9c3fd6","#4a1670"], 9:["#e2413b","#6a2bd6"], 10:["#8a96ad","#3e4656"]};
 for (let g = 1; g <= 9; g++) CARD_DESIGNS["champ" + g] = {name:`${GENS[g - 1].region} Champion`, c:[...REGION_COL[g], "#fffaf0"], pat:"champ", champ:g};
 Object.entries(CARD_DESIGNS).forEach(([id, d]) => addItem({cat:"card", id, name:d.name, price:d.price || 0, free:!!d.free, champ:d.champ}));
 // --- profile icons (a Pokémon in a coloured badge) ---
@@ -6192,7 +6207,11 @@ LEAGUES.forEach(L => {
   set.forEach(it => Object.assign(it, {champ:g, price:0, free:false, from:`Champion ${who}`}));
   GYM_REWARD["champ" + g] = set;
 });
-const isExclusive = it => !!(it.gym || it.champ || it.e4);
+// --- Battle Tower exclusives: win streaks of 21 and 49 ---
+const TOWER_REWARD = {21:[{cat:"icon", id:"tw1", num:350, name:"Tower Tycoon’s Milotic", elite:true}, {cat:"bg", id:"tower", name:"Battle Tower"}],
+  49:[{cat:"furn", id:"trophytower", name:"Battle Tower trophy", kind:"trophy", w:1, d:1, region:10}, {cat:"icon", id:"tw2", num:486, name:"Tower Tycoon’s Regigigas", elite:true}]};
+Object.entries(TOWER_REWARD).forEach(([at, list]) => list.forEach(it => { Object.assign(it, {tower:+at, price:0, free:false, from:`${at} Battle Tower wins in a row`}); addItem(it); }));
+const isExclusive = it => !!(it.gym || it.champ || it.e4 || it.tower);
 const TITLES = () => LEAGUES.filter(L => state.games.leagues[L.g]).map(L => ({id:"champ" + L.g, name:`${GENS[L.g - 1].region} Champion`}));
 const myTitle = () => { const t = TITLES().find(x => x.id === state.games.title); return t ? t.name : ""; };
 // a team's own default backdrop is always free to use for that team
@@ -6346,8 +6365,8 @@ function renderShop(){
     const n = it.cat === "furn" ? furnCount(it.id) : 0;
     return `<div class="shop-item${have ? " owned" : ""}${hidden ? " mystery" : ""}${ex ? " ex" : ""}">
       ${hidden ? `<span class="it-thumb q">?</span>` : itemThumb(it)}
-      <b>${hidden ? "Gym exclusive" : esc(it.name)}</b>
-      <span class="meta">${it.event ? `<span class="pill ev">${esc((EVENTS.find(e => e.id === it.event) || {}).name || "Event")} · limited time</span> ` : ""}${hidden ? "Beat Gym Leaders to find it" : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
+      <b>${hidden ? (it.tower ? "Tower exclusive" : "Gym exclusive") : esc(it.name)}</b>
+      <span class="meta">${it.event ? `<span class="pill ev">${esc((EVENTS.find(e => e.id === it.event) || {}).name || "Event")} · limited time</span> ` : ""}${hidden ? (it.tower ? "Win streaks in the Battle Tower" : "Beat Gym Leaders to find it") : ex ? `From ${esc(it.from || "a Gym Leader")}` : it.free ? "Starter item" : have && !multi ? "Owned" : multi && n ? `Owned × ${n}` : ""}</span>
       ${ex || it.free || (have && !multi) ? "" : `<button class="btn sm${G.pp >= it.price ? " primary" : ""}" type="button" data-buy="${it.id}">${fmtPP(it.price)}</button>`}
     </div>`;
   };
@@ -6358,7 +6377,7 @@ function renderShop(){
     <div class="segrow shop-tabs" role="group">${CAT_ORDER.map(c => `<button type="button" data-scat="${c}" aria-pressed="${c === shopCat}">${CAT[c].name}</button>`).join("")}</div>
     ${ex.length ? `<p class="meta shop-ex">Exclusives found: ${exGot} / ${ex.length}</p>` : ""}
     <div class="shop-grid">${sorted.filter(it => !isExclusive(it) || owns(it.cat, it.id)).map(card).join("")}</div>
-    ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four and Champions. They’re never sold here.</p>` : ""}
+    ${ex.length - exGot ? `<div class="set-sub shop-find">Still to find · ${ex.length - exGot}</div><div class="shop-q" aria-label="${ex.length - exGot} exclusives still to find">${ex.filter(it => !owns(it.cat, it.id)).map(it => `<span class="q-tile" title="${it.champ ? "A Champion’s reward" : it.e4 ? "An Elite Four reward" : it.tower ? "A Battle Tower reward" : "A Gym Leader’s reward"}">?</span>`).join("")}</div><p class="note">Exclusives come from Gym Leaders, the Elite Four, Champions and the Battle Tower. They’re never sold here.</p>` : ""}
     ${shopCat === "furn" || shopCat === "exp" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
     ${shopCat === "icon" ? `<p class="note">Choose your profile icon on your Trainer card.</p>` : ""}</div>`;
   paintThumbs($("scBody"));
@@ -7878,6 +7897,7 @@ const ACH = [
   {id:"badges", name:"Badge master", desc:"Earn all 72 badges.", p:() => [totalBadges(), 72]},
   {id:"quiz10", name:"Quiz whiz", desc:"Reach a streak of 10 in any quiz.", p:() => [Math.min(10, bestQuiz()), 10]},
   {id:"quiz25", name:"Professor", desc:"Reach a streak of 25 in any quiz.", p:() => [Math.min(25, bestQuiz()), 25]},
+  {id:"tower", name:"Tower climber", desc:"Win 7 Battle Tower battles in a row.", p:() => [Math.min(7, state.games.tower.best), 7]},
   {id:"vs", name:"Head to head", desc:"Win a Versus battle against another save file.", p:() => [Math.min(1, state.games.vs.w), 1]},
   {id:"gif", name:"Director", desc:"Save a Hall of Fame GIF.", p:() => [Math.min(1, state.games.gifs), 1]},
   {id:"card", name:"Picture day", desc:"Save your trainer card as an image.", p:() => [Math.min(1, state.games.cards), 1]},
@@ -8499,6 +8519,76 @@ function renderReplays(){
   };
 }
 
+// ================= BATTLE TOWER =================
+// Battles in a row with one team at level 50 (3 on 3 or 6 on 6), healed between battles, no Bag on either side.
+// Every 7 wins the trainers get smarter (better natures, items, then EVs); every 7th battle is Tower Tycoon Palmer.
+// Points grow with the streak; streaks of 21 and 49 give Tower-only rewards (TOWER_REWARD, never sold).
+const TYCOON = {name:"Palmer", silver:[464, 350, 149, 486, 485, 488], gold:[486, 485, 488, 350, 464, 149]};
+const towerTier = cur => Math.floor(cur/7);
+const towerTycoon = cur => cur % 7 === 6;
+const towerPts = cur => 30 + 10*Math.min(5, towerTier(cur)) + (towerTycoon(cur) ? 150 : 0);
+let towerPick = null;
+function towerFoe(cur, size){
+  const T = state.games.tower, tier = towerTier(cur), ai = Math.min(4, 2 + tier), seed = (T.won*131 + cur*17 + Math.floor(Math.random()*1e6)) | 0;
+  if (towerTycoon(cur)) { const nums = (cur >= 20 ? TYCOON.gold : TYCOON.silver).slice(0, size);
+    return {foe:{name:`Tycoon ${TYCOON.name}`, title:`Tower Tycoon · ${cur >= 20 ? "Gold" : "Silver"} challenge`, bg:"tower", trIdx:TR_BY_NAME.get(TYCOON.name)}, side:foeSide(TYCOON.name, nums, {level:50, ai:4, seed}), ai:4}; }
+  // anyone from the rivals and leagues; Elite Four and Champions only once the streak gets going
+  const pool = [...RIVALS.map(r => ({name:r.tr, title:r.title, nums:r.team}))];
+  LEAGUES.forEach(L => { L.gyms.forEach(([nm, ty, ace], k) => pool.push({name:nm, title:`${GENS[L.g - 1].region} Gym Leader`, type:ty, nums:() => leagueTeam(L.g, nm, ty, ace, 6, L.g*100 + k)}));
+    if (tier >= 1) L.e4.forEach(([nm, ty, ace], k) => pool.push({name:nm, title:`${GENS[L.g - 1].region} ${L.e4label || "Elite Four"}`, type:ty, nums:() => leagueTeam(L.g, nm, ty, ace, 6, L.g*1000 + k)}));
+    if (tier >= 2) pool.push({name:L.champ[0], title:`${GENS[L.g - 1].region} Champion`, nums:L.champ[1]}); });
+  const o = pool[Math.floor(Math.random()*pool.length)], all = (typeof o.nums === "function" ? o.nums() : o.nums).filter(n => NAT_BY.has(n));
+  const nums = [...all].sort(() => Math.random() - .5).slice(0, size);
+  return {foe:{name:o.name, title:`Battle ${cur + 1} · ${o.title}`, type:o.type, bg:"tower"}, side:foeSide(o.name, nums, {level:50, ai, seed}), ai};
+}
+function renderTower(){
+  if (needTeam()) return;
+  const T = state.games.tower, ts = nonEmptyTeams(), live = T.cur > 0 && TEAM_BY.has(T.team);
+  if (!ts.some(t => t.id === towerPick)) towerPick = live ? T.team : ts.some(t => t.id === "all") ? "all" : ts[0].id;
+  const next = T.cur, tyc = towerTycoon(next), steps = [21, 49];
+  const reward = at => { const got = (T.rw & (at === 21 ? 1 : 2)) > 0; return `<div class="tw-rw${got ? " got" : ""}"><b>${at} in a row</b><span>${TOWER_REWARD[at].map(it => got ? esc(it.name) : it.cat === "furn" ? "A trophy" : it.cat === "bg" ? "A background" : "A profile icon").join(" · ")}</span><small>${got ? "★ Earned" : `${Math.min(T.best, at)} / ${at}`}</small></div>`; };
+  $("scBody").innerHTML = `<div class="sc-narrow wide tw">
+    <div class="tw-head"><div class="tw-stat"><small>Streak</small><b>${T.cur}</b></div><div class="tw-stat"><small>Best</small><b>${T.best}</b></div><div class="tw-stat"><small>Wins</small><b>${T.won}</b></div></div>
+    <div class="tw-next${tyc ? " tyc" : ""}">${tyc ? `${trOrEmblem(TYCOON.name)}<div><b>Battle ${next + 1}: Tower Tycoon ${TYCOON.name}</b><span>The Tower’s boss. Beat him for ${towerPts(next)} PokéPoints.</span></div>`
+      : `<div><b>Battle ${next + 1}</b><span>${7 - next % 7 - 1 ? `${7 - next % 7 - 1} more until Tycoon ${TYCOON.name}.` : ""} A win is worth ${towerPts(next)} PokéPoints.${towerTier(next) ? ` Trainers are ${towerTier(next) >= 2 ? "at their toughest" : "tougher now"}.` : ""}</span></div>`}</div>
+    ${live ? `<div class="gym-team"><div><b>Your Tower team</b><span class="note" style="margin:0">${T.size} on ${T.size} · locked until the streak ends</span></div><div class="gt-mons">${T.nums.map(n => spr(n)).join("")}</div></div>
+      <div class="actions"><button class="btn primary" type="button" id="twGo">Battle ${next + 1} ▸</button><button class="btn" type="button" id="twQuit">End streak</button></div>`
+    : `${teamSelect("twTeam", towerPick)}
+      <div class="set-row"><span>Format</span><div class="segrow" data-twsize><button type="button" data-v="3" aria-pressed="${T.size === 3}">3 on 3</button><button type="button" data-v="6" aria-pressed="${T.size === 6}">6 on 6</button></div></div>
+      <div class="actions"><button class="btn primary" type="button" id="twGo">Start a streak</button></div>`}
+    <div class="cov-h">Tower rewards</div><div class="tw-rws">${steps.map(reward).join("")}</div>
+    <p class="note">Everyone battles at level 50 with no Bag. Your team is fully healed after every win. Losing, or leaving a battle, ends the streak. Tower rewards can’t be bought in the Shop.</p></div>`;
+  paintAll($("scBody"));
+  nav.onChange = e => { if (e.target.id === "twTeam") towerPick = e.target.value; };
+  nav.onClick = e => {
+    const sz = e.target.closest("[data-twsize] [data-v]"); if (sz) { T.size = +sz.dataset.v; save(); Sound.play("select"); renderTower(); return; }
+    if (e.target.closest("#twQuit")) { askConfirm("End this streak?", `Your streak of ${T.cur} ends here. Your best stays ${T.best}.`, "End streak").then(ok => { if (ok) { towerEnd(); renderTower(); } }); return; }
+    if (e.target.closest("#twGo")) {
+      if (live) { towerBattle(); return; }
+      pickForBattle(towerPick, T.size, `Your team for the Battle Tower`, nums => { if (nums.length < T.size) { toast(`The ${T.size} on ${T.size} Tower needs ${T.size} Pokémon on your team.`); return; } Object.assign(T, {team:towerPick, nums:nums.slice(0, T.size), cur:0}); save(); towerBattle(); });
+    }
+  };
+}
+function towerEnd(){ const T = state.games.tower; T.best = Math.max(T.best, T.cur); T.cur = 0; T.nums = []; T.team = ""; save(); }
+async function towerBattle(){
+  const T = state.games.tower, tid = T.team, nums = T.nums.filter(n => teamOf(tid).includes(n));
+  if (nums.length < T.size) { toast("Your Tower team changed, so this streak is over. Start a new one!"); towerEnd(); openScreen("battle", "tower"); return; }
+  await withMoves();
+  const cur = T.cur, F2 = towerFoe(cur, T.size), me = {...playerSide(tid, 50, {}), party:nums.map(n => monFromTeam(tid, n, 50))};
+  startBattle({back:"tower", foe:F2.foe, sides:[me, F2.side], humans:[true, false],
+    leaveNote:`Leaving ends your streak of ${cur}.`, onLeave:() => { towerEnd(); },
+    onEnd:win => {
+      if (!win) { const was = T.cur; towerEnd(); return {text:`${esc(F2.foe.name)} ended your streak at <b>${was}</b>.${was >= T.best && was ? " That’s your best yet!" : ""}`, buttons:[["Back to the Tower", () => openScreen("battle", "tower"), true]]}; }
+      const pts = towerPts(cur); T.cur++; T.won++; T.best = Math.max(T.best, T.cur);
+      const got = [];
+      for (const [at, bit] of [[21, 1], [49, 2]]) if (T.cur >= at && !(T.rw & bit)) { T.rw |= bit; for (const it of TOWER_REWARD[at]) if (!owns(it.cat, it.id)) { grant(it); got.push(it); } }
+      save(); checkAch();
+      if (got.length) { earn(pts, `Battle Tower win ${T.cur}`, true); setTimeout(() => showRewards(`${T.cur} wins in a row!`, got, pts), 1700); } else earn(pts, `Battle Tower win ${T.cur}`);
+      return {text:`${towerTycoon(cur) ? `You beat <b>Tower Tycoon ${TYCOON.name}</b>!` : `You beat <b>${esc(F2.foe.name)}</b>!`} Streak: <b>${T.cur}</b>.${towerTycoon(T.cur) ? ` Next up: Tycoon ${TYCOON.name}.` : ""}`,
+        buttons:[[`Next: battle ${T.cur + 1}`, () => towerBattle(), true], ["Take a break", () => openScreen("battle", "tower")]]};
+    }});
+}
+
 // ================= BATTLE SCREENS =================
 const BADGE_NAMES = {1:["Boulder","Cascade","Thunder","Rainbow","Soul","Marsh","Volcano","Earth"], 2:["Zephyr","Hive","Plain","Fog","Storm","Mineral","Glacier","Rising"], 3:["Stone","Knuckle","Dynamo","Heat","Balance","Feather","Mind","Rain"], 4:["Coal","Forest","Cobble","Fen","Relic","Mine","Icicle","Beacon"], 5:["Trio","Basic","Insect","Bolt","Quake","Jet","Freeze","Legend"], 6:["Bug","Cliff","Rumble","Plant","Voltage","Fairy","Psychic","Iceberg"]};
 const badgeName = (g, k) => { const L = LEAGUES[g - 1]; if (L.badge === "stamp") return `${L.gyms[k][1].split("/")[0]} trial stamp`; return `${(BADGE_NAMES[g] || [])[k] || L.gyms[k][1].split("/")[0]} Badge`; };
@@ -8522,6 +8612,7 @@ function renderBattleScreen(){
           <span class="bm-rw">Gym Leaders give PokéPoints and exclusive rewards you can’t buy in the Shop.</span></span>
       </button>
       <button class="bm-card" type="button" data-bsub="rival">${ic("battle")}<b>Rival battle</b><span>Take on ${RIVALS.length} famous trainers with any of your teams.</span><span class="meta">${Object.keys(state.games.wins).length} of ${RIVALS.length} beaten</span></button>
+      <button class="bm-card" type="button" data-bsub="tower">${ic("trophy")}<b>Battle Tower</b><span>Win as many battles in a row as you can. Healed between battles, tougher every 7 wins.</span><span class="meta">${state.games.tower.cur ? `Streak ${state.games.tower.cur} · ` : ""}Best ${state.games.tower.best}</span></button>
       <button class="bm-card" type="button" data-bsub="replays">${ic("frame")}<b>Replays</b><span>Watch your last battles again, share them, or pin one to your trainer card.</span><span class="meta">${rpList().length} saved</span></button>
       <button class="bm-card" type="button" data-bsub="vs">${ic("card")}<b>Versus</b><span>Battle another save file on this device. Pass the device and pick moves in secret.</span><span class="meta">${state.games.vs.w} wins · ${state.games.vs.l} losses</span></button>
     </div>
@@ -8535,6 +8626,7 @@ function renderBattleScreen(){
   if (sub === "gym") return renderGym();
   if (sub === "vs") return renderVersus();
   if (sub === "replays") return renderReplays();
+  if (sub === "tower") return renderTower();
 }
 const teamSelect = (id, sel, label = "Your team") => { const ts = nonEmptyTeams(); return `<label class="field">${label}<select class="select" id="${id}">${ts.map(t => `<option value="${t.id}" ${t.id === sel ? "selected" : ""}>${esc(t.dex)} · ${teamOf(t.id).length} Pokémon</option>`).join("")}</select></label>`; };
 const playerSide = (teamId, level = 50, bag = BAG.standard()) => ({name: profile && !profile.guest ? profile.name : "You", party: teamOf(teamId).slice(0, MAX).map(n => monFromTeam(teamId, n, level)), human:true, foePrefix:"", bag, ai:3});
