@@ -38,6 +38,11 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 Progress lives in each player's browser (several save files per device, optional PIN). Players move a save between
 devices with Account menu → **Download a backup** / **Restore a backup**.
 
+**Online accounts** (optional, Supabase): fill in `site/config.js` and players can sign in with Google or an email
+code. They get a username, a friend code and one cloud save that syncs local-first across devices; when two devices
+both changed, the player chooses which progress to keep. Without the config the app is exactly as above. Setup:
+[docs/supabase-setup.md](docs/supabase-setup.md); schema and privacy rules: `supabase/migrations/`.
+
 ## Credits
 Full credits are in the app under Settings → Credits. The 2D Hall of Fame backgrounds and Pokémon Home art were made
 with [Retro Diffusion](https://retrodiffusion.ai/). Dream Team Dex is a free, non-profit fan project.
