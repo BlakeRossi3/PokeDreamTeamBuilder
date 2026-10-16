@@ -198,7 +198,7 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 .btn.primary:active{transform:translateY(3px); box-shadow:0 1px 0 var(--accent-d)}
 :root[data-mode="2d"] .btn{border-radius:var(--r-sm); border-color:var(--line)}
 :root[data-mode="2d"] .btn.primary{background:var(--accent); border-color:var(--line); box-shadow:none}
-:root[data-mode="2d"] .btn:hover::before{content:"▶"; font-size:.7em; display:inline-block; width:1.1em; margin-left:-1.1em}   /* sits in the padding, so hovering never changes the button's width */
+:root[data-mode="2d"] .btn:hover::before{content:"▶"; font-size:.7em; display:inline-block; width:1.1em; margin-left:-1.1em; margin-right:-6px}   /* sits in the padding (the negative right margin cancels the flex gap), so hovering never changes the button's width */
 .btn.sm{padding:5px 12px; font-size:var(--fs-sm)}
 .btn.plain{background:transparent}
 .btn:disabled{opacity:.45; cursor:not-allowed}
@@ -566,7 +566,7 @@ html[data-view="signin"], html[data-view="signin"] body{min-height:100%}
 .online h3{margin:0 0 4px; font-family:var(--font-d); font-size:1.1rem}
 .on-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
 .on-row input{flex:1 1 180px; min-width:0; padding:9px 12px; color:var(--fg); background:var(--bg); border:var(--bw) solid var(--line); border-radius:var(--r-sm); font:inherit}
-.btn.google{gap:8px}
+.btn.google{gap:6px}
 .g-logo{display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#fff; color:#4285f4; font:700 13px/1 Arial, sans-serif}
 .sync-pick{display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap:10px; margin:12px 0}
 .sync-opt{display:flex; flex-direction:column; gap:4px; text-align:left; padding:12px 14px; color:var(--fg); background:var(--panel-solid); border:var(--bw) solid var(--line); border-radius:var(--r-sm); cursor:pointer; font:inherit}
