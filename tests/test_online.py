@@ -1,6 +1,6 @@
 """Online accounts with a stand-in Supabase client: email code sign-in, username, bringing a save over, upload,
 versioned sync, the "which progress?" choice, reload, the account menu. Also checks the app is unchanged when
-site/config.js is empty (no online card).
+site/config.js is empty (no online card; the test stubs it empty).
 
     python3 tests/test_online.py [width height]
 
@@ -23,13 +23,16 @@ async def main():
         b = await p.chromium.launch(); errs = []
         ctx = await b.new_context(viewport={'width': W, 'height': H}, service_workers='block')
         pg = await ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)))
-        # 1. no config: sign-in screen exactly as before
+        # 1. no config: sign-in screen exactly as before (the real site/config.js may be filled in, so stub it empty)
+        EMPTY = lambda r: r.fulfill(status=200, content_type='text/javascript', body='window.DTD_CONFIG = {supabaseUrl: "", supabaseAnonKey: ""};')
+        await ctx.route('**/config.js', EMPTY)
         await pg.goto(BASE); await pg.evaluate('localStorage.clear()'); await pg.reload(); await pg.wait_for_timeout(600)
         assert await pg.locator('.online').count() == 0, 'online card without config'
         # a local save file with some progress
         await pg.fill('#accName', 'Old'); await pg.click('#accNew button[type=submit]'); await pg.wait_for_timeout(800)
         await pg.evaluate('state.games.intro=1; state.games.ecoNew=0; state.teams.g1=[6,9,3]; state.teams.g2=[157]; state.games.pp=1234; state.games.badges={"1":7}; save()')
         # 2. turn the online accounts on (config + stand-in client)
+        await ctx.unroute('**/config.js', EMPTY)
         await ctx.route('**/config.js', lambda r: r.fulfill(status=200, content_type='text/javascript', body=CONFIG))
         await ctx.add_init_script(FAKE)
         await pg.reload(); await pg.wait_for_timeout(1000)
