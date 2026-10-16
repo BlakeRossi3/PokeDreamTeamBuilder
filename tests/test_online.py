@@ -17,46 +17,6 @@ TAG = str(W)
 CONFIG = 'window.DTD_CONFIG = {supabaseUrl:"https://fake.supabase.co", supabaseAnonKey:"anon"};'
 # the stand-in Supabase client (shared with test_friends.py)
 FAKE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fake_supabase.js")).read()
-(() => {
-  const K = "fakeSB", load = () => JSON.parse(localStorage.getItem(K) || '{"profiles":{},"saves":{},"session":null}'), store = d => localStorage.setItem(K, JSON.stringify(d));
-  window.fakeSB = {get:load, set:store};
-  const ok = data => Promise.resolve({data, error:null}), bad = message => Promise.resolve({data:null, error:{message}});
-  function from(table){
-    const q = {filter:{}, patch:null};
-    const run = () => { const d = load(), uid = q.filter.id || q.filter.user_id, rows = d[table] || {};
-      if (q.patch) { if (rows[uid]) Object.assign(rows[uid], q.patch); store(d); return ok(null); }
-      return ok(rows[uid] ? JSON.parse(JSON.stringify(rows[uid])) : null); };
-    const api = {select(){ return api; }, update(p){ q.patch = p; return api; }, eq(c, v){ q.filter[c] = v; return api; }, maybeSingle: run, then(a, b){ return run().then(a, b); }};
-    return api;
-  }
-  const client = {
-    auth:{
-      getSession(){ return ok({session:load().session}); },
-      onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; },
-      signInWithOtp(){ return ok({}); },
-      signInWithOAuth(){ return ok({}); },
-      verifyOtp({token}){ if (token !== "123456") return bad("Token has expired or is invalid"); const d = load(); d.session = {user:{id:"u1"}}; store(d); return ok({user:d.session.user, session:d.session}); },
-      signOut(){ const d = load(); d.session = null; store(d); return ok({}); },
-    },
-    from,
-    rpc(name, a){
-      const d = load(), me = d.session && d.session.user.id;
-      if (!me) return bad("not_signed_in");
-      if (name === "claim_username") { if (/fuck/i.test(a.p_name)) return bad("username_not_allowed"); d.profiles[me] = {...(d.profiles[me] || {friend_code:"ABCD2345"}), id:me, username:a.p_name}; store(d); return ok(d.profiles[me]); }
-      if (name === "put_save") {
-        const cur = d.saves[me];
-        if (!a.p_base) { if (cur) return ok({ok:false, version:cur.version}); d.saves[me] = {data:a.p_data, version:1, device:a.p_device, updated_at:new Date().toISOString()}; store(d); return ok({ok:true, version:1}); }
-        if (!cur || cur.version !== a.p_base) return ok({ok:false, version:cur ? cur.version : null});
-        d.saves[me] = {data:a.p_data, version:cur.version + 1, device:a.p_device, updated_at:new Date().toISOString()}; store(d); return ok({ok:true, version:cur.version + 1});
-      }
-      if (name === "my_data") return ok({profile:d.profiles[me], save:d.saves[me]});
-      if (name === "delete_my_account") { delete d.profiles[me]; delete d.saves[me]; d.session = null; store(d); return ok(null); }
-      return bad("unknown " + name);
-    },
-  };
-  window.supabase = {createClient: () => client};
-})();
-'''
 
 async def main():
     async with async_playwright() as p:
