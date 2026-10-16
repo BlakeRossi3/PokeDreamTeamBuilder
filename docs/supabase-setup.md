@@ -50,10 +50,11 @@ Everything here is free on Supabase's free plan. It takes about 20 minutes.
 
    ```html
    <h2>Your Dream Team Dex sign-in code</h2>
-   <p>Type this code in the app: <strong style="font-size:24px;letter-spacing:4px">{{ .Token }}</strong></p>
-   <p>Or <a href="{{ .ConfirmationURL }}">tap here to sign in</a> on this device.</p>
-   <p>If you didn't ask for this, you can ignore this email.</p>
+   <p>Type this code in the app: <strong style="font-size:28px;letter-spacing:6px">{{ .Token }}</strong></p>
+   <p>It works on any device and expires in an hour. If you didn't ask for this, you can ignore this email.</p>
    ```
+   (Subject: `Your Dream Team Dex code: {{ .Token }}`. The app asks for the code; it has no link, so it works when the
+   email is read on a different device.)
 
    Do the same for the **Confirm signup** template, since a player's first sign-in uses that one.
 3. **Custom SMTP (free).** With [Brevo](https://brevo.com): sign up, verify your sender email under **Senders, Domains
