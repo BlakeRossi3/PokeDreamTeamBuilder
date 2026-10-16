@@ -3410,7 +3410,12 @@ function sbLoad(){
   if (SB.loading) return SB.loading;
   SB.loading = new Promise(res => {
     const go = () => {
-      try { SB.client = window.supabase.createClient(SBC.supabaseUrl, SBC.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:"pkce"}}); res(SB.client); }
+      // implicit flow: an email link signs in whichever browser opens it (a phone's mail app often opens links in its
+      // own browser, where a PKCE link can't finish). A sign-in finished in another tab reaches a tab still waiting
+      // for the code through onAuthStateChange.
+      try { SB.client = window.supabase.createClient(SBC.supabaseUrl, SBC.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:"implicit"}});
+        SB.client.auth.onAuthStateChange((ev, session) => { if (ev === "SIGNED_IN" && session && accView.online && accView.online.step === "code") setTimeout(() => sbOnSession(session.user), 0); });
+        res(SB.client); }
       catch(e){ SB.loading = null; res(null); }
     };
     if (window.supabase && window.supabase.createClient) { go(); return; }
@@ -3530,7 +3535,7 @@ function onlineCardHTML(){
     <h3 id="onT">Play on any device</h3>
     <p class="meta">Sign in and your teams, badges and PokéPoints follow you to every browser. Free, and you can add friends.</p>
     ${o.step === "code" ? `<form class="on-row" id="accCode" autocomplete="off"><input id="accCd" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code (if the email has one)" aria-label="Sign-in code" required><button class="btn primary" type="submit">Sign in</button></form>
-      <p class="note">We sent an email to <b>${esc(o.email)}</b>. Open it and tap <b>Sign in</b> (or type the code here if there is one). <button class="linkbtn" type="button" data-acc="emailback">Use a different email</button></p>`
+      <p class="note">We sent an email to <b>${esc(o.email)}</b>. Open it and tap <b>Sign in</b> (or type the code here if there is one). If the link opens in another browser, you’ll be signed in there. <button class="linkbtn" type="button" data-acc="emailback">Use a different email</button></p>`
     : `<div class="on-row"><button class="btn google" type="button" data-acc="google"><span class="g-logo" aria-hidden="true">G</span> Continue with Google</button></div>
       <form class="on-row" id="accEmail"><input id="accEm" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email" required value="${esc(o.email || "")}"><button class="btn" type="submit">Email me a sign-in link</button></form>`}
     ${o.err ? `<p class="acc-err" role="alert">${esc(o.err)}</p>` : ""}
@@ -3725,16 +3730,16 @@ function openOnlineMenu(m){
 // ---- boot: coming back from Google or an email link, or a session already on this device ----
 async function sbBoot(){
   if (!CLOUD_ON) return;
-  const q = new URLSearchParams(location.search), fromAuth = q.has("code") || q.has("error_description") || /access_token|error_description/.test(location.hash);
+  const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.slice(1)), fromAuth = q.has("code") || q.has("error_description") || h.has("access_token") || h.has("error_description");
   let hasToken = false; try { hasToken = Object.keys(localStorage).some(k => /^sb-.+-auth-token$/.test(k)); } catch(e){}
   if (!fromAuth && !hasToken && !accounts.list.some(p => p.sb)) return;
   const c = await sbLoad(); if (!c) return;
   c.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT" && profile && profile.sb) { SB.status = "signedout"; renderAcct(); } });
   let session = null; try { ({data:{session}} = await c.auth.getSession()); } catch(e){}
   if (fromAuth) {
-    const why = q.get("error_description");
+    const why = q.get("error_description") || h.get("error_description");
     for (const k of ["code", "error", "error_code", "error_description", "state"]) q.delete(k);
-    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));   // also drops the #access_token… part
     if (why) toast("Sign-in didn’t finish: " + why);
     if (session) sbOnSession(session.user);
   }
