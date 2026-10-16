@@ -156,7 +156,8 @@ h1{font-size:var(--fs-h1); font-weight:700; line-height:1.05}
 :root[data-mode="2d"] .acct .dot{border-radius:0}
 
 /* team tabs: slanted plates (3D) / menu boxes with ▶ cursor (2D) */
-.tabs-wrap{overflow-x:auto; margin-inline:-4px; padding:4px 4px 10px}
+.tabs-wrap{overflow-x:auto; margin-inline:-4px; padding:4px 4px 10px; scrollbar-width:thin; --fl:0px; --fr:0px; -webkit-mask-image:linear-gradient(90deg, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent); mask-image:linear-gradient(90deg, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent)}
+.tabs-wrap.fl{--fl:36px} .tabs-wrap.fr{--fr:36px}
 .tabs{display:flex; gap:8px; min-width:max-content; align-items:stretch}
 .tab{position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding:8px 22px 8px 20px; min-width:104px; cursor:pointer; text-align:left; border:0; background:var(--panel-2); clip-path:var(--slant); color:var(--fg)}
 .tab .num{font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.1em; color:var(--muted); text-transform:uppercase}
@@ -250,9 +251,8 @@ img.spr:not([src]), img.tr:not([src]){visibility:hidden}
 .slot-item{position:absolute; top:38px; right:4px; z-index:2; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
 .slot .x:hover{color:var(--bad); border-color:var(--bad)}
 :root[data-mode="2d"] .slot .x, :root[data-mode="2d"] .slot .info{border-radius:0; border-color:var(--line); font-size:16px}
-  background:transparent; border:1px dashed var(--muted); border-radius:var(--pill); color:var(--muted)}
 .types{display:flex; gap:4px; justify-content:center; flex-wrap:wrap}
-.tb{display:inline-block; padding:2px 8px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em; background:var(--tc); color:var(--tt); line-height:1.35; box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+.tb{display:inline-block; padding:2px 8px; max-width:100%; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em; background:var(--tc); color:var(--tt); line-height:1.35; box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
 :root[data-mode="2d"] .tb{border:2px solid var(--line); padding:0 6px; letter-spacing:.02em; box-shadow:none}
 
 /* mini party bar: sticks to the top of the Pokédex while you scroll */
@@ -453,7 +453,7 @@ html.noscroll, html.noscroll body{overflow:hidden}
 .hls{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px}
 .hl{display:flex; flex-direction:column; gap:2px; padding:8px; background:var(--raised); border:2px solid var(--line-2); border-radius:var(--r-sm); min-width:0}
 .hl span:first-child{font-size:var(--fs-xs); color:var(--muted)}
-.hl b{font-family:var(--font-d); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.hl b{font-family:var(--font-d); overflow-wrap:anywhere; line-height:1.15}
 .stats .tot + .tot{border-top:0; padding-top:0}
 
 /* desktop: header stays put; team and Pokédex scroll separately */
@@ -502,6 +502,8 @@ html.noscroll, html.noscroll body{overflow:hidden}
 .vt-slot{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; min-height:0; padding:12px 8px 14px; cursor:pointer; text-align:center; color:var(--fg);
   background:linear-gradient(var(--raised), var(--panel-2)); border:var(--bw) solid var(--line); border-radius:var(--r); box-shadow:var(--shadow), var(--inset); transition:transform .15s, border-color .15s}
 .vt-slot:hover{transform:translateY(-3px)}
+.vt-slot{container-type:inline-size} .vt-slot .types{max-width:100%}
+@container (max-width:120px){ .vt-slot .tb{padding-inline:4px; letter-spacing:0; font-size:10px} :root[data-mode="2d"] .vt-slot .tb{font-size:14px} }
 .vt-slot.on{border-color:var(--hi); box-shadow:0 0 0 3px var(--hi), var(--shadow)}
 .vt-slot.empty{cursor:default; border-style:dashed; justify-content:center; opacity:.6}
 :root[data-mode="2d"] .vt-slot{background:var(--slot-bg); box-shadow:inset 0 0 0 2px var(--hl), 4px 4px 0 color-mix(in srgb, var(--ink) 30%, transparent)}
@@ -671,7 +673,8 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 .ball-ic.lg{width:27px; height:27px; margin-right:8px; vertical-align:-2px}
 .slot{min-height:172px; cursor:pointer}
 .slot .nm{display:flex; align-items:center; justify-content:center; gap:5px; margin-top:auto; padding:0 6px 10px}
-.slot .nm .nt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.slot .nm .nt{min-width:0; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; white-space:normal; overflow-wrap:anywhere; text-align:left; line-height:1.12}
+.slot .nm .nt.l{font-size:.88em} .slot .nm .nt.xl{font-size:.78em}
 :root[data-mode="2d"] .slot .nm{padding-bottom:2px}
 .actions .btn.undo{flex:0 0 auto; padding-inline:14px}
 .ph .right .btn.more{min-width:36px; padding-inline:8px; font-size:18px; line-height:1; letter-spacing:.05em}
@@ -686,8 +689,9 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 :root[data-mode="2d"] .fpanel{border-width:2px; border-color:var(--line-2)}
 .frow{display:grid; grid-template-columns:118px minmax(0,1fr); gap:10px; align-items:center}
 .frow .fl{font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-.frow .segrow button{flex:0 1 auto; padding:4px 12px}
-.frow .segrow.gens button{min-width:38px; flex:0 0 auto}
+.frow .segrow, .ct-row .segrow, #mpCat{display:grid; grid-template-columns:repeat(auto-fit, minmax(64px, 1fr)); gap:4px}
+.frow .segrow button, .ct-row .segrow button, #mpCat button{padding:4px 6px; justify-content:center; text-align:center; min-width:0}
+.frow .segrow.gens, .ct-row .segrow.gens{grid-template-columns:repeat(9, minmax(0, 1fr))}
 .frow.end{grid-template-columns:1fr auto}
 .ftg{display:flex; flex-wrap:wrap; gap:6px}
 .fchip{display:inline-flex; align-items:center; gap:6px; padding:5px 12px; cursor:pointer; font-family:var(--font-d); font-weight:700; font-size:var(--fs-sm); background:var(--panel-solid); border:2px solid var(--line-2); border-radius:var(--pill); color:var(--muted)}
@@ -697,7 +701,7 @@ html.sorting, html.sorting *{cursor:grabbing!important; user-select:none}
 .empty-grid .btn{margin-top:10px}
 
 /* Pokémon sheet: Battle tab, move picker, item picker */
-.modal.sheet .pk-head{display:flex; align-items:center; gap:10px; padding-right:44px; min-width:0} .modal.sheet .pk-head h3{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.modal.sheet .pk-head{display:flex; align-items:center; gap:10px; padding-right:44px; min-width:0} .modal.sheet .pk-head h3{min-width:0; overflow-wrap:anywhere; line-height:1.2; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden}
 .modal.sheet{overflow-x:hidden}
 .modal.sheet .pk-head h3.mt{padding-right:0; font-size:var(--fs-h2, 20px)}
 @media (max-width:560px){
@@ -782,7 +786,7 @@ em.ok{font-style:normal; color:#1f9d4c; font-weight:700} em.no{font-style:normal
   .mp-list{max-height:none} .mpd{grid-template-columns:auto 1fr auto 1fr}
 }
 @media (max-width:560px){ .mp-row{grid-template-columns:38px 20px minmax(0, 1fr) 30px 30px} .mp-row > :nth-child(6){display:none} .mp-row.hdr > :nth-child(6){display:none} }
-.ip-tabs{margin:6px 0 10px}
+.ip-tabs{margin:6px 0 10px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(90deg, #000 92%, transparent); mask-image:linear-gradient(90deg, #000 92%, transparent)} .ip-tabs::-webkit-scrollbar{display:none} .ip-tabs button{flex:none}
 .ip-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:6px; max-height:min(56vh, 520px); overflow:auto; align-content:start; padding:2px}
 .ip-it{display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; cursor:pointer; background:var(--raised); color:var(--fg); border:var(--bw) solid var(--line); border-radius:var(--r-sm); font-family:var(--font-d); font-size:var(--fs-xs); line-height:1.15; text-align:center}
 .ip-it span{overflow:hidden; text-overflow:ellipsis; max-width:100%}
@@ -1080,7 +1084,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .screen{min-height:100vh; min-height:100dvh; display:flex; flex-direction:column}
 .sc-top{position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:12px; padding:12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:var(--bw) solid var(--line)}
 .sc-top h2{flex:1; font-size:var(--fs-h1); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-@media (max-width:480px){ .sc-top h2{font-size:clamp(18px, 6vw, 26px)} .sc-top{gap:8px} }
+@media (max-width:480px){ .sc-top h2{font-size:clamp(18px, 6vw, 26px)} .sc-top{gap:8px} .sc-top .bk-t{display:none} #scBack{padding-inline:12px} }
 :root:not([data-mode="2d"]) .sc-top h2{font-style:italic}
 .sc-right{display:flex; gap:8px; align-items:center}
 .sc-top .snd{position:static; width:40px; height:40px; padding:9px; color:var(--fg); background:var(--panel); border:var(--bw) solid var(--line); backdrop-filter:none}
@@ -1240,9 +1244,10 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 :root[data-mode="2d"] .bag-chip{border-radius:0; border-color:var(--ink)}
 .sw-flag.item{display:inline-flex; align-items:center; gap:2px; background:var(--raised); color:var(--fg); border:1px solid var(--line-2); padding-left:0} .sw-flag.item .itm{margin:-6px 0}
 :root[data-mode="2d"] .bt-move{border-radius:0; border:2px solid var(--ink)}
-.bt-acts{display:flex; gap:6px; flex-wrap:wrap}
+.bt-acts{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px} .bt-acts > *{justify-content:center; min-width:0}
+@media (max-width:560px){ .bt-acts{grid-template-columns:repeat(2, minmax(0, 1fr))} }
 .bt-head .bt-skip{margin-left:auto; flex:none}
-@media (max-width:620px){ .bt2 .bt-head{flex-wrap:wrap; gap:8px} .bt2 .bt-head > div{flex:1 1 0; min-width:0} .bt2 .bt-head h3{font-size:var(--fs-h2)} .bt-head .bt-skip{order:5; flex:1 1 100%; margin-left:0} .bt2 .bt-log{min-height:64px} }
+@media (max-width:620px){ .bt2 .bt-head{flex-wrap:wrap; gap:8px} .bt2 .bt-head > div:not(.stage){flex:1 1 0; min-width:0} .bt2 .bt-head h3{font-size:var(--fs-h2)} .bt-head .bt-skip{order:5; flex:1 1 100%; margin-left:0} .bt2 .bt-log{min-height:64px} }
 .prep-list{display:flex; flex-direction:column; gap:6px; margin:10px 0; max-height:min(56vh, 520px); overflow:auto}
 .prep-row{display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
 .prep-row .stage{width:48px; height:48px; flex:none} .prep-row .stage::before{display:none}
@@ -1303,8 +1308,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .ct-grid .field input, .ct-grid .field select{width:100%; min-width:0; box-sizing:border-box}
 .ct-row{display:grid; grid-template-columns:132px minmax(0,1fr); gap:10px; align-items:center; margin-top:10px}
 .ct-row .fl{font-family:var(--font-d); font-weight:700; font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-.ct-row .segrow button{flex:0 1 auto; padding:5px 12px}
-.ct-row .segrow.gens button{min-width:38px; flex:0 0 auto}
+.ct .ct-presets{display:grid; grid-template-columns:repeat(auto-fit, minmax(118px, 1fr)); gap:6px}
 .ct-types{display:flex; flex-wrap:wrap; gap:6px}
 .ct-tip{margin:6px 0 0 142px}
 .ct-size{display:flex; align-items:center; gap:10px}
@@ -1372,7 +1376,9 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .shop-bal b{font-family:var(--font-d); font-size:30px; line-height:1.1; font-variant-numeric:tabular-nums}
 :root[data-mode="2d"] .shop-bal{border-radius:0; background:var(--accent); color:var(--on-accent); border:3px solid var(--ink); box-shadow:4px 4px 0 var(--ink)}
 .shop-top .note{flex:1 1 260px; margin:0}
-.shop-tabs{flex-wrap:wrap}
+.shop-tabs{display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:6px} .shop-tabs button{justify-content:center; text-align:center}
+@media (max-width:900px){ .shop-tabs{grid-template-columns:repeat(3, minmax(0, 1fr))} }
+@media (max-width:480px){ .shop-tabs{grid-template-columns:repeat(2, minmax(0, 1fr))} }
 .shop-ex{margin:-4px 0 0}
 .shop-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(158px, 1fr)); gap:10px}
 .shop-item{display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 10px; text-align:center; background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--r); min-width:0}
@@ -1416,7 +1422,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .card-opt small{font-size:11px; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
 .card-opt[aria-pressed="true"]{border-color:var(--hi); background:var(--sel-bg); box-shadow:0 0 0 2px var(--hi)}
 .card-opt.locked .card-sw{filter:saturate(.4) brightness(.8)}
-.icon-grid{display:flex; flex-wrap:wrap; gap:6px}
+.icon-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(52px, 1fr)); gap:6px; justify-items:center}
 .icon-opt{padding:3px; cursor:pointer; background:none; border:2px solid transparent; border-radius:50%}
 .icon-opt .picon{width:44px; height:44px}
 .icon-opt[aria-pressed="true"]{border-color:var(--hi); box-shadow:0 0 0 2px var(--hi)}
@@ -1432,7 +1438,8 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 .home-deco .actions .btn, .shop > .actions .btn{flex:0 0 auto}
 .home-deco .actions{align-items:center; justify-content:space-between; margin-top:0}
 .bm-main .ic{width:58px; height:58px; padding:12px; background:rgba(255,255,255,.2)}
-.bm-main b{font-size:clamp(28px, 3.6vw, 40px); line-height:1.05}
+.bm-main b{font-size:clamp(28px, 3.6vw, 40px); line-height:1.05; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.22)}
+:root[data-mode="2d"] .bm-main b{color:var(--on-accent); text-shadow:none}
 .bm-main .bm-l > span:not(.ic):not(.bm-cta):not(.bm-prog){color:rgba(255,255,255,.92); font-size:var(--fs)}
 .bm-prog{display:grid; gap:6px; font-size:var(--fs-sm); color:rgba(255,255,255,.9)}
 .bm-prog .ach-bar{background:rgba(0,0,0,.22); max-width:none}
@@ -1557,7 +1564,7 @@ html[data-view="hub"] .start-shade{background:linear-gradient(rgba(5,7,15,.6), r
 
 <!-- ================= SCREENS (battle, quiz, settings…) ================= -->
 <section class="screen" id="screen" hidden>
-  <header class="sc-top"><button class="btn sm" type="button" id="scBack">← Menu</button><h2 id="scTitle"></h2><span class="sc-right"><button class="snd" type="button" data-snd aria-label="Sound"></button><button class="btn sm fsbtn" type="button" data-fs aria-label="Full screen" title="Full screen"><span class="fs-ic" aria-hidden="true"></span></button></span></header>
+  <header class="sc-top"><button class="btn sm" type="button" id="scBack" aria-label="Back to the menu">←<span class="bk-t"> Menu</span></button><h2 id="scTitle"></h2><span class="sc-right"><button class="snd" type="button" data-snd aria-label="Sound"></button><button class="btn sm fsbtn" type="button" data-fs aria-label="Full screen" title="Full screen"><span class="fs-ic" aria-hidden="true"></span></button></span></header>
   <main class="sc-body" id="scBody"></main>
 </section>
 
@@ -2258,7 +2265,11 @@ function renderTabs(){
   $("tabs").innerHTML = vis.map(tab).join("") + `<button class="tab-edit new" type="button" id="newTeam" title="Make a team with your own rules">＋ New team</button><button class="tab-edit" type="button" id="editTabs" title="Show, hide and reorder teams">⚙ Edit tabs</button>`;
   const cur = $("tabs").querySelector('[aria-current="true"]');
   if (cur) cur.scrollIntoView({block:"nearest", inline:"nearest"});
+  tabFade();
 }
+// fade the ends of the team tab rail when more tabs are hidden that way
+function tabFade(){ const w = $("tabs").parentElement; w.classList.toggle("fl", w.scrollLeft > 2); w.classList.toggle("fr", w.scrollLeft + w.clientWidth < w.scrollWidth - 2); }
+$("tabs").parentElement.addEventListener("scroll", tabFade, {passive:true}); addEventListener("resize", tabFade);
 function renderLayout(){
   $("layout").classList.toggle("closed", !state.teamOpen);
 }
@@ -2280,7 +2291,7 @@ function renderTeam(){
     html += `<div class="slot" data-num="${m.num}" data-sid="${m.num}" title="Tap for moves, item and stats · drag to reorder">${hi ? `<span class="slot-item" title="Holding ${esc(hi)}">${itemIcon(hi)}</span>` : ""}${friendOf(m.num) >= 100 ? `<span class="slot-ribbon" title="Friendship ribbon: best friends in your Home">${RIBBON_SVG}</span>` : ""}
       <button class="info" type="button" data-info="${m.num}" aria-label="${esc(m.name)} stats">i</button>
       <button class="x" type="button" data-remove="${m.num}" aria-label="Remove ${esc(m.name)}">✕</button>
-      ${spr(m.num, {sh})}<span class="nm" title="${esc(nickOf(state.team, m.num) === m.name ? m.name : nickOf(state.team, m.num) + " (" + m.name + ")")}">${ballImg(ballOf(state.team, m.num))}<span class="nt">${esc(nickOf(state.team, m.num))}</span>${sh || state.shiny ? '<span class="shiny-mark" title="Shiny">✦</span>' : ""}</span></div>`;
+      ${spr(m.num, {sh})}<span class="nm" title="${esc(nickOf(state.team, m.num) === m.name ? m.name : nickOf(state.team, m.num) + " (" + m.name + ")")}">${ballImg(ballOf(state.team, m.num))}<span class="nt${nickOf(state.team, m.num).length > 12 ? " xl" : nickOf(state.team, m.num).length > 8 ? " l" : ""}">${esc(nickOf(state.team, m.num))}</span>${sh || state.shiny ? '<span class="shiny-mark" title="Shiny">✦</span>' : ""}</span></div>`;
   }
   $("slots").innerHTML = html;
   $("clearBtn").disabled = !t.length; renderUndo();
@@ -2464,7 +2475,9 @@ function showTip(el){
   tip.hidden = false;
   const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
   let x = r.right + 10, y = r.top;
-  if (x + w > innerWidth - 8) x = r.left - w - 10;
+  const pan = el.matches(".slot") && el.closest(".panel, aside, section");
+  if (pan) { x = pan.getBoundingClientRect().right + 10; if (x + w > innerWidth - 8) x = r.left - w - 10; }   // team slots: beside the team panel, not over the other slots
+  else if (x + w > innerWidth - 8) x = r.left - w - 10;
   if (x < 8) x = Math.max(8, Math.min(innerWidth - w - 8, r.left));
   if (y + h > innerHeight - 8) y = innerHeight - h - 8;
   tip.style.left = x + "px"; tip.style.top = Math.max(8, y) + "px";
@@ -6004,12 +6017,31 @@ function furnSprite(it, ts, pixel, flip){
   try { HOUSE_DRAW[it.kind](fkit(x, ts, pixel), it); } catch(e){}
   const out = {c, pad, h}; if (furnCache.size > 300) furnCache.clear(); furnCache.set(k, out); return out;
 }
+// the visible part of a picture (transparent margins cut off), so small items like cobwebs fill their Shop tile
+const trimC = new WeakMap();
+function trimmed(src){
+  if (trimC.has(src)) return trimC.get(src);
+  const w = src.width, h = src.height, c = mkCanvas(w, h), cx = c.getContext("2d"); cx.drawImage(src, 0, 0);
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  try { const d = cx.getImageData(0, 0, w, h).data; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y*w + x)*4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } } catch(e) { x0 = 0; y0 = 0; x1 = w - 1; y1 = h - 1; }
+  let out = src;
+  if (x1 >= x0 && (x1 - x0 + 1 < w || y1 - y0 + 1 < h)) { out = mkCanvas(x1 - x0 + 1, y1 - y0 + 1); out.getContext("2d").drawImage(src, -x0, -y0); }
+  trimC.set(src, out); return out;
+}
 function homeItemThumb(x, it, pixel){
   x.clearRect(0, 0, 160, 96);
-  const img = pixel && artOf("furn/" + it.id);
-  if (img) { const k = Math.max(1, Math.floor(Math.min(150/img.width, 86/img.height))); x.imageSmoothingEnabled = false; x.drawImage(img, Math.round((160 - img.width*k)/2), Math.round((96 - img.height*k)/2), img.width*k, img.height*k); return; } const ts = Math.min(150/(it.w + .6), 84/(it.d*HM.SQ + (FURN_H[it.kind] || .3) + .6)) / (pixel ? 2 : 1);
-  const s = furnSprite(it, ts, pixel, false), k = pixel ? 2 : 1; x.imageSmoothingEnabled = !pixel;
-  x.drawImage(s.c, (160 - s.c.width*k)/2, (96 - s.c.height*k)/2, s.c.width*k, s.c.height*k);
+  const art = pixel && artOf("furn/" + it.id);
+  let img, k;
+  if (art) { img = trimmed(art); k = Math.max(1, Math.floor(Math.min(150/img.width, 86/img.height))); }
+  else {
+    k = pixel ? 2 : 1; let ts = Math.min(150/(it.w + .6), 84/(it.d*HM.SQ + (FURN_H[it.kind] || .3) + .6)) / k;
+    img = trimmed(furnSprite(it, ts, pixel, false).c);
+    const f = Math.min(150/(img.width*k), 86/(img.height*k), 4);   // small items: draw them bigger instead of stretching the picture
+    if (f > 1.15) { ts *= f*.98; img = trimmed(furnSprite(it, ts, pixel, false).c); }
+    k = Math.min(k, 150/img.width, 86/img.height); if (pixel) k = Math.max(1, Math.floor(k));
+  }
+  x.imageSmoothingEnabled = !pixel && !art;
+  x.drawImage(img, Math.round((160 - img.width*k)/2), Math.round((96 - img.height*k)/2), Math.round(img.width*k), Math.round(img.height*k));
 }
 function homeRoomThumb(x, room, pixel){
   const k = pixel ? 2 : 1, W = 160/k, H = 96/k, c = mkCanvas(W, H), cx = c.getContext("2d"), ts = H/(HM.WALL + HM.D*HM.SQ);
@@ -7149,7 +7181,7 @@ async function drawCard(cv, who){
   rows.forEach(([k, v], i) => { const y = 214 + i*32; c.fillStyle = mut; c.fillText(k, 60, y); c.fillStyle = ink; c.font = `700 ${two ? 24 : 18}px ${head}`; c.textAlign = "right"; c.fillText(String(v), 470, y); c.textAlign = "left"; c.font = `${two ? 24 : 18}px ${body}`; c.fillStyle = "rgba(0,0,0,.08)"; c.fillRect(60, y + 15, 410, 1); });
   // badges: 9 regions x 8
   c.fillStyle = mut; c.font = `${two ? 22 : 15}px ${body}`; c.fillText("Badges", 520, 230);
-  LEAGUES.forEach((L, ri) => { const y = 256 + ri*22; c.fillStyle = mut; c.fillText(ROMAN[L.g], 520, y); L.gyms.forEach(([, ty], k) => { const x = 560 + k*20, on = hasBadge(L.g, k); c.beginPath(); c.moveTo(x, y - 8); c.lineTo(x + 8, y); c.lineTo(x, y + 8); c.lineTo(x - 8, y); c.closePath(); if (on) { c.fillStyle = TC[ty.split("/")[0]]; c.fill(); } c.lineWidth = 1.5; c.strokeStyle = on ? "rgba(0,0,0,.35)" : "rgba(0,0,0,.18)"; c.stroke(); }); if (state.games.leagues[L.g]) { c.fillStyle = "#e2b13c"; c.font = `${two ? 20 : 15}px ${body}`; c.fillText("★", 730, y); c.font = `${two ? 22 : 15}px ${body}`; } });
+  LEAGUES.forEach((L, ri) => { const y = 256 + ri*22; c.fillStyle = mut; c.textAlign = "right"; c.fillText(ROMAN[L.g], 544, y); c.textAlign = "left"; L.gyms.forEach(([, ty], k) => { const x = 560 + k*20, on = hasBadge(L.g, k); c.beginPath(); c.moveTo(x, y - 8); c.lineTo(x + 8, y); c.lineTo(x, y + 8); c.lineTo(x - 8, y); c.closePath(); if (on) { c.fillStyle = TC[ty.split("/")[0]]; c.fill(); } c.lineWidth = 1.5; c.strokeStyle = on ? "rgba(0,0,0,.35)" : "rgba(0,0,0,.18)"; c.stroke(); }); if (state.games.leagues[L.g]) { c.fillStyle = "#e2b13c"; c.font = `${two ? 20 : 15}px ${body}`; c.fillText("★", 730, y); c.font = `${two ? 22 : 15}px ${body}`; } });
   // trainer
   try {
     const tr = trainerOf("all"), sp = await getSprite(two ? "t2d" : "t3f", tr), img = frameAt(sp, 0), bb = sp.bb;
