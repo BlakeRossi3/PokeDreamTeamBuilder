@@ -70,7 +70,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
 `POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
-`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `HOME LIFE` (`SPOT_OF`, `homeDecide`, `BERRIES`, `EVENTS`, `homePhoto`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
+`POKÉMON HOME` · `HALL OF FAME GALLERY` · `ONLINE ACCOUNTS` (`sbStart`, `sbUpload`, `syncConflict`, `openOnlineMenu`) · `FRIENDS` (`enterVisit`/`leaveVisit`, `renderFriends`, `publicProfile`) · `FRIEND BATTLES` (`fbChallenge`, `fbOpen`, `runLive`, `fbValid`) · `HOME LIFE` (`SPOT_OF`, `homeDecide`, `BERRIES`, `EVENTS`, `homePhoto`) · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
 
@@ -101,6 +101,11 @@ Boot code is at the very end of the script.
   with `leaveVisit()` (screens do it in `nav.cleanup`). What friends see is built by `publicProfile()` and uploaded after a
   sync (`friendsAfterSync`). New `state.games` fields: `showcase` {team, style}, `social` {vis, likes, friends, likeAt}.
   `tests/test_friends.py` plays two players with `tests/fake_supabase.js`.
+- **Friend battles** (`FRIEND BATTLES` section, `supabase/migrations/*_friend_battles.sql`): live lockstep battles. Both
+  clients build the same `Battle` (sides in invite order: inviter = side 0; `F.me` is which side is "you") with the
+  invite's seed; shared randomness is only drawn inside `fbStep`, so never call engine code that rolls dice outside it
+  in a live battle (auto-picks use `Math.random`). Remote choices go through `fbValid` on both sides. Counters live in
+  `state.games.social.fbN/fbW`. `tests/test_friend_battle.py` runs two browser contexts joined by a stand-in server.
 - **The claude.ai build** (`--artifact`) has no `<!doctype>` (quirks mode) and can use `window.claude` for cloud saves
   (`ON_CLAUDE`). The website is standards mode and stores saves only in the browser. Test layout changes on the website.
 - **Size:** the site is ~417 MB. GitHub Pages allows 1 GB per site and 100 MB per file; keep it well under.

@@ -38,6 +38,30 @@ set request.jwt.claim.sub = :'C';
 select username from claim_username('Brock');
 select count(*) as c_sees_public from public_profile;   -- 0
 select like_home(:'A');                                 -- not_friends
+-- friend battles: rules checked, only friends, only the two players, results both must confirm, 3 paid wins a day
+set request.jwt.claim.sub = :'A';
+select invite_battle(:'B', '{"format":4,"bag":true}')->>'status' as bad_rules;      -- bad_rules
+select invite_battle(:'C', '{"format":3,"bag":true}')->>'status' as a_to_c;         -- not_friends
+select invite_battle(:'B', '{"format":3,"bag":false}')->>'match_id' as mid \gset
+set request.jwt.claim.sub = :'C';
+select count(*) as c_sees_invites from battle_invites;                               -- 0
+select respond_battle(:'mid', true)->>'status' as c_responds;                        -- not_found
+set request.jwt.claim.sub = :'B';
+select username, rules from battle_inbox();                                          -- Blake_1 | {"bag": false, "format": 3}
+select respond_battle(:'mid', true)->>'status' as b_accepts;                         -- accepted
+select report_battle(:'mid', 0, :'B', 12)->>'status' as b_reports;                  -- waiting
+set request.jwt.claim.sub = :'A';
+select report_battle(:'mid', 0, :'A', 12)->>'status' as a_disagrees;                -- mismatch
+select count(*) filter (where report_battle(:'mid', r, :'B', 9)->>'status' = 'waiting') as a_reports_4 from generate_series(1, 4) r;   -- 4
+set request.jwt.claim.sub = :'B';
+select r as round, report_battle(:'mid', r, :'B', 9)->>'paid' as paid from generate_series(1, 4) r;   -- true true true false
+select battle_record();                                                              -- {"wins": 4, "losses": 0}
+insert into battle_results values (:'mid', 9, :'B', :'A', 1, true);                 -- direct writes blocked
+set request.jwt.claim.sub = :'A';
+select invite_battle(:'B', '{"format":1,"bag":true}')->>'match_id' as mid2 \gset
+reset role; update battle_invites set created_at = now() - interval '3 minutes' where match_id = :'mid2'; set role authenticated;
+set request.jwt.claim.sub = :'B';
+select respond_battle(:'mid2', true)->>'status' as late;                            -- expired
 -- B collects likes, then blocks A
 set request.jwt.claim.sub = :'B';
 select * from likes_received(null);

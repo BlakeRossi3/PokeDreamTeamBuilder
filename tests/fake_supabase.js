@@ -21,7 +21,29 @@
     };
     return api;
   }
+  // ---- Realtime + friend battles. tests/test_friend_battle.py runs two players in two browser contexts and exposes
+  // window.__fakeNet in both: a tiny shared server for the battle RPCs, the broadcast relay and invite changes.
+  // Without it (the other tests), channels are silent and battle RPCs fail.
+  const subs = [];
+  window.fakeRT = {deliver(topic, type, data){
+    for (const ch of [...subs]) for (const h of ch.hs) {
+      if (h.type !== type) continue;
+      if (type === "broadcast" && ch.topic === topic && (!h.filter.event || h.filter.event === data.event)) h.cb({event:data.event, payload:data.payload});
+      if (type === "postgres_changes" && h.filter.table === data.table) { const m = /^(\w+)=eq\.(.+)$/.exec(h.filter.filter || ""); if (!m || String(data.new[m[1]]) === m[2]) h.cb(data); }
+    }
+  }};
+  const net = (op, x) => window.__fakeNet ? window.__fakeNet(op, x) : Promise.resolve(null);
+  function channel(topic){
+    const ch = {topic, hs:[],
+      on(type, filter, cb){ ch.hs.push({type, filter:filter || {}, cb}); return ch; },
+      subscribe(cb){ subs.push(ch); net("sub", {topic}).then(() => cb && cb("SUBSCRIBED")); return ch; },
+      send(m){ return net("send", {topic, event:m.event, payload:m.payload}).then(() => "ok"); },
+      unsubscribe(){ const i = subs.indexOf(ch); if (i >= 0) subs.splice(i, 1); return net("unsub", {topic}).then(() => "ok"); },
+    };
+    return ch;
+  }
   const client = {
+    channel, removeChannel: ch => ch.unsubscribe(),
     auth:{
       getSession(){ return ok({session:load().session}); },
       onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; },
@@ -35,6 +57,7 @@
       const d = load(), me = d.session && d.session.user.id;
       if (!me) return bad("not_signed_in");
       const done = v => { store(d); return ok(v); };
+      if (/battle/.test(name)) return net("rpc", {name, args:a, me}).then(r => r && r.error ? {data:null, error:{message:r.error}} : {data:r ? r.data : null, error:r ? null : {message:"offline"}});
       switch (name) {
         case "claim_username": {
           if (/fuck/i.test(a.p_name)) return bad("username_not_allowed");
