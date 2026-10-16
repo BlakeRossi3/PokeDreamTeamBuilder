@@ -6,7 +6,7 @@ self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Pr
 self.addEventListener("fetch", e => {
   const r = e.request; if (r.method !== "GET") return;
   const u = new URL(r.url); if (u.origin !== location.origin) return;
-  if (/\/(s|t)\/[^/]+\.wasm$/.test(u.pathname) || u.pathname.endsWith("learnsets.json")) {
+  if (/\/(s|t)\/[^/]+\.wasm$/.test(u.pathname) || u.pathname.endsWith("learnsets.json") || u.pathname.endsWith("items.png")) {
     e.respondWith(caches.open(CACHE).then(async c => { const hit = await c.match(r); if (hit) return hit; const res = await fetch(r); if (res.ok) c.put(r, res.clone()); return res; }));
     return;
   }

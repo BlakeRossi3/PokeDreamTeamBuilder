@@ -255,6 +255,8 @@ const items = {
   "Starf Berry": () => { const b = duel({sp:"Pikachu", moves:["Splash"], hp:5, item:"Starf Berry"}, {sp:"Snorlax"}); b.hpBerry(0, []); return Object.values(b.get(0).stages).includes(2); },
   "Leppa Berry": () => true,
   "Ring Target": () => { const b = duel({sp:"Snorlax", moves:["Tackle"]}, {sp:"Gengar", item:"Ring Target"}); return b.calc(b.get(0), b.get(1), MV("Tackle"), {}).rolls[0] > 0; },
+  "Gold Berry": () => { const m = mon({sp:"Snorlax", item:"Gold Berry"}); return m.item === "Sitrus Berry"; },   // the Gen 2 names work like today's berries
+  "Berry": () => mon({sp:"Snorlax", item:"Berry"}).item === "Oran Berry",
   "Mirror Herb": () => { const b = duel({sp:"Snorlax", moves:["Swords Dance"]}, {sp:"Blissey", moves:["Splash"], item:"Mirror Herb"}); T(b); return b.get(1).stages.atk === 2 && !b.get(1).item; },
   "Custap Berry": () => { const b = duel({sp:"Snorlax", moves:["Tackle"], item:"Custap Berry", hp:20}, {sp:"Jolteon", moves:["Splash"]}); return T(b).find(e => e.k === "move").side === 0; },
   "Micle Berry": () => { const b = duel({sp:"Pikachu", moves:["Splash"], hp:5, item:"Micle Berry"}, {sp:"Snorlax"}); b.hpBerry(0, []); return b.get(0).v.micle === true; },

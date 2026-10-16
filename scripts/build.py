@@ -18,7 +18,7 @@ PLACEHOLDERS = [
     ("DATA", DATA / "data.json"), ("IDX", PACKS / "index.json"), ("TRAINERS", DATA / "trainer_names2.json"),
     ("OLDTRAINERS", DATA / "trainer_names.json"), ("TAGS", DATA / "themes_tags.json"), ("HOFD", DATA / "hofdata.json"),
     ("FORMS", DATA / "forms.json"), ("FE", DATA / "fe.json"), ("MOVES", DATA / "moves_data.json"), ("BALLS", DATA / "balls.json"),
-    ("RIVALS", DATA / "rivals.json"), ("LEADERS", DATA / "leaders.json"),
+    ("RIVALS", DATA / "rivals.json"), ("ITEMICONS", DATA / "item_icons.json"), ("LEADERS", DATA / "leaders.json"),
 ]
 TITLE = "Dream Team Dex"
 DESC = ("Build Pokémon dream teams for every region, battle Gym Leaders, decorate your own Pokémon Home and stage "
@@ -45,7 +45,7 @@ def assemble() -> str:
 def build_web(page: str) -> None:
     W = DIST / "web"
     h = hashlib.sha1()
-    for f in ["index.json", "learnsets.json", "gifkit.js"]:
+    for f in ["index.json", "learnsets.json", "gifkit.js", "items.png"]:
         h.update((PACKS / f).read_bytes())
     h.update(page.encode())
     build = h.hexdigest()[:10]
@@ -85,7 +85,7 @@ def build_web(page: str) -> None:
         shutil.rmtree(W)
     W.mkdir(parents=True)
     (W / "index.html").write_text(page, encoding="utf-8")
-    for f in ["gifkit.js", "learnsets.json"]:
+    for f in ["gifkit.js", "learnsets.json", "items.png"]:
         shutil.copy(PACKS / f, W / f)
     index = json.loads((PACKS / "index.json").read_text())
     for k in index:
@@ -131,7 +131,7 @@ def build_artifact(page: str) -> None:
     A = DIST / "artifact"
     A.mkdir(parents=True, exist_ok=True)
     (A / "dream-team-dex.html").write_text(page, encoding="utf-8")
-    print(f"dist/artifact/dream-team-dex.html  {len(page)//1024} KB  (publish it with packs/s, packs/t, index.json, learnsets.json, gifkit.js beside it)")
+    print(f"dist/artifact/dream-team-dex.html  {len(page)//1024} KB  (publish it with packs/s, packs/t, index.json, learnsets.json, items.png, gifkit.js beside it)")
 
 
 if __name__ == "__main__":

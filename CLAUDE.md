@@ -24,6 +24,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `python3 scripts/lint.py` — ESLint over the inline script (`npm install` once). Must be clean.
 - `node scripts/gen_data.mjs` — regenerate Pokémon/move/ability/item/learnset data from Pokémon Showdown (`@pkmn/dex`).
   Run by hand when data should change; the build itself never needs Node.
+- `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
+  downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
 - `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
   (`pip install playwright && python3 -m playwright install chromium` once). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
@@ -58,7 +60,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 `ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SMOOTH 3D SPRITES`
 (`getSprite`, `spKey`, `hqFrame` xBR upscale, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
-`PERSONALIZE` · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
+`POKÉMON SHEET` (`battleHTML`/`wireBattle`, `openMovePicker`, `openItemPicker`, `personalHTML`, `itemIcon`) · `BATTLE ENGINE` (= `src/engine.js`: `Battle`, `mkMon`, `BAG_ITEMS`, `ITEM_WORKS`, `ABIL_WORKS`) · `GYM CHALLENGE + LEAGUES` (`LEAGUES`) · `POKÉPOINTS + UNLOCKABLES` · `SHOP` ·
 `POKÉMON HOME` · `HALL OF FAME GALLERY` · `MAIN MENU + SCREENS` (`HUB`, `openScreen`, `SCREEN_TITLE`, `renderScreen` map,
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE SCREENS`.
 Boot code is at the very end of the script.
@@ -88,7 +90,9 @@ Boot code is at the very end of the script.
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
 
-- **Battles.** Member battle fields (`nature`, `evs`, `ivs`) are validated in `cleanMember`; Megas/Primals never hold
+- **The Pokémon sheet** has three tabs: Battle (everything that changes a battle), Personalize (looks only) and Info.
+  Keep anything that affects battle on the Battle tab only. Pickers open in the same modal and return with `sheetBack`.
+- **Battles.** Member battle fields (`nature`, `evs`, `ivs`, `level`) are validated in `cleanMember`; Megas/Primals never hold
   items (there are no Mega Stones). Any damage change must keep `tests/test_damage.mjs` at 0 mismatches.
 
 ## Blake's preferences
