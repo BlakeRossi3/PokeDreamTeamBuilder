@@ -37,6 +37,11 @@ async def main():
         st = await pg.evaluate('JSON.stringify(HS.mons.map(m => [m.n, m.st, m.act || (m.plan && m.plan.act) || null, !!m.visitor]))'); print('night', st)
         naps = await pg.evaluate('HS.mons.filter(m => !m.visitor && (m.act === "nap" || (m.plan && m.plan.act === "nap"))).length'); print('napping', naps)
         assert naps >= 2, st
+        zz = await pg.evaluate('HS.mons.filter(m => m.act === "nap" && m.zz).length'); print('real sleeping sprites', zz); assert zz >= 1, 'no sleeping sprite loaded'
+        # redecorating: put the bed away while someone sleeps on it; they get down instead of floating in the air
+        await pg.evaluate('window.__bed = homeData().items.find(p => p.id === "bed"); homeData().items = homeData().items.filter(p => p.id !== "bed")'); await pg.wait_for_timeout(1200)
+        left = await pg.evaluate('JSON.stringify(HS.mons.filter(m => m.spot ? m.spot.kind === "bed" : m.z > 0).map(m => m.n))'); print('still on the bed', left); assert left == '[]', left
+        await pg.evaluate('homeData().items.push(window.__bed)')
         await pg.screenshot(path=OUT + f'hl_night_{TAG}.png')
         await pg.evaluate('window.DTD_TOD = "day"')
         # berries: pick one, hold it, feed a Pokémon
