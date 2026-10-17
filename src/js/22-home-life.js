@@ -344,12 +344,13 @@ function drawWeather(c, now, pixel, which){
   }
 }
 // night lights: lamps, the fireplace, the TV and pumpkins glow after dark
-const GLOW = {lamp:[.5, 1.75, 2.4, "255,214,140"], lamp2:[.5, 1.8, 2.4, "255,214,140"], fire:[1, .9, 3, "255,150,70"], tv:[1, 1.0, 2.2, "120,190,255"], arcade:[.5, 1.2, 1.8, "120,240,255"], desk:[1, 1.3, 1.6, "120,190,255"], pumpkin:[.5, .45, 1.6, "255,150,40"], holtree:[.5, 1.4, 2.2, "255,220,150"], tank:[1, .9, 1.6, "120,200,255"]};
+const GLOW = {stove:[.6, .95, 1.5, "255,150,70"], orb:[.5, 1.1, 1.6, "200,160,255"], lamp:[.5, 1.75, 2.4, "255,214,140"], lamp2:[.5, 1.8, 2.4, "255,214,140"], fire:[1, .9, 3, "255,150,70"], tv:[1, 1.0, 2.2, "120,190,255"], arcade:[.5, 1.2, 1.8, "120,240,255"], desk:[1, 1.3, 1.6, "120,190,255"], pumpkin:[.5, .45, 1.6, "255,150,40"], holtree:[.5, 1.4, 2.2, "255,220,150"], tank:[1, .9, 1.6, "120,200,255"]};
 function drawGlows(c, now, pixel, k){
   if (!(k > 0)) return;
   const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
   for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.outA > .5 && HS.spans && HS.spans.some(s => p.x + p.it.w/2 > s.x0 && p.x + p.it.w/2 < s.x1)) continue;
-    const fl = 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*fl;
+    const screen = p.it.kind === "tv" || p.it.kind === "arcade";   // screens flicker as the picture changes
+    const fl = screen ? .82 + .18*Math.abs(Math.sin(now/170 + p.x)*Math.sin(now/530 + p.y)) : 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" || p.it.kind === "stove" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*fl;
     // a warm pool on the floor under the light, then the glow itself
     const fy = scrY(p.y + p.it.d) - ts*.1, pr = G[2]*ts*.85*fl;
     c.save(); c.translate(x, fy); c.scale(1, .34); let g = c.createRadialGradient(0, 0, 0, 0, 0, pr); g.addColorStop(0, `rgba(${G[3]},${(.3*k).toFixed(3)})`); g.addColorStop(1, `rgba(${G[3]},0)`); c.fillStyle = g; c.fillRect(-pr, -pr, pr*2, pr*2); c.restore();
@@ -370,7 +371,22 @@ function drawWindowLight(c, pixel, L){
   if (pixel) { if (!HS.litPat || HS.litCol !== col) { const t = mkCanvas(2, 2), x = t.getContext("2d"); x.fillStyle = `rgba(${col},.5)`; x.fillRect(0, 0, 1, 1); x.fillRect(1, 1, 1, 1); HS.litPat = c.createPattern(t, "repeat"); HS.litCol = col; } c.globalAlpha = Math.min(1, day*.55); c.fillStyle = HS.litPat; }
   for (const q of skyRects(pixel)) { if (q.out) continue;
     if (!pixel) { const g = c.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, `rgba(${col},${(.16*day).toFixed(3)})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; }
-    const a = q.x + q.w*.08, b = q.x + q.w*.92; c.beginPath(); c.moveTo(Math.round(a), Math.round(y0)); c.lineTo(Math.round(b), Math.round(y0)); c.lineTo(Math.round(b + sh), Math.round(y1)); c.lineTo(Math.round(a + sh*.8), Math.round(y1)); c.closePath(); c.fill(); }
+    const a = q.x + q.w*.08, b = q.x + q.w*.92; c.beginPath(); c.moveTo(Math.round(a), Math.round(y0)); c.lineTo(Math.round(b), Math.round(y0)); c.lineTo(Math.round(b + sh), Math.round(y1)); c.lineTo(Math.round(a + sh*.8), Math.round(y1)); c.closePath(); c.fill();
+    if (state.ui.motion !== "reduced") dustMotes(c, pixel, q, a, b, y0, y1, sh, col, day); }
+  c.restore();
+}
+// dust drifting in a sunbeam: a few specks that float slowly through the beam and twinkle as they turn in the light
+function dustMotes(c, pixel, q, a, b, y0, y1, sh, col, day){
+  const t = performance.now()/1000, R = rng(Math.round(q.x*7 + q.y*13) + 11), ts = HS.ts;
+  c.save(); c.globalAlpha = 1;
+  for (let i = 0; i < 18; i++) {
+    const u = (R() + t*(.012 + R()*.02)) % 1, v = (R() + Math.sin(t*.3 + i)*.04 + 1) % 1, d = R();   // along the shaft (window → floor), across it, how far down it lands
+    const wy = q.y + q.h*.55, fy = y0 + (y1 - y0)*d, fx = a + (b - a)*v + sh*d;   // from the window pane down to the lit patch on the floor
+    const y = wy + (fy - wy)*u, x = q.x + q.w*v + (fx - q.x - q.w*v)*u + Math.sin(t*.7 + i*2.3)*ts*.06, tw = .5 + .5*Math.abs(Math.sin(t*(.6 + R()) + i*1.7));
+    const al = day*tw*Math.sin(Math.PI*u)*(pixel ? .95 : .7); if (al < .05) continue;
+    c.fillStyle = `rgba(255,252,236,${al.toFixed(3)})`;
+    if (pixel) c.fillRect(Math.round(x), Math.round(y), 1, 1); else { c.beginPath(); c.arc(x, y, Math.max(.8, ts*.025), 0, 7); c.fill(); }
+  }
   c.restore();
 }
 function eventVisitors(){
