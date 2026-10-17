@@ -8,6 +8,12 @@
   bedroom → living room → kitchen → Grand hall → garden → pond, and your furniture moves along with its room.
 - **Nicer doorways** between rooms: carved door posts, a lantern-lit front door, rose-covered garden gates and doormats.
 - **Your PokéPoints stay in view** at the top of the Shop while you scroll.
+- **Decorating is easier:** drag the floor (or use the arrow keys) to look around, jump to any room, and tap a piece of
+  furniture for a toolbar right above it: Move, Flip, Turn, Put away. Drag it to slide it or nudge it with the arrow keys;
+  new pieces show up in view, ready to place, and Esc puts a moved piece back.
+- **Choose who lives here:** the new Trainer button picks the trainer you walk around your Home as (friends see them too).
+- **Beat a region's League, bring any team:** once you've beaten a region's Elite Four and Champion, its Gyms and League
+  take any of your teams.
 - **Pokémon switch style with you:** flipping between 2D and 3D now changes the sprites of everyone in your Home too.
 
 ## 🎨 All-new Home art

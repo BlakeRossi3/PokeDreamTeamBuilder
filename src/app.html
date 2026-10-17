@@ -674,7 +674,7 @@ button.fr-row{cursor:pointer} button.fr-row:hover{background:var(--raised-2, rgb
 .hm-event[data-ev="winter"] .hm-ev-pill{background:linear-gradient(100deg, #3a68b8, #6fc3e8)}
 :root[data-mode="2d"] .hm-ev-pill{border-radius:0; background:#6b3fc4; border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink)} :root[data-mode="2d"] .hm-event[data-ev="winter"] .hm-ev-pill{background:#3a68b8}
 .hm-photo{position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center; padding:6px 10px; background:rgba(11,18,34,.8); border-radius:var(--r-sm); color:#fff; font-size:var(--fs-xs); max-width:calc(100% - 20px)}
-.home.photo .home-bar, .home.photo .hm-bag, .home.photo .home-res, .home.photo .home-help, .home.photo .hm-event, .home.photo .home-pad{display:none}
+.home.photo .home-bar, .home.photo .hm-bag, .home.photo .home-res, .home.photo .home-help, .home.photo .hm-event, .home.photo .home-pad, .home.deco .home-pad{display:none}
 .home-pad{position:absolute; inset:auto 0 0 0; pointer-events:none}
 .hm-joy{position:absolute; left:14px; bottom:14px; width:96px; height:96px; border-radius:50%; background:rgba(11,18,34,.35); border:2px solid rgba(255,255,255,.45); pointer-events:auto; touch-action:none}
 .hm-joy i{position:absolute; left:50%; top:50%; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; background:rgba(255,255,255,.85)}
@@ -1383,6 +1383,7 @@ img.bdg, .gym-card.on img.bdg{background:none; box-shadow:none; clip-path:none; 
 .prep-lead{font-size:var(--fs-xs); padding:1px 6px; border-radius:99px; background:var(--accent); color:var(--on-accent)}
 :root[data-mode="2d"] .prep-lead{border-radius:0}
 .gym-team{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px; margin:6px 0; background:var(--raised); border:var(--bw) solid var(--line); border-radius:var(--r-sm)}
+.gym-team .gt-pick{display:flex; align-items:center; gap:8px; margin-top:6px} .gym-team .gt-pick .select{max-width:100%; min-width:0}
 .gym-team .gt-mons{display:flex; flex-wrap:wrap; gap:2px; flex:1 1 auto; min-width:0}
 .gym-team .gt-mons .stage{width:42px; height:42px}
 .gym-team .gt-mons .stage::before{display:none}
@@ -1684,7 +1685,13 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 .hm-it[aria-pressed="true"]{border-color:var(--hi); background:var(--sel-bg); box-shadow:0 0 0 2px var(--hi)}
 .hm-it:disabled{opacity:.45; cursor:default}
 :root[data-mode="2d"] .hm-it{border-radius:0}
-.hm-selact{align-items:center}
+/* decorating: the toolbar over the selected piece, the "where does it go" hint, and the room buttons */
+.hm-float{position:absolute; left:0; top:0; z-index:3; display:flex; align-items:center; gap:6px; padding:6px 8px; background:var(--panel-solid); border:var(--bw) solid var(--line); border-radius:var(--r-sm); box-shadow:var(--e2); max-width:calc(100% - 8px); box-sizing:border-box; flex-wrap:wrap}
+.hm-float b{font-family:var(--font-d); font-size:var(--fs-sm); padding-inline:4px; white-space:nowrap}
+.hm-dhint{position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:3; padding:6px 12px; border-radius:var(--pill); background:rgba(11,18,34,.82); color:#fff; font-size:var(--fs-sm); pointer-events:none; white-space:nowrap; max-width:calc(100% - 24px); overflow:hidden; text-overflow:ellipsis}
+.hm-dhint[hidden]{display:none}
+.hm-rooms{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+:root[data-mode="2d"] .hm-float{border-radius:0; background:var(--paper); box-shadow:3px 3px 0 var(--ink)} :root[data-mode="2d"] .hm-dhint{border-radius:0}
 .home-help{margin:0}
 .hm-pick{display:grid; grid-template-columns:repeat(auto-fill, minmax(86px, 1fr)); gap:6px; max-height:min(52vh, 460px); overflow:auto; margin:10px 0}
 .hm-pk{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; cursor:pointer; color:var(--fg); background:var(--raised); border:2px solid var(--line-2); border-radius:var(--r-sm); font-size:var(--fs-xs); min-width:0}
@@ -2063,7 +2070,7 @@ function cleanUI(u){
 }
 const QUIZ_MODES = ["sil", "type", "stat", "typing"];
 const freshOwn = () => ({bg:[], furn:{}, exp:[], icon:[], ball:[], card:[], house:[]});
-const freshHome = () => ({mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}, lay:"", house:"cottage"});
+const freshHome = () => ({tr:null, mons:[], items:[{id:"bed", x:1, y:0, f:0}, {id:"rug", x:4, y:3, f:0}, {id:"plant", x:9, y:0, f:0}, {id:"table", x:7, y:3, f:0}], fr:{}, pet:{}, gain:{}, bag:{}, trees:{}, feed:{}, gifts:[], giftDay:{}, fedN:0, photos:0, games:{d:"", catchN:0, seekN:0, catchBest:0, found:0}, lay:"", house:"cottage"});
 const freshGames = () => ({quizBest:0, qbest:{sil:0, type:0, stat:0, typing:0}, wins:{}, badges:{}, leagues:{}, vs:{w:0, l:0}, gifs:0, cards:0, ach:{}, since:0, card:"red", intro:0, daily:null, dailyN:0, dailyBest:0, pp:0, ppTotal:0, spent:0, own:freshOwn(), icon:null, eco:0, ecoNew:0, home:freshHome(), e4:{}, title:"", rw2:0, showcase:{team:"all", style:"3d"}, social:{vis:[], likes:0, friends:0, likeAt:"", fbN:0, fbW:0}, botw:null, tower:{cur:0, best:0, won:0, team:"", size:3, nums:[], rw:0}, missions:null, login:{last:"", cur:0, best:0, days:0}});
 function cleanGames(g){
   const o = freshGames(); if (!g || typeof g !== "object") return o;
@@ -2101,6 +2108,7 @@ function cleanGames(g){
     for (const [k, v] of Object.entries(obj(h.pet))) if (NAT_BY.has(+k) && /^\d{4}-\d\d-\d\d$/.test(v)) o.home.pet[k] = v;
     o.home.lay = typeof h.lay === "string" && h.lay.length < 200 && h.lay.split(",").every(id => ROOMS.some(r => r.id === id)) ? h.lay : "";   // the room order item positions refer to ("" = before the front yard)
     o.home.house = typeof h.house === "string" && HOUSES.some(x => x.id === h.house) ? h.house : "cottage";
+    o.home.tr = Number.isInteger(h.tr) && h.tr >= 0 && h.tr < TRAINERS.length ? h.tr : null;   // who walks around the Home (null = the "All" team's trainer)
     for (const [k, v] of Object.entries(obj(h.gain))) if (NAT_BY.has(+k) && v && /^\d{4}-\d\d-\d\d$/.test(v.d)) o.home.gain[k] = {d:v.d, n:Math.min(25, int(v.n))};
   }
   o.dailyBest = Math.min(10, int(g.dailyBest));
@@ -2855,10 +2863,10 @@ sortable($("slots"), ".slot[data-num]", {axis:"grid", onDrop:(from, to, aft) => 
 }});
 
 // ---------- trainer picker ----------
-function openTrainerPicker(){
-  const cur = trainerOf(state.team);
-  const md = openModal(`<h3 class="mt" id="modalTitle">Choose a trainer</h3>
-    <p class="note">For your ${esc(G().title.replace(" dream team",""))} team. ${TRAINERS.length} trainers, shown as ${state.mode === "2d" ? "pixel sprites" : "3D portraits"}.</p>
+function openTrainerPicker(o = {}){
+  const cur = o.cur ?? trainerOf(state.team);
+  const md = openModal(`<h3 class="mt" id="modalTitle">${esc(o.title || "Choose a trainer")}</h3>
+    <p class="note">${o.note || `For your ${esc(G().title.replace(" dream team",""))} team.`} ${TRAINERS.length} trainers, shown as ${state.mode === "2d" ? "pixel sprites" : "3D portraits"}.</p>${o.extra || ""}
     <input class="search tsearch" id="trSearch" type="search" placeholder="Search trainers" autocomplete="off" aria-label="Search trainers">
     <div id="trList"></div>`, {wide:true});
   const draw = () => {
@@ -2877,6 +2885,7 @@ function openTrainerPicker(){
   md.querySelector("#trSearch").addEventListener("input", draw);
   md.querySelector("#trList").addEventListener("click", e => {
     const b = e.target.closest("[data-pick]"); if (!b) return;
+    if (o.onPick) { o.onPick(+b.dataset.pick); return; }
     snap("Changed trainer"); state.trainers[state.team] = +b.dataset.pick; touched(); save();
     closeModal(); renderTeam(); toast(`${TRAINERS[+b.dataset.pick]} now leads this team.`);
   });
@@ -3777,7 +3786,7 @@ function cleanCardPub(c){
 function enterVisit(pub, who){
   if (VISIT) leaveVisit();
   save();
-  const mine = state, snap = persisted(), sc = pub && pub.showcase || {}, h = pub && pub.home || {}, myTr = trainerOf("all");
+  const mine = state, snap = persisted(), sc = pub && pub.showcase || {}, h = pub && pub.home || {}, myTr = homeTrainer();
   VISIT = {who, mine, snap, myTr, card:cleanCardPub(pub && pub.card), nicks:{}, earn:0, visited:false, team:"all", style:sc.style === "2d" ? "2d" : "3d"};
   for (const [k, v] of Object.entries(h.nicks && typeof h.nicks === "object" ? h.nicks : {})) if (NAT_BY.has(+k) && typeof v === "string") VISIT.nicks[k] = v.slice(0, 16);
   state = {...freshState(), q:"", type:null, sort:"dex", f:F0(), fOpen:false, covOpen:false, teamOpen:true};
@@ -6578,6 +6587,14 @@ function renderShop(){
 const HM = {WALL:2.6, SQ:.58, D:7};
 const homeData = () => state.games.home;
 const homeRooms = () => ROOMS.filter(r => r.free || owns("exp", r.id));
+const homeTrainer = () => Number.isInteger(homeData().tr) ? homeData().tr : trainerOf("all");   // you, walking around your Home
+function pickHomeTrainer(){
+  const D = homeData();
+  openTrainerPicker({cur:homeTrainer(), title:"Who lives here?", note:"Pick the trainer you walk around your Home as. Friends see them when they visit you.",
+    extra:Number.isInteger(D.tr) ? `<p class="note"><button class="linkbtn" type="button" id="trUseAll">Use my “All” team’s trainer (${esc(TRAINERS[trainerOf("all")])})</button></p>` : "",
+    onPick:i => { D.tr = i; save(); closeModal(); homeSyncMons(); toast(`${TRAINERS[i]} is home!`); }});
+  const b = $("trUseAll"); if (b) b.onclick = () => { D.tr = null; save(); closeModal(); homeSyncMons(); toast("Your “All” team’s trainer is home."); };
+}
 const houseOf = () => { const id = homeData().house; return HOUSES.find(h => h.id === id && owns("house", id)) || HOUSES[0]; };
 const homeCap = () => homeRooms().reduce((s, r) => s + r.cap, 0);
 const shadeHex = (hex, f) => { const [r, g, b] = hexRGB(hex); const m = v => Math.max(0, Math.min(255, Math.round(f < 1 ? v*f : v + (255 - v)*(f - 1)))); return "#" + [m(r), m(g), m(b)].map(v => v.toString(16).padStart(2, "0")).join(""); };
@@ -7017,6 +7034,7 @@ function renderHome(){
       <button class="btn sm hm-tb" type="button" id="hmDeco" aria-pressed="${HS.edit}" title="Place and move furniture" aria-label="${HS.edit ? "Done decorating" : "Decorate"}">${ic(HS.edit ? "check" : "sofa")}<span>${HS.edit ? "Done decorating" : "Decorate"}</span></button>
       <button class="btn sm hm-tb" type="button" id="hmShop" title="Furniture and rooms" aria-label="Shop">${ic("shop")}<span>Shop</span></button>
       <button class="btn sm hm-tb" type="button" id="hmCam" title="Photo mode" aria-label="Photo mode">${ic("camera")}<span>Photo</span></button>
+      ${VISIT ? "" : `<button class="btn sm hm-tb" type="button" id="hmTr" title="Choose your trainer" aria-label="Trainer: ${esc(TRAINERS[homeTrainer()])}">${ic("person")}<span>Trainer</span></button>`}
       ${VISIT || HS.edit ? "" : `<button class="btn sm hm-tb" type="button" id="hmGames" title="Berry Catch and Hide-and-seek" aria-label="${HS.hide && !HS.hide.found ? "Stop Hide-and-seek" : "Games"}">${ic("quiz")}<span>${HS.hide && !HS.hide.found ? "Stop" : "Games"}</span></button>`}
       <span class="home-pp" title="Your PokéPoints">${fmtPP(state.games.pp)}</span>
     </div>
@@ -7024,36 +7042,39 @@ function renderHome(){
     <div class="home-stage" id="hmStage"><canvas id="hmCv" tabindex="0" aria-label="Your Pokémon Home. Use the arrow keys or WASD to walk, E to play with a Pokémon, or tap where to go."></canvas>
       <div class="home-msg" id="hmMsg" hidden></div>
       <div class="hm-photo" id="hmPhoto" ${HS.photo ? "" : "hidden"}><span>Drag or use the arrow keys to look around</span><button class="btn sm primary" type="button" data-ph="png">Save PNG</button><button class="btn sm" type="button" data-ph="gif">Save GIF</button><button class="btn sm" type="button" data-ph="exit">Done</button></div>
-      <div class="home-pad" aria-hidden="true"></div></div>
+      <div class="home-pad" aria-hidden="true"></div>
+      ${HS.edit ? `<div class="hm-float" id="hmFloat" hidden></div><div class="hm-dhint" id="hmDHint"></div>` : ""}</div>
     ${HS.edit ? `<div class="home-deco" id="hmDecoBar"></div>` : `<div class="home-res" id="hmRes"></div>`}
     ${eventOn() && !HS.edit ? `<p class="hm-event" data-ev="${eventOn().id}"><span class="hm-ev-pill">${eventOn().id === "halloween" ? "🎃" : "❄"} ${esc(eventOn().name)}</span><span>Limited-time furniture in the Shop${eventOn().visitors ? ", and visitors after dark" : ""}.</span></p>` : ""}
-    <p class="note home-help">${HS.edit ? "Pick an item, then tap the floor to place it. Drag a placed item to move it, or tap it to flip, turn or put it away." : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
+    <p class="note home-help">${HS.edit ? (matchMedia("(pointer:coarse)").matches ? "Drag the floor to look around. Tap a piece of furniture to move, flip, turn or put it away, or drag it to slide it. Pick something below to add it." : "Drag the floor or use the arrow keys to look around. Click a piece of furniture to move, flip, turn or put it away; drag it to slide it, or nudge it with the arrow keys (F flip, R turn, Delete put away, Esc cancel).") : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
   </div>`;
   HS.cv = $("hmCv"); HS.ctx = HS.cv.getContext("2d");
   if (!HS.me || HS.me.x > HS.W) HS.me = {x:Math.min(3, HS.W/2), y:4.6, dir:1, path:null, walk:0, target:null};
   HS.weather = weatherToday();
   homeSyncMons();
   if (HS.edit) renderDecoBar(); else { renderResidents(); renderHomeBag(); }
-  $("scBody").querySelector(".home").classList.toggle("photo", HS.photo);
+  $("scBody").querySelector(".home").classList.toggle("photo", HS.photo); $("scBody").querySelector(".home").classList.toggle("deco", HS.edit);
   homeResize(); homePad();
   if (HS.introPending && !HS.edit) { HS.intro = {t0:performance.now()}; HS.introPending = false; }
   HS.layerKey = ""; cancelAnimationFrame(HS.raf); HS.last = performance.now(); HS.raf = requestAnimationFrame(homeFrame);
   if (HS.ro) HS.ro.disconnect(); const ro = HS.ro = new ResizeObserver(() => homeResize()); ro.observe($("hmStage"));
   if (HS.vis) HS.vis.disconnect(); HS.offscreen = false; const vis = HS.vis = new IntersectionObserver(es => { HS.offscreen = !es[es.length - 1].isIntersecting; }); vis.observe($("hmStage"));
   HS.cv.addEventListener("pointerdown", homePointerDown); HS.cv.addEventListener("pointermove", homePointerMove);
-  HS.cv.addEventListener("pointerup", homePointerUp); HS.cv.addEventListener("pointercancel", homePointerUp); HS.cv.addEventListener("pointerleave", () => { HS.hover = null; });
+  HS.cv.addEventListener("pointerup", homePointerUp); HS.cv.addEventListener("pointercancel", homePointerUp); HS.cv.addEventListener("pointerleave", () => { HS.hover = null; HS.ptrE = null; });
   HS.cv.style.touchAction = HS.edit || HS.photo ? "none" : "";
-  nav.cleanup = () => { seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; vis.disconnect(); HS.vis = null; HS.offscreen = false; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
+  nav.cleanup = () => { if (HS.edit) decoCancel(); seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; vis.disconnect(); HS.vis = null; HS.offscreen = false; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
   nav.onClick = e => {
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
-    if (e.target.closest("#hmDeco")) { HS.edit = !HS.edit; HS.place = null; HS.sel = null; Sound.play("select"); renderHome(); return; }
+    if (e.target.closest("#hmDeco")) { decoCancel(); HS.edit = !HS.edit; HS.sel = null; HS.dcam = HS.cam; Sound.play("select"); renderHome(); return; }
+    const rm = e.target.closest("[data-hroom]"); if (rm) { const r = HS.rooms[+rm.dataset.hroom]; if (r) { HS.dcam = r.x0 + r.w/2 - HS.V.W/HS.ts/2; Sound.play("select"); } return; }
     if (e.target.closest("#hmShop")) { shopCat = "furn"; openScreen("shop"); return; }
     if (e.target.closest("#hmGames")) { if (HS.hide && !HS.hide.found) seekStop(); else homeGames(); return; }
+    if (e.target.closest("#hmTr")) { pickHomeTrainer(); return; }
     if (e.target.closest("#hmCam")) { HS.photo = true; HS.pcam = HS.cam; HS.edit = false; Sound.play("select"); renderHome(); return; }
     const ph = e.target.closest("[data-ph]"); if (ph) { if (ph.dataset.ph === "exit") { HS.photo = false; renderHome(); } else homePhoto(ph.dataset.ph); return; }
     const hb = e.target.closest("[data-hold]"); if (hb) { HS.hold = HS.hold === hb.dataset.hold ? null : hb.dataset.hold; Sound.play("select"); renderHomeBag(); return; }
     const r = e.target.closest("[data-hres]"); if (r) { const m = HS.mons.find(x => x.n === +r.dataset.hres); if (m) homeGoTo(m); return; }
-    const p = e.target.closest("[data-hplace]"); if (p) { HS.place = HS.place && HS.place.id === p.dataset.hplace ? null : {id:p.dataset.hplace, f:0}; HS.sel = null; Sound.play("select"); renderDecoBar(); return; }
+    const p = e.target.closest("[data-hplace]"); if (p) { const same = HS.place && HS.place.id === p.dataset.hplace; decoCancel(); HS.place = same ? null : {id:p.dataset.hplace, f:0}; HS.sel = null; decoGhostInView(); Sound.play("select"); renderDecoBar(); return; }
     const a = e.target.closest("[data-hact]"); if (a) { homeEditAct(a.dataset.hact); return; }
   };
   setMusic("home");
@@ -7066,7 +7087,7 @@ function homeSyncMons(){
   for (const m of HS.mons) if (m.spMode !== state.mode) { m.sp = null; m.bk = null; m.bkLoad = false; m.loading = false; m.spMode = state.mode; }   // the style changed: everyone gets that style's sprite
   for (const m of HS.mons) if (!m.sp && !m.loading) { const md = state.mode; m.loading = true; getSprite(spKey(m.n, false, md), m.n).then(sp => { if (md === m.spMode) m.sp = sp; m.loading = false; }).catch(() => { m.loading = false; }); }
   // visiting a friend, you walk around as yourself
-  const tr = VISIT ? VISIT.myTr : trainerOf("all"); HS.trSp = null; getSprite(state.mode === "2d" ? "t2d" : "t3f", tr).then(sp => { HS.trSp = sp; }).catch(() => {});
+  const tr = VISIT ? VISIT.myTr : homeTrainer(); HS.trSp = null; getSprite(state.mode === "2d" ? "t2d" : "t3f", tr).then(sp => { HS.trSp = sp; }).catch(() => {});
 }
 function homeResize(){
   const st = $("hmStage"); if (!st || !HS.cv) return;
@@ -7114,12 +7135,16 @@ function homeFrame(now){
   const view = V.W/ts, fit = HS.W <= view, follow = fit ? (HS.W - view)/2 : Math.max(0, Math.min(HS.W - view, HS.me.x - view/2));
   let want = follow;
   if (HS.photo) want = HS.pcam = fit ? follow : Math.max(0, Math.min(HS.W - view, HS.pcam));   // photo mode: you steer the camera
+  else if (HS.edit) {   // decorating: the camera is yours too (drag the floor, arrow keys, the room buttons); carrying something to an edge scrolls
+    if (HS.place && HS.ptrE && !fit) { const px = homeWorldPoint(HS.ptrE).px, edge = V.W*.08; if (px < edge) HS.dcam -= dt*7; else if (px > V.W - edge) HS.dcam += dt*7; if (px < edge || px > V.W - edge) homePointerMove(HS.ptrE); }
+    want = HS.dcam = fit ? follow : Math.max(0, Math.min(HS.W - view, HS.dcam ?? HS.cam));
+  }
   else if (HS.intro) {   // walking in: a slow look across the whole house, then back to you
     const t = (now - HS.intro.t0)/3200, ease = v => v*v*(3 - 2*v);
     if (fit || t >= 1) HS.intro = null; else want = t < .55 ? ease(t/.55)*(HS.W - view) : (HS.W - view) + (follow - (HS.W - view))*ease((t - .55)/.45);
   }
   if (!HS.intro && !HS.photo && !fit && HS.me.walk) want = Math.max(0, Math.min(HS.W - view, want + HS.me.dir*view*.12));   // look a little ahead of where you're walking
-  if (HS.intro || HS.photo) { HS.cam += (want - HS.cam)*Math.min(1, dt*12); HS.camV = 0; }
+  if (HS.intro || HS.photo || HS.edit) { HS.cam += (want - HS.cam)*Math.min(1, dt*12); HS.camV = 0; }
   else { const a = (want - HS.cam)*28 - (HS.camV || 0)*10.6; HS.camV = (HS.camV || 0) + a*dt; HS.cam += HS.camV*dt; }   // a critically damped spring: eases in and out, never overshoots
   if (Math.abs(want - HS.cam) < .001 && Math.abs(HS.camV || 0) < .01) { HS.cam = want; HS.camV = 0; }
   HS.camPx = Math.round(HS.cam*ts);   // one rounded camera offset for the room, the furniture and the Pokémon, so nothing shimmers against the floor
@@ -7162,6 +7187,7 @@ function homeFrame(now){
   for (const m of HS.mons) if (!(HS.outA > .5 && inside(m.x))) drawEmote(c, m, now, pixel);   // emotes stay bright at night
   if (pixel) { HS.ctx.imageSmoothingEnabled = false; HS.ctx.drawImage(HS.low, 0, 0, HS.low.width*HS.k, HS.low.height*HS.k); }
   homeOverlay(now, pixel);
+  if (HS.edit) decoFloat(pixel);
   HS.raf = requestAnimationFrame(homeFrame);
 }
 function homeItemFx(c, p, now, pixel){
@@ -7368,6 +7394,7 @@ function homeUpdate(dt, now){
     if (HS.joy) { vx += HS.joy.x; vy += HS.joy.y; }
   }
   if (HS.photo) { HS.pcam += vx*dt*6; vx = vy = 0; }   // photo mode: the arrows move the camera, not you
+  if (HS.edit && $("modalWrap").hidden && !HS.sel) HS.dcam = (HS.dcam ?? HS.cam) + ((HS.keys.has("right") ? 1 : 0) - (HS.keys.has("left") ? 1 : 0))*dt*9;   // decorating: the arrows look around
   if (me.walk && now - HS.stepT > 320) { HS.stepT = now; Sound.play("step"); }
   if (now > HS.crackT) { HS.crackT = now + 350 + Math.random()*900; if (placedItems().some(p => p.it.kind === "fire" && Math.hypot(p.x + 1 - me.x, p.y + 1 - me.y) < 3.2)) Sound.play("crackle"); }
   if (now > HS.evT) { HS.evT = now + 5000; if (eventVisitors().filter(n => !homeMons().includes(n)).join(",") !== HS.evKey) homeSyncMons(); }   // visitors come at night and leave by day
@@ -7508,9 +7535,36 @@ function renderDecoBar(){
   const used = {}; homeData().items.forEach(p => used[p.id] = (used[p.id] | 0) + 1);
   const owned = ITEMS_ALL.filter(it => it.cat === "furn" && furnCount(it.id) > 0);
   box.innerHTML = `<div class="hm-items">${owned.map(it => { const left = furnCount(it.id) - (used[it.id] | 0); return `<button type="button" class="hm-it" data-hplace="${it.id}" aria-pressed="${HS.place && HS.place.id === it.id}" ${left <= 0 ? "disabled" : ""}>${itemThumb(it)}<span>${esc(it.name)}</span><small>${left} left</small></button>`; }).join("")}</div>
-    ${HS.sel ? `<div class="actions hm-selact"><b>${esc(HS.sel.it.name)}</b><button class="btn sm" type="button" data-hact="flip">Flip</button>${canRotate(unlockOf("furn", HS.sel.id)) ? `<button class="btn sm" type="button" data-hact="rotate">Turn</button>` : ""}<button class="btn sm" type="button" data-hact="move">Move</button><button class="btn sm" type="button" data-hact="store">Put away</button></div>` : ""}
-    <div class="actions"><button class="btn sm" type="button" data-hact="undo" ${HS.undo.length ? "" : "disabled"}>↶ Undo</button><button class="btn sm" type="button" data-hact="shop">Get more furniture</button><span class="meta">Rooms: ${HS.rooms.map(r => esc(r.name)).join(" · ")}</span></div>`;
+    <div class="actions"><button class="btn sm" type="button" data-hact="undo" ${HS.undo.length ? "" : "disabled"}>↶ Undo</button><button class="btn sm" type="button" data-hact="shop">Get more furniture</button></div>
+    <div class="hm-rooms" role="group" aria-label="Go to a room"><span class="meta">Go to</span>${HS.rooms.map((r, i) => `<button class="btn sm" type="button" data-hroom="${i}">${esc(r.name)}</button>`).join("")}</div>`;
   paintThumbs(box);
+  const fl = $("hmFloat");
+  if (fl) { fl.hidden = !HS.sel; if (HS.sel) fl.innerHTML = `<b>${esc(HS.sel.it.name)}</b><button class="btn sm primary" type="button" data-hact="move">Move</button><button class="btn sm" type="button" data-hact="flip">Flip</button>${canRotate(unlockOf("furn", HS.sel.id)) ? `<button class="btn sm" type="button" data-hact="rotate">Turn</button>` : ""}<button class="btn sm" type="button" data-hact="store">Put away</button>`; }
+}
+// decorating helpers: the toolbar that floats over the selected piece, nudging it, and a new piece showing up in view
+function decoFloat(pixel){
+  const fl = $("hmFloat"), hint = $("hmDHint"); if (!fl) return;
+  if (hint) { const t = HS.place && !HS.place.drag ? (matchMedia("(pointer:coarse)").matches ? `Tap where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes` : `Click where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes · Esc to cancel`) : ""; if (hint.textContent !== t) hint.textContent = t; hint.hidden = !t; }
+  const s = HS.sel; if (!s || fl.hidden) return;
+  const it = s.it || unlockOf("furn", s.id), r = HS.cv.getBoundingClientRect(), k = (pixel ? HS.k : 1)*r.width/HS.cv.width, st = $("hmStage").getBoundingClientRect();
+  const top = (scrY(s.y) - (isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5))*HS.ts)*k + (r.top - st.top), bot = scrY(s.y + it.d)*k + (r.top - st.top), cx = scrX(s.x + it.w/2)*k + (r.left - st.left);
+  const w = fl.offsetWidth, h = fl.offsetHeight, x = Math.max(4, Math.min(st.width - w - 4, cx - w/2)), y = top - h - 8 > 4 ? top - h - 8 : Math.min(st.height - h - 4, bot + 8);
+  fl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+}
+function decoCancel(){   // stop placing; a piece picked up with Move goes back where it was
+  const P = HS.place; HS.place = null; HS.ghost = null;
+  if (P && P.from && !P.drag) { homeData().items.push({id:P.id, x:P.from.x, y:P.from.y, f:P.f, ...(P.r ? {r:1} : {})}); HS.undo.pop(); HS.layerKey = ""; save(); }
+}
+function decoNudge(dx, dy){
+  const D = homeData(), s = HS.sel, i = D.items.findIndex(p => p.x === s.x && p.y === s.y && p.id === s.id); if (i < 0) return;
+  const q = D.items.splice(i, 1)[0], it = rotItem(unlockOf("furn", q.id), q.r ? 1 : 0), nx = q.x + dx, ny = q.y + dy, ok = fits(it, nx, ny);
+  if (ok) { decoSnap(); q.x = nx; q.y = ny; } D.items.splice(i, 0, q);
+  HS.sel = {...q, it}; HS.layerKey = ""; if (ok) { save(); Sound.play("select"); if (nx < HS.dcam + .5 || nx + it.w > HS.dcam + HS.V.W/HS.ts - .5) HS.dcam = nx + it.w/2 - HS.V.W/HS.ts/2; } else Sound.play("wrong");
+}
+function decoGhostInView(){   // a piece picked from the tray shows up in the middle of the view right away (no hover on a phone)
+  if (!HS.place) { HS.ghost = null; return; }
+  const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), view = HS.V.W/HS.ts, c = (HS.dcam ?? HS.cam) + view/2;
+  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(c - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(HM.D/2 - it.d/2)))};
 }
 function homeEditAct(a){
   const D = homeData(), s = HS.sel;
@@ -7525,7 +7579,7 @@ function homeEditAct(a){
     D.items.splice(i, 0, q); HS.sel = {...q, it};
   }
   if (a === "store" && i >= 0) { D.items.splice(i, 1); HS.sel = null; }
-  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0, r:s.r || 0}; HS.sel = null; }
+  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0, r:s.r || 0, from:{x:s.x, y:s.y}}; HS.ghost = {x:s.x, y:s.y}; HS.sel = null; }   // it waits where it was until you tap a new spot
   HS.layerKey = ""; save(); Sound.play("select"); renderDecoBar();
 }
 function fits(it, x, y, ignore){
@@ -7552,7 +7606,8 @@ function homeWorldPoint(e){
 }
 function homePointerMove(e){
   if (!HS.edit && !HS.photo && e.pointerType === "mouse") { const p = homeWorldPoint(e); HS.hover = HS.mons.find(m => m.box && p.px >= m.box.x && p.px <= m.box.x + m.box.w && p.py >= m.box.y && p.py <= m.box.y + m.box.h) || null; HS.cv.style.cursor = HS.hover ? "pointer" : ""; }
-  if (HS.photo && HS.pdrag) { HS.pcam = HS.pdrag.cam - (e.clientX - HS.pdrag.x)*HS.cv.width/HS.cv.getBoundingClientRect().width/HS.k/HS.ts; return; }
+  HS.ptrE = {clientX:e.clientX, clientY:e.clientY};
+  if (HS.pdrag) { const c = HS.pdrag.cam - (e.clientX - HS.pdrag.x)*HS.cv.width/HS.cv.getBoundingClientRect().width/HS.k/HS.ts; if (Math.abs(e.clientX - HS.pdrag.x) > 5) HS.pdrag.moved = true; if (HS.photo) HS.pcam = c; else HS.dcam = c; return; }
   if (HS.edit && HS.drag && !HS.place) { const p = homeWorldPoint(e); if (Math.abs(p.x - HS.drag.px) > .6 || Math.abs(p.y - HS.drag.py) > .9) decoDragStart(); }
   if (!HS.edit || !HS.place) return; const p = homeWorldPoint(e), it = rotItem(unlockOf("furn", HS.place.id), HS.place.r);
   const ox = HS.place.ox ?? it.w/2, oy = HS.place.oy ?? it.d/2;
@@ -7565,7 +7620,7 @@ function decoDragStart(){
   HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item}; HS.sel = null; Sound.play("select");
 }
 function homePointerUp(e){
-  if (HS.pdrag) { HS.pdrag = null; return; }
+  if (HS.pdrag) { const d = HS.pdrag; HS.pdrag = null; if (HS.edit && !d.moved && HS.sel) { HS.sel = null; renderDecoBar(); } return; }   // a tap on empty floor puts the selection down
   const d = HS.drag; HS.drag = null;
   if (!HS.edit || !HS.place || !HS.place.drag) return;
   homePointerMove(e);
@@ -7586,6 +7641,7 @@ function homePointerDown(e){
     const hit = placedItems().reverse().find(q => p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) && p.y <= q.y + q.it.d);
     HS.sel = hit ? homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id) && {...hit} : null; if (HS.sel) Sound.play("select"); renderDecoBar();
     if (hit) { HS.drag = {item:homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id), px:p.x, py:p.y}; HS.cv.setPointerCapture(e.pointerId); }
+    else { HS.pdrag = {x:e.clientX, cam:HS.dcam ?? HS.cam, moved:false}; HS.cv.setPointerCapture(e.pointerId); }   // empty floor: drag to look around
     return;
   }
   if (HS.hide && !HS.hide.found) { const hit = placedItems().reverse().find(q => !isFloorItem(q.it) && p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - 1.6 && p.y <= q.y + q.it.d); if (hit) { seekAt(hit); return; } }
@@ -7603,8 +7659,11 @@ const HM_KEYS = {ArrowLeft:"left", a:"left", A:"left", ArrowRight:"right", d:"ri
 document.addEventListener("keydown", e => {
   const inHome = nav.screen === "home" || (nav.screen === "friends" && nav.sub && nav.sub.startsWith("h:"));
   if (!inHome || $("screen").hidden || !$("modalWrap").hidden || e.target.closest("input, select, textarea")) return;
+  if (HS.edit && HS.sel && HM_KEYS[e.key]) { e.preventDefault(); const k = HM_KEYS[e.key]; decoNudge(k === "left" ? -1 : k === "right" ? 1 : 0, k === "up" ? -1 : k === "down" ? 1 : 0); return; }   // the arrows nudge the selected piece
   if (HM_KEYS[e.key]) { HS.keys.add(HM_KEYS[e.key]); e.preventDefault(); return; }
   if (HS.edit && (e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); decoUndo(); return; }
+  if (HS.edit && e.key === "Escape" && (HS.place || HS.sel)) { e.preventDefault(); if (HS.place && HS.place.drag) return; decoCancel(); HS.sel = null; renderDecoBar(); return; }
+  if (HS.edit && HS.sel && !e.ctrlKey && !e.metaKey) { const a = {f:"flip", F:"flip", r:"rotate", R:"rotate", Delete:"store", Backspace:"store", m:"move", M:"move"}[e.key]; if (a) { e.preventDefault(); homeEditAct(a); return; } }
   if ((e.key === "e" || e.key === "E" || e.key === " " || e.key === "Enter") && !e.target.closest("button") && !HS.edit && !HS.photo) { const t = nearestThing(); if (t) { e.preventDefault(); homeUseThing(t); } }
 });
 document.addEventListener("keyup", e => { if (HM_KEYS[e.key]) HS.keys.delete(HM_KEYS[e.key]); });
@@ -8207,6 +8266,7 @@ const ICON = {
   mute:'<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
   paw:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="4.6" ry="3.8"/><circle cx="6" cy="10.5" r="1.9"/><circle cx="9.6" cy="6.6" r="1.9"/><circle cx="14.4" cy="6.6" r="1.9"/><circle cx="18" cy="10.5" r="1.9"/></svg>',
   sofa:'<svg viewBox="0 0 24 24"><path d="M5 11V8.5A2.5 2.5 0 0 1 7.5 6h9A2.5 2.5 0 0 1 19 8.5V11"/><path d="M3.5 12.5a1.5 1.5 0 0 1 3 0V14h11v-1.5a1.5 1.5 0 0 1 3 0V18h-17z"/><path d="M5.5 18v1.5M18.5 18v1.5"/></svg>',
+  person:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/></svg>',
   camera:'<svg viewBox="0 0 24 24"><path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.6l1.6-2h5.6l1.6 2H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="12" cy="13" r="3.6"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
 };
@@ -8331,7 +8391,7 @@ async function screenBack(){
   showHub();
 }
 $("scBack").addEventListener("click", screenBack);
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("screen").hidden && $("modalWrap").hidden) { e.preventDefault(); screenBack(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !e.defaultPrevented && !$("screen").hidden && $("modalWrap").hidden) { e.preventDefault(); screenBack(); } });   // (Decorate mode uses Esc to cancel first)
 function askConfirm(title, text, yes){
   return new Promise(res => {
     let done = false; const fin = v => { if (done) return; done = true; res(v); };
@@ -9190,19 +9250,23 @@ async function startRival(i){
   startBattle({back:"rival", foe:{name:r.tr, title:r.title, bg:r.bg}, sides:[playerSide(rivalTeam), foe], humans:[true, false],
     onEnd:win => { if (win) { const first = !state.games.wins[r.tr]; state.games.wins[r.tr] = (state.games.wins[r.tr] || 0) + 1; save(); earn(first ? 150 : 40, `Beat ${r.tr}${first ? " for the first time" : ""}`); } return {text: win ? `You defeated <b>${esc(r.tr)}</b>!` : `You lost to <b>${esc(r.tr)}</b>. Tweak your team and try again!`, buttons:[["Rematch", () => startRival(i), true], ["Choose another rival", () => openScreen("battle", "rival")]]}; }});
 }
-const gymTeamFor = g => "g" + g;   // each region's challenge is taken on with that region's team only
+const gymTeamFor = g => "g" + g;   // each region's challenge is taken on with that region's team…
+// …until you beat its Elite Four and Champion: then any of your teams can take on its Gyms and League again
+const gymTeamsOpen = g => !!state.games.leagues[g];
 let gymTeam = {};
 function renderGym(){
   if (needTeam()) return;
   const g = gymRegion, L = LEAGUES[g - 1], R = GENS[g - 1].region, nb = badgeCount(g), next = [...Array(8).keys()].find(k => !hasBadge(g, k));
-  gymTeam[g] = gymTeamFor(g);
-  const lbl = L.label || "Gym challenge", e4l = L.e4label || "Elite Four", ok = teamOf(gymTeam[g]).length > 0;
+  const open = gymTeamsOpen(g), choices = open ? visibleTeams().filter(t => teamOf(t.id).length) : [];
+  if (!open || !choices.some(t => t.id === gymTeam[g])) gymTeam[g] = gymTeamFor(g);
+  const lbl = L.label || "Gym challenge", e4l = L.e4label || "Elite Four", ok = teamOf(gymTeam[g]).length > 0, TT = TEAM_BY.get(gymTeam[g]), tName = gymTeam[g] === gymTeamFor(g) ? `${R} team` : `${(TT && TT.title || "team").replace(/ dream team$/, "")} team`;
   $("scBody").innerHTML = `<div class="sc-narrow wide">
     <div class="segrow gym-tabs" role="group">${GENS.map(x => `<button type="button" data-greg="${x.g}" aria-pressed="${x.g === g}" title="${x.region}">${ROMAN[x.g]} <span>${x.region}</span>${state.games.leagues[x.g] ? " ★" : ""}</button>`).join("")}</div>
     <div class="gym-head"><h3>${R} ${lbl}</h3><span class="meta">${nb} / 8 ${L.badge === "stamp" ? "stamps" : "badges"}${state.games.leagues[g] ? " · League cleared ★" : ""}</span></div>
-    <div class="gym-team"><div><b>Your ${R} team</b><span class="note" style="margin:0">${ok ? `Only ${R} Pokémon can take on the ${R} ${esc(lbl)}.` : `Build it first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span></div>
+    <div class="gym-team"><div><b>Your ${esc(tName)}</b><span class="note" style="margin:0">${open ? `League cleared: bring any of your teams.` : ok ? `Only ${R} Pokémon can take on the ${R} ${esc(lbl)}. Beat its ${esc(e4l)} and Champion to bring any team.` : `Build it first: only ${R} Pokémon can take on the ${R} ${esc(lbl)}.`}</span>
+      ${open && choices.length > 1 ? `<label class="gt-pick"><span class="meta">Team</span><select class="select" id="gTeamSel" aria-label="Team for the ${esc(R)} ${esc(lbl)}">${choices.map(t => `<option value="${t.id}"${t.id === gymTeam[g] ? " selected" : ""}>${esc(t.title.replace(/ dream team$/, ""))}</option>`).join("")}</select></label>` : ""}</div>
       ${ok ? `<div class="gt-mons">${teamOf(gymTeam[g]).map(n => spr(n)).join("")}</div>` : ""}
-      <button class="btn${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? `✎ Edit ${R} team` : `Build the ${R} team`}</button></div>
+      <button class="btn${ok ? "" : " primary"}" type="button" id="gEdit">${ok ? `✎ Edit ${esc(tName)}` : `Build the ${R} team`}</button></div>
     <p class="note">Every battle is even: you bring as many Pokémon as the leader, and both sides battle at the leader’s level.</p>
     <div class="badge-case">${L.gyms.map(([nm, ty], k) => { const on = hasBadge(g, k), isNext = k === next;
       return `<div class="gym-card${on ? " on" : ""}${isNext ? " next" : ""}">${trOrEmblem(nm, ty)}<div class="gc-t"><b>${esc(nm)}</b><span>${ty.split("/").map(t => `<span class="tb" style="${tStyle(t)}">${t}</span>`).join("")}</span><small>${GYM_SIZE[k]} on ${GYM_SIZE[k]} · Lv ${GYM_LV[k]}</small><small class="gc-rw">${on ? `★ ${esc(GYM_REWARD[g + "-" + k].name)}` : "Reward: ?"}</small></div>
@@ -9211,11 +9275,11 @@ function renderGym(){
     <div class="e4-box${nb >= 8 ? "" : " locked"}"><div><h3>${e4l} + Champion</h3><p class="meta e4-rw">${L.e4.map(([x], k) => `<span class="${(state.games.e4[g] | 0) & (1 << k) ? "won" : ""}">${(state.games.e4[g] | 0) & (1 << k) ? "★" : "☆"} ${esc(x)}</span>`).join(" ")} <span class="${state.games.leagues[g] ? "won" : ""}">${state.games.leagues[g] ? "★" : "☆"} ${esc(L.champ[0])}</span> · Elite Four members give elite rewards; the Champion gives a full set.</p><p class="note" style="margin:4px 0 0">${L.e4.map(x => esc(x[0])).join(" · ")} · then Champion <b>${esc(L.champ[0])}</b>. Five battles in a row with no healing. You get one bag for the whole run (${bagLine(BAG.league())}), and what you use stays used. Your team battles at each opponent’s level (Lv 48–51, Champion Lv 54).</p></div>
       <button class="btn${nb >= 8 ? " primary" : ""}" type="button" id="e4Go" ${nb >= 8 && ok ? "" : "disabled"}>${nb >= 8 ? (state.games.leagues[g] ? "Challenge again" : "Begin") : `Earn all 8 ${L.badge === "stamp" ? "stamps" : "badges"} first`}</button></div></div>`;
   paintAll($("scBody"));
-  nav.onChange = null;
+  nav.onChange = e => { if (e.target.id === "gTeamSel") { gymTeam[g] = e.target.value; Sound.play("select"); renderGym(); } };
   nav.onClick = e => {
     const t = e.target.closest("[data-greg]"); if (t) { gymRegion = +t.dataset.greg; Sound.play("select"); renderGym(); return; }
     const b = e.target.closest("[data-gym]"); if (b) { const k = +b.dataset.gym; if (k > 0 && !hasBadge(g, k - 1) && !hasBadge(g, k)) { toast(`Beat ${L.gyms[k - 1][0]} first.`); return; } startGym(g, k); return; }
-    if (e.target.closest("#gEdit")) { enterApp(null, gymTeamFor(g)); return; }
+    if (e.target.closest("#gEdit")) { enterApp(null, gymTeam[g] || gymTeamFor(g)); return; }
     if (e.target.closest("#e4Go")) startE4(g);
   };
 }

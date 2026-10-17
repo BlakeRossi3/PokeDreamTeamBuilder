@@ -132,6 +132,10 @@ Boot code is at the very end of the script.
   `LEGACY_ROOMS`). Never change a room's `w` without migrating. Out in a yard the house rooms are covered by
   `drawFacade` (2D art `house/<design>`, canvas `facadeShapes` in 3D); `HS.outA` fades it. House designs are `HOUSES`
   (cat `house`, `home.house`, `houseOf()`). `tests/test_home_layout.py` checks the migration.
+  Decorate mode has its own camera (`HS.dcam`: drag the floor, arrow keys, `data-hroom` buttons), a toolbar over the
+  selected piece (`decoFloat`), `decoNudge`, and `decoCancel` (a piece picked up with Move goes back). The trainer in the
+  Home is `homeTrainer()` (`home.tr`, null = the "All" team's trainer). Gyms take any team once `leagues[g]` is won
+  (`gymTeamsOpen`).
 - **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.

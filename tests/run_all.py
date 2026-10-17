@@ -43,6 +43,8 @@ TESTS = [  # (file, args)
     ("test_tower.py", ["1280", "860", "3d"]),
     ("test_home_layout.py", ["2d", "1280", "860"]),     # yard + kitchen, old saves keep furniture in its room, house front, designs
     ("test_home_layout.py", ["3d", "390", "844"]),
+    ("test_home_deco.py", ["2d", "1280", "860"]),       # Decorate mode, the Home trainer, any team after the League
+    ("test_home_deco.py", ["3d", "390", "844"]),
     ("test_home_games.py", ["2d", "390", "844"]),       # hammock, Berry Catch, Hide-and-seek
     ("test_home_games.py", ["3d", "1280", "860"]),
     ("test_missions.py", ["3d", "390", "844"]),         # daily missions + login streak
