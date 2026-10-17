@@ -7082,8 +7082,8 @@ function renderHome(){
 function homeSyncMons(){
   const res = homeMons(), vis = eventVisitors().filter(n => !res.includes(n)), want = [...res, ...vis], have = new Map(HS.mons.map(m => [m.n, m]));
   HS.evKey = vis.join(",");
-  HS.followers = res.filter(n => friendOf(n) >= 50).sort((a, b) => friendOf(b) - friendOf(a)).slice(0, 2);
-  HS.mons = want.map((n, i) => have.get(n) || (() => { const s = randomSpot(false) || {x:1 + i, y:4}; const m = NAT_BY.get(n); return {n, x:s.x, y:s.y, dir:Math.random() < .5 ? -1 : 1, st:"idle", t:Math.random()*2000, spd:1.2 + Math.random()*.8, fl:floatsOf(n), water:m.types.includes("Water"), sp:null, hop:0, emote:null, swim:false, z:0, visitor:vis.includes(n)}; })());
+  HS.followers = res.filter(n => friendOf(n) >= 50 && !(isFish(n) && HS.rooms.some(r => r.pond))).sort((a, b) => friendOf(b) - friendOf(a)).slice(0, 2);
+  HS.mons = want.map((n, i) => have.get(n) || (() => { const s = (isFish(n) && randomSpot("only")) || randomSpot(false) || {x:1 + i, y:4}; const m = NAT_BY.get(n); return {n, x:s.x, y:s.y, dir:Math.random() < .5 ? -1 : 1, st:"idle", t:Math.random()*2000, spd:1.2 + Math.random()*.8, fl:floatsOf(n), water:m.types.includes("Water"), sp:null, hop:0, emote:null, swim:false, z:0, visitor:vis.includes(n)}; })());
   for (const m of HS.mons) if (m.spMode !== state.mode) { m.sp = null; m.bk = null; m.bkLoad = false; m.loading = false; m.spMode = state.mode; }   // the style changed: everyone gets that style's sprite
   for (const m of HS.mons) if (!m.sp && !m.loading) { const md = state.mode; m.loading = true; getSprite(spKey(m.n, false, md), m.n).then(sp => { if (md === m.spMode) m.sp = sp; m.loading = false; }).catch(() => { m.loading = false; }); }
   // visiting a friend, you walk around as yourself
@@ -7244,10 +7244,12 @@ function drawHomeMon(c, m, now, pixel){
   // a sleeping sprite is pixel art drawn at a whole-number scale close to the awake size; the rest as usual
   const s = zz ? Math.max(1, Math.min(4, Math.round(Math.max(m.sp.bb.w*.62, m.sp.bb.h*.5)*monScale(m)/Math.max(zz.bb.w, zz.bb.h)))) : monScale(m, sp);
   const ts = HS.ts, bb = sp.bb, w = bb.w*s, h = bb.h*s, X = scrX(m.x), Y = scrY(m.y);
-  const zl = (m.z || 0)*ts, lift = zl + (m.fl ? ts*.55 + Math.sin(now/600 + m.n)*ts*.08 : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !m.fl ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
+  // fliers: floaters always hover; birds take off when they go somewhere and land when they stop (flapping as they fly)
+  const airT = m.swim || m.z ? 0 : m.fl ? 1 : isFlier(m) && m.st === "walk" ? 1 : 0; m.air = (m.air ?? airT) + (airT - (m.air ?? airT))*Math.min(1, (HS.dt || .016)*4);
+  const zl = (m.z || 0)*ts, lift = zl + (m.air > .01 ? m.air*ts*(m.fl ? .75 : 1) + Math.sin(now/(m.fl ? 600 : 120) + m.n)*ts*(m.fl ? .08 : .07)*m.air : 0) + (m.hop > 0 ? Math.sin(m.hop*Math.PI)*ts*(m.act === "bounce" ? .8 : .5) : 0) + (m.st === "walk" && !(m.air > .5) ? Math.abs(Math.sin(now/110 + m.n))*ts*.06 : 0);
   const swim = m.swim, ft = footOf(sp), up = Math.max(0, lift - zl), lf = 1/(1 + up/(ts*.9)), sw = Math.max(ts*.2, ft.w*w*.62)*lf;   // the shadow shrinks and fades as it hops or floats
   if (swim) { c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = pixel ? 1 : Math.max(1, ts*.04); c.beginPath(); c.ellipse(Math.round(X), Math.round(Y - zl), Math.max(2, w*.36), Math.max(1, w*.09), 0, 0, 7); c.stroke(); }
-  else softShadow(c, X + ft.cx*w*(bk ? m.dir : -m.dir) + ts*.04, Y - zl + ts*.02, sw, sw*.3, (m.fl ? .2 : .34)*lf, pixel);
+  else softShadow(c, X + ft.cx*w*(bk ? m.dir : -m.dir) + ts*.04, Y - zl + ts*.02, sw, sw*.3, (.34 - .14*(m.air || 0))*lf, pixel);
   const fi = frameIdx(sp, now + m.n*137), img = sp.frames[fi].img;
   c.save(); c.translate(Math.round(X), Math.round(Y - lift)); if (bk ? m.dir < 0 : m.dir > 0) c.scale(-1, 1);   // front sprites face left (back sprites right): mirrored to face the other way
   if (m.act === "nap" && !zz) { c.rotate(.07); c.scale(1.08, .8 + .025*Math.sin(now/900 + m.n)); c.globalAlpha = .96; }   // no sleeping sprite: curled up a little, slow breathing
@@ -7424,19 +7426,21 @@ function homeUpdate(dt, now){
     if (m.st === "act") homeActTick(m, now);
     else if (m.st === "idle" && m.t <= 0 && homeDecide(m, now)) { /* off to use furniture, play, follow you or leave a gift */ }
     else if (m.st === "idle" && m.t <= 0) {
-      const near = Math.random() < .3 && friendOf(m.n) >= 40 ? me : null, swimTrip = m.water && HS.rooms.some(r => r.pond) && Math.random() < .5;
-      const t = swimTrip ? randomSpot("only") : randomSpot(m.fl || m.swim, near);
-      if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null; } else m.t = 1500;
+      const pond = HS.rooms.some(r => r.pond), fish = isFish(m.n) && pond, near = !fish && Math.random() < .3 && friendOf(m.n) >= 40 ? me : null;
+      const swimTrip = fish || (m.water && pond && Math.random() < (HS.weather === "rain" ? .9 : .75));   // water Pokémon live in the pond
+      const t = swimTrip ? randomSpot("only", fish || inPond(roomAt(m.x), m.x, m.y) ? {x:m.x, y:m.y} : null) : wanderSpot(m, near);
+      if (t) { m.tx = t.x; m.ty = t.y; m.st = "walk"; m.swimTrip = !!swimTrip; m.path = needPath(m, t) ? findPath(m, t) : null; } else m.t = 1500;
+      if (m.swim) m.t = 3000 + Math.random()*5000;   // drifting takes its time
       if (Math.random() < .12) m.emote = {k:clockTod() === "night" && Math.random() < .6 ? "zz" : "note", t0:now, dur:1600};
     } else if (m.st === "walk") {
       const wp = m.path && m.path.length ? m.path[0] : {x:m.tx, y:m.ty}, dx = wp.x - m.x, dy = wp.y - m.y, d = Math.hypot(dx, dy), last = !(m.path && m.path.length > 1);   // through the doorway when it needs another room
       m.v = Math.min(m.spd*(m.follow && me.walk ? 1.25 : 1), (m.v || 0) + m.spd*dt*3.5, last ? Math.max(.3, d*2.4) : 99);   // speeds up, and slows down as it arrives
-      const sp = m.v*dt;
+      const sp = m.v*dt*(m.swim ? .55 : 1);   // drifting in the pond is slow
       if (d <= sp && Math.abs(dx) > .01) m.dir = Math.sign(dx);   // the last little step still turns it the right way
       if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
       else if (d <= sp) { m.x = wp.x; m.y = wp.y; m.v = 0; if (m.plan) homeAct(m, m.plan, now); else if (m.follow) { m.follow = false; m.st = "idle"; m.t = 900; if (Math.abs(me.x - m.x) > .1) m.dir = Math.sign(me.x - m.x); } else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
       else {
-        const canSwim = m.fl || (m.water && m.swimTrip) || m.swim, av = d > .5 ? steerAway(m) : {x:0, y:0};
+        const canSwim = isFlier(m) || (m.water && m.swimTrip) || m.swim, av = d > .5 ? steerAway(m) : {x:0, y:0};
         let ux = dx/d + av.x, uy = dy/d + av.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l;
         let nx = m.x + ux*sp, ny = m.y + uy*sp*.8;
         if (blocked(nx, ny, canSwim)) { nx = m.x + dx/d*sp; ny = m.y + dy/d*sp*.8; }   // steering would bump into something: go straight
@@ -7444,7 +7448,7 @@ function homeUpdate(dt, now){
         else { const mx = nx - m.x; m.x = nx; m.y = ny; if (Math.abs(mx) > sp*.05) m.dir = Math.sign(mx); }   // always faces the way it's really moving (only straight up/down keeps its facing)
       }
     }
-    m.swim = !m.fl && !m.z && inPond(roomAt(m.x), m.x, m.y);
+    m.swim = !isFlier(m) && !m.z && inPond(roomAt(m.x), m.x, m.y);
   }
   if (HS.msgT && now > HS.msgT) { HS.msgT = 0; const el = $("hmMsg"); if (el) el.hidden = true; }
 }
@@ -7805,6 +7809,14 @@ function drawRibbon(c, x, y, s){   // a friendship ribbon on a canvas (trainer c
 const FAMILY = /*FAMILIES*/;
 const famOf = n => FAMILY[baseOf(n)] || baseOf(n);
 const NOCTURNAL = new Set([41, 42, 169, 92, 93, 94, 163, 164, 197, 198, 430, 200, 429, 302, 353, 354, 355, 356, 477, 491, 714, 715, 527, 528]);
+// sizes (PokéAPI height/weight): big ones (2 m+ or 250 kg+) don't squeeze onto chairs; tiny ones (40 cm and 15 kg or less) nap on cushions and shelves
+const BIG = new Set([3,23,24,76,95,103,115,130,131,143,146,148,149,150,160,199,208,226,244,245,248,249,250,289,297,306,320,321,330,336,350,357,362,376,381,382,383,384,389,450,460,464,465,472,473,476,477,483,484,485,486,487,493,497,526,545,593,604,614,623,638,639,640,643,644,646,675,697,699,706,713,716,717,718,750,760,766,768,770,773,776,780,781,790,791,792,794,796,797,799,800,804,805,809,812,823,839,843,844,851,858,870,874,879,881,882,883,887,888,889,890,895,896,897,901,902,904,911,934,968,972,975,976,977,981,982,983,984,988,989,992,995,998,1003,1005,1007,1008,1009,1018,1020,1021]);
+const TINY = new Set([10,13,16,19,21,25,29,46,50,52,81,90,98,102,104,116,132,133,138,151,172,173,174,175,177,182,183,187,191,194,220,238,255,258,265,276,280,285,298,311,312,315,316,333,339,351,385,387,393,396,401,406,412,415,417,420,422,425,427,433,456,479,480,481,482,489,490,492,494,506,509,519,527,529,540,543,546,557,572,574,577,582,587,590,595,602,607,616,650,653,656,659,661,664,665,669,670,677,682,684,686,702,703,704,707,708,710,722,725,728,731,734,736,742,743,746,747,751,753,755,761,764,771,777,778,789,798,808,810,813,816,819,821,824,829,833,835,837,840,841,842,848,854,855,856,859,868,869,871,872,877,906,909,917,919,921,922,924,925,926,928,938,940,944,951,953,954,955,957,978,999,1004,1011,1012,1013,1024,1025]);
+// Pokémon that live in water and can't walk on land: with a pond they never leave it
+const FISH = new Set([72,73,90,91,116,117,118,119,120,121,129,130,131,170,171,211,222,223,224,226,230,318,319,320,321,339,340,349,350,366,367,368,369,370,382,456,457,458,489,490,550,592,593,594,746,779,781,846,847,963,964,976,977,978]);
+const monSize = n => BIG.has(baseOf(n)) ? "big" : TINY.has(baseOf(n)) ? "tiny" : "mid";
+const isFish = n => FISH.has(baseOf(n));
+const isFlier = m => m.fl || NAT_BY.get(m.n).types.includes("Flying");
 const isNocturnal = n => NOCTURNAL.has(baseOf(n)) || NAT_BY.get(n).types.some(t => t === "Ghost" || t === "Dark");
 // where Pokémon can use furniture: on it (nap/sit/bounce, with a lift z in tiles) or in front of it
 const SPOT_OF = {
@@ -7815,8 +7827,19 @@ const SPOT_OF = {
   fire:{act:"warm", front:true}, stove:{act:"warm", front:true}, fridge:{act:"sniff", front:true}, counter:{act:"sniff", front:true}, tramp:{act:"bounce", pts:[[1, 1]], z:.45},
   fountain:{act:"splash", front:true}, tank:{act:"splash", front:true}, shellfountain:{act:"splash", front:true},
   plant:{act:"sniff", front:true}, flowers:{act:"sniff", front:true}, tree:{act:"sniff", front:true}, palm:{act:"sniff", front:true}, flowerarch:{act:"sniff", front:true},
+  arch:{act:"sniff", front:true}, pot2:{act:"sniff", front:true}, terrarium:{act:"sniff", front:true}, cauldron:{act:"sniff", front:true},
+  bag:{act:"train", front:true}, snowman:{act:"chill", front:true}, tub:{act:"warm", front:true},
+  orb:{act:"watch", front:true}, globe:{act:"watch", front:true}, lamp2:{act:"watch", front:true}, windvane:{act:"watch", front:true}, clock:{act:"watch", front:true},
+  display:{act:"admire", front:true}, totem:{act:"admire", front:true}, statue:{act:"admire", front:true}, badgecase:{act:"admire", front:true}, trophy:{act:"admire", front:true},
 };
-const ACT_EMO = {nap:"zz", sit:"note", watch:"star", warm:"heart", bounce:"note", splash:"drop", sniff:"heart", lurk:"dots", play:"note"};
+// tall furniture a flier can perch on (and a tiny Pokémon can nap on top of a shelf)
+const PERCH = new Set(["shelf", "statue", "clock", "fridge", "totem", "piano", "arcade", "tree", "palm", "windvane", "display", "badgecase", "lamp2"]);
+function perchZ(p){   // the height of the top of a piece of furniture, in tiles
+  const img = state.mode === "2d" && artOf(furnArtKey(p.it));
+  const h = img ? img.height*Math.min(1, p.it.w*32/img.width)/32 : (FURN_H[p.it.kind] || 1.5);
+  return h*(p.it.kind === "tree" || p.it.kind === "palm" ? .78 : .93);
+}
+const ACT_EMO = {nap:"zz", sit:"note", watch:"star", warm:"heart", bounce:"note", splash:"drop", sniff:"heart", lurk:"dots", play:"note", perch:"note", sun:"heart", eat:"heart", train:"bang", chill:"heart", admire:"star"};
 function homeSpots(){
   const out = [];
   for (const p of placedItems()) {
@@ -7829,27 +7852,58 @@ function homeSpots(){
       out.push(s);
     });
   }
-  if (clockTod() === "night") for (const r of HS.rooms) if (r.wall) for (const x of [r.x0 + .9, r.x0 + r.w - .9]) if (!blocked(x, .75)) out.push({key:`corner${x}`, act:"lurk", kind:"corner", x, y:.75, z:0, on:false});
+  for (const p of placedItems()) if (PERCH.has(p.it.kind)) {   // on top of tall furniture
+    const x = p.x + p.it.w/2, ay = Math.min(HM.D - .3, p.y + p.it.d + .5), z = perchZ(p);
+    if (HM.WALL + (p.y + p.it.d)*HM.SQ - z < 1.3) continue;   // too tall against the back wall: a bird up there would be out of view
+    if (!blocked(x, ay)) out.push({key:`${p.id}@${p.x},${p.y}#perch`, act:"perch", kind:p.it.kind, x, y:p.y + p.it.d, z, on:true, depth:p.y + p.it.d + .03, ax:x, ay});
+  }
+  const tod = clockTod();
+  if (tod === "night") for (const r of HS.rooms) if (r.wall) for (const x of [r.x0 + .9, r.x0 + r.w - .9]) if (!blocked(x, .75)) out.push({key:`corner${x}`, act:"lurk", kind:"corner", x, y:.75, z:0, on:false});
+  if (tod !== "night" && HS.weather !== "rain" && HS.weather !== "snow")   // sunny patches in the yards
+    for (const r of HS.rooms) if (roomKind(r) === "out") for (const f of [.25, .5, .75]) { const x = r.x0 + r.w*f, y = HM.D*(f === .5 ? .82 : .6); if (!blocked(x, y)) out.push({key:`sun${r.id}${f}`, act:"sun", kind:"sun", x, y, z:0, on:false}); }
   return out;
 }
+// where a Pokémon would rather be: "out" in the yards, "in" the house, or "" (anywhere)
+function placePref(m){
+  const T = NAT_BY.get(m.n).types, has = t => T.includes(t), w = HS.weather, night = clockTod() === "night";
+  if (night) return isNocturnal(m.n) ? "" : "in";
+  if (w === "rain") return has("Water") || has("Grass") ? "out" : "in";
+  if (w === "snow") return has("Ice") ? "out" : has("Fire") ? "in" : "";
+  if (["Grass", "Bug", "Flying", "Ground", "Rock", "Water"].some(has)) return "out";
+  if (["Fire", "Electric", "Psychic", "Ghost", "Steel", "Fairy"].some(has)) return "in";
+  return "";
+}
+const isOutside = x => roomKind(roomAt(x)) === "out";
+// each type's favourite things (furniture kinds, or acts like "sun" and "perch")
+const TYPE_FAV = {Fire:["fire", "stove", "tub"], Water:["fountain", "tank", "shellfountain"], Grass:["sun", "plant", "flowers", "tree", "palm", "pot2", "arch"],
+  Bug:["terrarium", "flowers", "plant", "tree", "pot2"], Electric:["tv", "arcade", "desk", "lamp2"], Ice:["snowman", "chill"], Fighting:["bag", "totem"],
+  Psychic:["orb", "globe", "piano"], Ghost:["corner", "lamp2", "cobweb"], Dark:["corner"], Rock:["display", "totem"], Ground:["display", "totem", "sun"],
+  Steel:["clock", "badgecase", "trophy"], Fairy:["cushion", "pillowpile", "bean", "arch"], Normal:["sofa", "bean", "chair", "fridge", "counter"],
+  Flying:["perch", "windvane"], Dragon:["statue", "totem"], Poison:["cauldron"]};
 function spotWeight(m, s, night){
   const T = NAT_BY.get(m.n).types, has = t => T.includes(t), noct = isNocturnal(m.n);
+  const size = monSize(m.n), flier = isFlier(m);
   let w = 1;
   if (s.act === "nap") w = night ? (noct ? .3 : 8) : (noct ? 3 : .5);
   if (s.act === "lurk") w = noct && (has("Ghost") || has("Dark")) ? 7 : 0;
-  if (has("Fire") && s.kind === "fire") w *= 6;
-  if (has("Water") && s.act === "splash") w *= 6;
-  if ((has("Grass") || has("Bug")) && s.act === "sniff") w *= 6;
-  if (has("Electric") && ["tv", "arcade", "desk"].includes(s.kind)) w *= 6;
-  if ((has("Fairy") || has("Normal")) && (s.act === "sit" || s.kind === "cushion" || s.kind === "bean")) w *= 3;
+  if (s.act === "perch") w = flier ? (night ? 6 : 3) : 0;   // only fliers get up there
+  if (s.act === "sun") w = has("Bug") || has("Fire") ? 1.5 : .4;   // (Grass and Ground types love it: see TYPE_FAV)
+  if (T.some(t => (TYPE_FAV[t] || []).some(k => k === s.kind || k === s.act))) w *= 7;   // each type's favourite spots
+  if (has("Ice") && s.act === "warm") w *= .1;   // ice types keep away from the heat
+  if (has("Fire") && s.kind === "fountain") w *= .2;
+  if (size === "big" && s.on && s.kind !== "bed") w = 0;   // too big for chairs, cushions and hammocks
+  if (size === "tiny" && ["cushion", "bean", "pillowpile"].includes(s.kind)) w *= 3;
   if (s.act === "warm" && night) w *= 1.6;
   if (night && !noct && s.act !== "nap") w *= .35;
+  const pref = placePref(m); if (pref && HS.rooms.some(r => roomKind(r) === "out") && HS.rooms.some(r => roomKind(r) !== "out")) w *= (isOutside(s.x) === (pref === "out")) ? 2.2 : .35;
   return w;
 }
 const pickWeighted = list => { const tot = list.reduce((a, x) => a + x.w, 0); if (tot <= 0) return null; let r = Math.random()*tot; for (const x of list) { r -= x.w; if (r <= 0) return x; } return list[list.length - 1]; };
 // an idle Pokémon decides what to do next; returns true if it found something (otherwise it wanders as before)
 function homeDecide(m, now){
   if (m.visitor) return false;
+  if (isFish(m.n) && HS.rooms.some(r => r.pond)) return false;   // fish just swim about (see homeUpdate)
+  if (m.water && HS.rooms.some(r => r.pond) && clockTod() !== "night" && Math.random() < .7) return false;   // water types mostly swim
   const tod = clockTod(), night = tod === "night", me = HS.me, f = friendOf(m.n);
   // friends who follow you (the two who like you most, from 50 friendship) mostly stay with you (see homeUpdate)
   if (f >= 50 && !VISIT && HS.followers.includes(m.n) && !(night && !isNocturnal(m.n)) && Math.hypot(me.x - m.x, me.y - m.y) < 2.5 && Math.random() < .6) { m.t = 1200 + Math.random()*1500; return true; }
@@ -7858,7 +7912,7 @@ function homeDecide(m, now){
   if (!VISIT && !night && f >= 60 && D.giftDay[m.n] !== day && D.gifts.length < 6 && Math.random() < .12) { homeGift(m, day); return true; }
   // meet up and play (same evolution family or type first)
   if (Math.random() < (night ? (isNocturnal(m.n) ? .1 : 0) : .16)) {   // at night only the night owls play
-    const T = NAT_BY.get(m.n).types, others = HS.mons.filter(o => o !== m && !o.visitor && o.st === "idle" && !o.act);
+    const T = NAT_BY.get(m.n).types, others = HS.mons.filter(o => o !== m && !o.visitor && o.st === "idle" && !o.act && !(isFish(o.n) && HS.rooms.some(r => r.pond)));
     const pick = pickWeighted(others.map(o => ({o, w:(famOf(o.n) === famOf(m.n) ? 6 : 1)*(NAT_BY.get(o.n).types.some(t => T.includes(t)) ? 2.5 : 1)})));
     if (pick) {
       const o = pick.o, mid = {x:(m.x + o.x)/2, y:(m.y + o.y)/2}, a = randomSpot(m.fl, mid) || mid;
@@ -7867,9 +7921,15 @@ function homeDecide(m, now){
   }
   const taken = new Set(HS.mons.filter(o => o.spot).map(o => o.spot.key));
   // bedtime: most Pokémon find a bed or cushion (or curl up on the floor); nocturnal ones stay up
-  if (night && !isNocturnal(m.n)) {   // the closest free bed (one of the two nearest, so they don't all race for the same one)
-    const beds = homeSpots().filter(s => s.act === "nap" && !taken.has(s.key)).sort((a, b) => Math.hypot(a.ax - m.x, a.ay - m.y) - Math.hypot(b.ax - m.x, b.ay - m.y)), s = beds.length ? beds[Math.random() < .7 || beds.length < 2 ? 0 : 1] : null;
+  if (night && !isNocturnal(m.n)) {   // bedtime: a bed, a sofa, a perch for fliers, the pond for water types; the closest free one, preferring the bedroom
+    if (m.water && HS.rooms.some(r => r.pond) && Math.random() < .5) { const t = randomSpot("only"); if (t) { homeWalk(m, t, {act:"nap"}); m.swimTrip = true; return true; } }
+    const size = monSize(m.n), flier = isFlier(m);
+    const ok = s => !taken.has(s.key) && (s.act === "nap" || (s.act === "sit" && (s.kind === "sofa" || s.kind === "bench")) || (s.act === "perch" && (flier || (size === "tiny" && s.kind === "shelf")))) && !(size === "big" && s.on && s.kind !== "bed");
+    const score = s => Math.hypot(s.ax - m.x, s.ay - m.y)*(roomAt(s.x).id === "bedroom" ? .4 : roomAt(s.x).wall ? 1 : 3);
+    const beds = homeSpots().filter(ok).sort((a, b) => score(a) - score(b)), s = beds.length ? beds[Math.random() < .7 || beds.length < 2 ? 0 : 1] : null;
     if (s) { homeWalk(m, {x:s.ax, y:s.ay}, {act:"nap", spot:s}); return true; }
+    const br = HS.rooms.find(r => r.id === "bedroom");   // no bed free: curl up on the bedroom floor
+    if (br && roomAt(m.x) !== br) { const t = randomSpot(m.fl, {x:br.x0 + br.w/2, y:4}); if (t && roomAt(t.x) === br) { homeWalk(m, t, {act:"nap"}); return true; } }
     homeAct(m, {act:"nap"}, now); return true;
   }
   // use furniture
@@ -7882,13 +7942,27 @@ function homeDecide(m, now){
 }
 function homeWalk(m, t, plan){
   m.tx = t.x; m.ty = t.y; m.st = "walk"; m.plan = plan || null; m.spot = plan && plan.spot || null; m.swimTrip = false; m.follow = false;
-  m.path = dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0) ? findPath(m, t) : null;
+  m.path = needPath(m, t) ? findPath(m, t) : null;
+}
+// a walk needs a planned path through a doorway, or around the pond for Pokémon that can't swim or fly
+function needPath(m, t){
+  if (dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0)) return true;
+  if (isFlier(m) || (m.water && m.swimTrip)) return false;
+  for (let i = 1; i < 12; i++) { const x = m.x + (t.x - m.x)*i/12, y = m.y + (t.y - m.y)*i/12; if (inPond(roomAt(x), x, y)) return true; }
+  return false;
+}
+// somewhere to wander: in the yards or the house, as the Pokémon (and the weather) likes
+function wanderSpot(m, near){
+  const pref = placePref(m), both = HS.rooms.some(r => roomKind(r) === "out") && HS.rooms.some(r => roomKind(r) !== "out");
+  if (pref && both && !near && Math.random() < .75) for (let i = 0; i < 6; i++) { const t = randomSpot(isFlier(m) || m.swim); if (t && isOutside(t.x) === (pref === "out")) return t; }
+  return randomSpot(isFlier(m) || m.swim, near);
 }
 // arrived: start the planned activity
 function homeAct(m, plan, now){
   const s = plan.spot, night = clockTod() === "night";
   m.act = plan.act; m.st = "act"; m.with = plan.with || null; HS.acts = (HS.acts || 0) + 1;
-  m.t = plan.act === "nap" ? (night ? 25000 + Math.random()*25000 : 9000 + Math.random()*8000) : plan.act === "play" ? 4500 : 7000 + Math.random()*9000;
+  if (plan.act === "eat") { m.eatT = now + 2600; m.eatCol = plan.col; }
+  m.t = plan.act === "nap" ? (night ? 25000 + Math.random()*25000 : 9000 + Math.random()*8000) : plan.act === "play" ? 4500 : plan.act === "eat" ? 2800 : 7000 + Math.random()*9000;
   if (s && s.on) { m.x = s.x; m.y = s.y; m.z = s.z; m.depth = s.depth; m.hop = 1; }
   else if (s) { m.x = s.x; m.y = s.y; }   // right on its spot
   if (s && !s.on) { const it = placedItems().find(p => s.key.startsWith(`${p.id}@${p.x},${p.y}#`)); if (it) { const cx = it.x + it.it.w/2; m.dir = Math.abs(cx - m.x) < .2 ? (m.dir || 1) : Math.sign(cx - m.x); } }   // faces what it's using
@@ -7943,7 +8017,9 @@ function feedMon(m, bid){
   fd.n++; D.fedN++; D.fr[m.n] = Math.min(100, friendOf(m.n) + up); missionBump("feed");
   m.hop = 1; m.st = m.st === "act" ? m.st : "idle"; m.t = Math.max(m.t, 2000); m.dir = HS.me.x < m.x ? -1 : 1;
   m.emote = {k:fav ? "fav" : "heart", t0:now, dur:2200}; Sound.play(fav ? "up" : "heal");
-  m.eatT = now + 1500; m.eatCol = b.col; if (fav) burst("spark", m, 9, {sp:1.1, dur:1200, col:"#ffd43b"}); else burst("heart", m, 3);
+  const tb = !isFish(m.n) && placedItems().filter(p => p.it.kind === "tabler" || p.it.kind === "counter").map(p => ({x:p.x + p.it.w/2, y:Math.min(HM.D - .3, p.y + p.it.d + .45)})).filter(t => !blocked(t.x, t.y)).sort((a, b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
+  if (tb && Math.hypot(tb.x - m.x, tb.y - m.y) > 1 && Math.hypot(tb.x - m.x, tb.y - m.y) < 25) { if (m.st === "act") homeActEnd(m); homeWalk(m, tb, {act:"eat", col:b.col}); }   // takes it to the table to eat
+  else { m.eatT = now + 1500; m.eatCol = b.col; } if (fav) burst("spark", m, 9, {sp:1.1, dur:1200, col:"#ffd43b"}); else burst("heart", m, 3);
   homeMsg(fav ? `Loved the <b>${b.name}</b>! It’s its favourite flavour.` : `Ate the <b>${b.name}</b>. Yum!`, {n:m.n, f:friendOf(m.n), f0:friendOf(m.n) - up});
   save(); renderResidents(); renderHomeBag(); checkAch();
 }
