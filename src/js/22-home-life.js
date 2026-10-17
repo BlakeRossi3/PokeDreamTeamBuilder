@@ -150,6 +150,7 @@ function homeWalk(m, t, plan){
 }
 // a walk needs a planned path through a doorway, or around the pond for Pokémon that can't swim or fly
 function needPath(m, t){
+  if (!sameRow(m.x, t.x)) return true;   // through the front or back door
   if (dividers().some(d => (d.x - m.x)*(d.x - t.x) < 0)) return true;
   if (isFlier(m) || (m.water && m.swimTrip)) return false;
   for (let i = 1; i < 12; i++) { const x = m.x + (t.x - m.x)*i/12, y = m.y + (t.y - m.y)*i/12; if (inPond(roomAt(x), x, y)) return true; }
@@ -269,13 +270,14 @@ function drawTreeBerries(c, p, pixel){
     c.fillStyle = b.col; c.beginPath(); c.arc(R(x), R(y), r, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(R(x - r*.4), R(y - r*.5), Math.max(1, R(r*.35)), Math.max(1, R(r*.35)));
   });
 }
-// what's in reach of the trainer: a gift, a Pokémon or a tree with berries
+// what's in reach of the trainer: a gift, a Pokémon, a tree with berries, a Badge Case or a door
 function nearestThing(){
   const me = HS.me, D = homeData();
-  for (let i = 0; i < D.gifts.length; i++) { const g = D.gifts[i]; if (!VISIT && Math.hypot(g.x - me.x, (g.y - me.y)*1.4) < 1.2) return {k:"gift", i, x:g.x, y:g.y}; }
+  for (let i = 0; i < D.gifts.length; i++) { const g = D.gifts[i]; if (!VISIT && sameRow(g.x, me.x) && Math.hypot(g.x - me.x, (g.y - me.y)*1.4) < 1.2) return {k:"gift", i, x:g.x, y:g.y}; }
   const m = nearestMon(1.7); if (m) return {k:"mon", m};
-  for (const p of placedItems()) if (p.it.kind === "tree" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.8) return {k:"tree", p};
-  for (const p of placedItems()) if (p.it.kind === "badgecase" && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.5) return {k:"case", p};
+  for (const p of placedItems()) if (p.it.kind === "tree" && sameRow(p.x, me.x) && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.8) return {k:"tree", p};
+  for (const p of placedItems()) if (p.it.kind === "badgecase" && sameRow(p.x, me.x) && Math.hypot(p.x + p.it.w/2 - me.x, (p.y + p.it.d + .3 - me.y)*1.4) < 1.5) return {k:"case", p};
+  const w = nearDoor(me, 1.1); if (w) return {k:"door", w};
   return null;
 }
 function homeUseThing(t){
@@ -283,6 +285,7 @@ function homeUseThing(t){
   if (t.k === "gift") openGift(t.i);
   else if (t.k === "tree") pickBerry(t.p);
   else if (t.k === "case") openBadgeCase(t.p.it.region);
+  else if (t.k === "door") HS.me.path = [{x:t.w.at.x, y:t.w.at.y, to:t.w.to}];
   else if (t.k === "mon") { if (HS.hold && !VISIT && !t.m.visitor) feedMon(t.m, HS.hold); else homeInteract(t.m); }
 }
 // a Badge Case up close: each badge large, with its Gym Leader
@@ -310,10 +313,11 @@ function weatherToday(){
 }
 // screen rectangles where the outside shows: window panes, and the open sky/ground of outdoor rooms
 function skyRects(pixel){
-  const ts = HS.ts, out = [], wallH = HM.WALL*ts, ox = -(HS.camPx ?? Math.round(HS.cam*ts)), oy = -HS.camY;
-  for (const r of HS.rooms) {
+  const ts = HS.ts, out = [], wallH = HM.WALL*ts, ox = scrX(0), oy = -HS.camY, R = HS.pass;   // the rooms of the row being drawn
+  const y0 = R && R.k ? scrY(0) - wallH : 0, y1 = !R || R.k === HS.rows.length - 1 ? HS.V.H : scrY(HM.D);
+  for (const r of R ? R.rooms : HS.rooms) {
     const X0 = r.x0*ts, W = r.w*ts;
-    if (!r.wall) { out.push({x:X0 + ox, y:0, w:W, h:HS.V.H, out:true}); continue; }
+    if (!r.wall) { out.push({x:X0 + ox, y:y0, w:W, h:y1 - y0, out:true}); continue; }
     const A = pixel && roomArt(r);
     for (let i = 1; i < W/ts - 1.5; i += 4.5) {
       if (A && A.win) { const k = ts/32, w = A.win.width*k, h = A.win.height*k; out.push({x:X0 + (i + 1.4)*ts - w/2 + 3*k + ox, y:wallH*.13 + 3*k + oy, w:w - 6*k, h:h - 6*k}); }
@@ -340,7 +344,7 @@ function drawWeather(c, now, pixel, which){
       else if (w === "snow") { const y = q.y + ((sy*q.h + now*.05*sp*ts/32*6) % (q.h + ts)) - ts*.3, x = q.x + ((sx*q.w + Math.sin(now/900 + i)*ts*.3 + q.w) % q.w), s = Math.max(1, ts*(.04 + (i % 3)*.02)*sz); c.fillStyle = `rgba(255,255,255,${(.85*al).toFixed(2)})`; c.fillRect(P(x), P(y), s, s); }
     }
     c.restore();
-    if (which === "out" && w === "rain" && q.out && Math.random() < .5) fx("splash", (q.x + Math.random()*q.w + HS.camPx)/ts, .3 + Math.random()*(HM.D - .5), 0, {vx:0, vz:0, g:0, dur:380});   // splashes on the ground
+    if (which === "out" && w === "rain" && q.out && Math.random() < .5) fx("splash", (q.x + Math.random()*q.w - scrX(0))/ts, .3 + Math.random()*(HM.D - .5), 0, {vx:0, vz:0, g:0, dur:380});   // splashes on the ground
   }
 }
 // night lights: lamps, the fireplace, the TV and pumpkins glow after dark
@@ -348,7 +352,7 @@ const GLOW = {stove:[.6, .95, 1.5, "255,150,70"], orb:[.5, 1.1, 1.6, "200,160,25
 function drawGlows(c, now, pixel, k){
   if (!(k > 0)) return;
   const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
-  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.outA > .5 && HS.spans && HS.spans.some(s => p.x + p.it.w/2 > s.x0 && p.x + p.it.w/2 < s.x1)) continue;
+  for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.pass && (p.x < HS.pass.x0 || p.x >= HS.pass.x1)) continue;   // the row being drawn
     const screen = p.it.kind === "tv" || p.it.kind === "arcade";   // screens flicker as the picture changes
     const up = p.s ? liftOf(p)*ts : 0;
     const fl = screen ? .82 + .18*Math.abs(Math.sin(now/170 + p.x)*Math.sin(now/530 + p.y)) : 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" || p.it.kind === "stove" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts - up, r = G[2]*ts*fl;

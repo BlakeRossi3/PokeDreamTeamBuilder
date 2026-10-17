@@ -24,7 +24,7 @@ async def main():
         await pg.click('#hmDeco'); await pg.wait_for_timeout(700)
         pt = lambda x, y: pg.evaluate(f'''(() => {{ const r = HS.cv.getBoundingClientRect(), k = (state.mode === "2d" ? HS.k : 1)*r.width/HS.cv.width; return [r.left + scrX({x})*k, r.top + scrY({y})*k]; }})()''')
         bed = json.loads(await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bed"))'))
-        await pg.evaluate(f'HS.dcam = {bed["x"]} - 1'); await pg.wait_for_timeout(600)
+        await pg.evaluate(f'HS.drow = rowOf({bed["x"]}).k; HS.dcam = {bed["x"]} - rowOf({bed["x"]}).x0 - 1'); await pg.wait_for_timeout(600)
         x, y = await pt(bed['x'] + 1, bed['y'] + 1.5); await pg.mouse.click(x, y); await pg.wait_for_timeout(400)
         fl = await pg.evaluate('[HS.sel && HS.sel.id, !$("hmFloat").hidden]'); print('selected', fl); assert fl == ['bed', True]
         await pg.locator('#hmStage').screenshot(path=OUT + f'deco_{TAG}_selected.png')
@@ -32,11 +32,11 @@ async def main():
         x1 = await pg.evaluate('homeData().items.find(i => i.id === "bed").x'); print('nudged', bed['x'], '->', x1); assert x1 == bed['x'] + 1
         await pg.click('#hmFloat [data-hact="move"]'); await pg.wait_for_timeout(200); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(200)
         back = await pg.evaluate('[homeData().items.filter(i => i.id === "bed").map(i => i.x), nav.screen, HS.edit]'); print('move + Esc', back); assert back == [[x1], 'home', True]
-        c0 = await pg.evaluate('HS.cam'); mx, my = await pt(c0 + 1.5, 6.6)
+        c0 = await pg.evaluate('HS.cam'); mx, my = await pt(f'{c0} + HS.pass.x0 + 1.5', 6.6)
         await pg.mouse.move(mx, my); await pg.mouse.down(); await pg.mouse.move(mx - 120, my, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(600)
         c1 = await pg.evaluate('HS.cam'); print('look around', round(c0, 2), '->', round(c1, 2)); assert c1 > c0 + .5
         await pg.click('[data-hroom="3"]'); await pg.wait_for_timeout(900)
-        k = await pg.evaluate('[HS.cam, HS.rooms[3].x0, HS.rooms[3].w, HS.V.W/HS.ts]'); print('kitchen', k); assert k[0] + k[3] > k[1] and k[0] < k[1] + k[2]
+        k = await pg.evaluate('[HS.cam + HS.pass.x0, HS.rooms[3].x0, HS.rooms[3].w, HS.V.W/HS.ts]'); print('kitchen', k); assert k[0] + k[3] > k[1] and k[0] < k[1] + k[2]
         await pg.click('[data-hplace="sofa"]'); await pg.wait_for_timeout(300)
         g = json.loads(await pg.evaluate('JSON.stringify(HS.ghost)')); print('new piece in view', g); assert g and k[1] - 1 <= g['x'] <= k[1] + k[2]
         await pg.locator('#hmStage').screenshot(path=OUT + f'deco_{TAG}_placing.png')

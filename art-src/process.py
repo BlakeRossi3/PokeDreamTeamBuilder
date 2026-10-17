@@ -267,6 +267,16 @@ for p in sorted((RAW / "house").glob("*.png")):
         out.paste(q, (0, y))
         y += q.height
     save(out, f"house/{p.stem}.png")
+    # for the Home's rows: the roof that covers the house rooms seen from the yards (ridge, then rows of tiles, as tall as
+    # a room: 216 px) and the front wall (the bottom 83 px: as tall as a room's back wall) behind the front yard
+    roof = [im.crop((0, top, im.width, b0))]
+    n = 216 - roof[0].height
+    while n > 0:
+        band = im.crop((0, b0, im.width, b0 + min(n, b1 - b0))); roof.append(band); n -= band.height
+    r = Image.new("RGBA", (im.width, 216)); y = 0
+    for q in roof: r.paste(q, (0, y)); y += q.height
+    save(r, f"house/{p.stem}_roof.png")
+    save(im.crop((0, bot - 83, im.width, bot)), f"house/{p.stem}_front.png")
 
 # ---------- rooms ----------
 R = RAW / "room"
@@ -356,6 +366,11 @@ save(tile, "room/floor_tile.png")
 for p in sorted((RAW / "div").glob("*.png")):
     im = rgba(p)
     save(im if p.stem.endswith("_cap") else cutout(im), f"div/{p.stem}.png")
+
+# ---------- doors between the rows of rooms (raw/door): the house's front door, seen from the front yard, and its open
+# back door to the garden. Already cut out; stray specks dropped.
+for p in sorted((RAW / "door").glob("*.png")):
+    save(keep_main(rgba(p)), f"room/door_{p.stem}.png")
 
 files = sorted(OUT.rglob("*.png"))
 print(f"art/2d: {len(files)} images, {sum(f.stat().st_size for f in files)/1024:.0f} KB")

@@ -89,6 +89,7 @@ const Sound = (() => {
       case "wrong": tone(fx, t, 196, .28, "square", .4, .85); break;
       case "send": noise(fx, t, .16, .4, 3000); tone(fx, t + .05, 520, .12, "p25", .3, 1.8); break;
       case "step": noise(fx, t, .025, .12, 2500); break;
+      case "door": noise(fx, t, .06, .18, 900); tone(fx, t + .02, 300, .09, "square", .22, .7); tone(fx, t + .1, 200, .06, "square", .18, .8); break;
       case "crackle": noise(fx, t, .03, .1, 3000); noise(fx, t + .05 + Math.random()*.08, .02, .08, 4000); break;
       case "splash": noise(fx, t, .22, .25, 1800); tone(fx, t, 900, .1, "p12", .12, .5); break;
       case "pick": tone(fx, t, 1047, .05, "p12", .3); tone(fx, t + .05, 1568, .08, "p12", .3); break;

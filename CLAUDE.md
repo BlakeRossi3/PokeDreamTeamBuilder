@@ -135,15 +135,26 @@ Boot code is at the very end of `js/33-battle-screens.js` (the last file).
 - **Home layout.** `ROOMS` is in house order (front yard, bedroom, living room, kitchen, Grand hall, garden, pond). Item,
   gift and berry-tree positions are absolute x along the house; `home.lay` records the room order they refer to and
   `homeRelayout()` moves everything with its room when the owned rooms change (old saves without `lay` use
-  `LEGACY_ROOMS`). Never change a room's `w` without migrating. Out in a yard the house rooms are covered by
-  `drawFacade` (2D art `house/<design>`, canvas `facadeShapes` in 3D); `HS.outA` fades it. House designs are `HOUSES`
-  (cat `house`, `home.house`, `houseOf()`). `tests/test_home_layout.py` checks the migration.
+  `LEGACY_ROOMS`). Never change a room's `w` without migrating. House designs are `HOUSES`
+  (cat `house`, `home.house`, `houseOf()`; `door` = where the front door sits in the 2D front picture). `tests/test_home_layout.py` checks the migration.
+- **Home rows.** Rooms also lie in rows north → south (`ROOMS[].row`: garden/pond 0, house 1, front yard 2). Saves still
+  use the one strip of rooms (each row is a stretch of it); `homeRows()` builds `HS.rows` ({k, rooms, x0, x1, w, out}) and
+  `HS.doors` (between rows k and k+1: `n` = the north row's front edge, `s` = the south row's back wall, both `DOORX`
+  tiles from the row's left end). `rowOf(x)`/`sameRow`; walking into a door, E (`nearestThing` → door) or a tap goes
+  through (`goThrough`); `findPath` chains `gridPath` (A*) through doors with `{x, y, to}` waypoints, and `needPath` is
+  true across rows. Rows are walled off (`inWall`), `fits` keeps pieces in one row and out of the doorways, and `blocked`
+  keeps doorways open. Drawing: `HS.cam` is along the row in view (from its left end), `HS.vy` slides between rows, and
+  `homeFrame` draws each visible row with its own camera (`rowCam(R)` sets `HS.pass`, which `scrX`/`scrY`/`skyRects`
+  use): backdrop, a slice of the layer, `drawRowDoors` (house front `house/<id>_front` + `room/door_front` behind the
+  yard, `room/door_back` in the bedroom), entities in that row, and `drawRoof` (`house/<id>_roof`) over the house when
+  you're outside (`HS.outA`). After the passes `rowCam(VR)` leaves the camera on the row in view for the overlay and pointer.
+  Decorate has its own row (`HS.drow`: up/down keys, room buttons). `tests/test_home_rows.py` covers it.
   Decorate mode has its own camera (`HS.dcam`: drag the floor, arrow keys, `data-hroom` buttons), a toolbar over the
   selected piece (`decoFloat`), `decoNudge`, and `decoCancel` (a piece picked up with Move goes back). The trainer in the
   Home is `homeTrainer()` (`home.tr`, null = the "All" team's trainer). Gyms take any team once `leagues[g]` is won
   (`gymTeamsOpen`).
-- **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
-  whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
+- **Home walls.** Rooms in a row sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
+  whose look comes from `divType` (indoor, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
 
 - **The Pokémon sheet** has three tabs: Battle (everything that changes a battle), Personalize (looks only) and Info.
