@@ -54,14 +54,15 @@ async def main():
         g = await pg.evaluate('(() => { const m = HS.mons.find(x => x.n === 25), n0 = homeData().gifts.length; homeGift(m, todayKey()); const n = homeData().gifts.length; openGift(n - 1); return [n - n0, homeData().gifts.length - n0]; })()')
         print('gift', g); assert g == [1, 0], g
         # decorating: drag the beanbag, undo it, turn the long rug
-        await pg.evaluate('HS.edit = true; renderHome()'); await pg.wait_for_timeout(800)
-        pt = await pg.evaluate('''(() => { const r = HS.cv.getBoundingClientRect(), c = (x, y) => ({x:r.left + (x - HS.cam)*HS.ts*HS.k*r.width/HS.cv.width, y:r.top + (HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY)*HS.k*r.height/HS.cv.height});
-          return [c(4.5, 1.6), c(7.5, 1.6)]; })()''')
+        await pg.evaluate('HS.edit = true; renderHome(); HS.dcam = homeData().items.find(i => i.id === "bean").x - 2'); await pg.wait_for_timeout(1200)
+        bx = await pg.evaluate('homeData().items.find(i => i.id === "bean").x')   # wherever the house layout put it
+        pt = await pg.evaluate(f'''(() => {{ const r = HS.cv.getBoundingClientRect(), c = (x, y) => ({{x:r.left + (x - HS.cam)*HS.ts*HS.k*r.width/HS.cv.width, y:r.top + (HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY)*HS.k*r.height/HS.cv.height}});
+          return [c({bx} + .5, 1.6), c({bx} + 3.5, 1.6)]; }})()''')
         await pg.mouse.move(pt[0]['x'], pt[0]['y']); await pg.mouse.down(); await pg.mouse.move(pt[1]['x'] - 20, pt[1]['y'], steps=6); await pg.mouse.move(pt[1]['x'], pt[1]['y'], steps=4); await pg.mouse.up(); await pg.wait_for_timeout(300)
-        bean = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bean"))'); print('dragged', bean); assert '"x":4' not in bean, bean
+        bean = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bean"))'); print('dragged', bean); assert f'"x":{bx},' not in bean, bean
         await pg.screenshot(path=OUT + f'hl_deco_{TAG}.png')
         await pg.click('[data-hact="undo"]'); await pg.wait_for_timeout(200)
-        bean = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bean"))'); print('undone', bean); assert '"x":4' in bean
+        bean = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bean"))'); print('undone', bean); assert f'"x":{bx},' in bean
         rot = await pg.evaluate('(() => { HS.sel = {...homeData().items.find(i => i.id === "rugb")}; homeEditAct("rotate"); return JSON.stringify(homeData().items.find(i => i.id === "rugb")); })()'); print('turned', rot)
         assert '"r":1' in rot
         await pg.evaluate('HS.edit = false; renderHome()'); await pg.wait_for_timeout(600)
