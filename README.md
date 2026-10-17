@@ -16,7 +16,7 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 (repository Settings → Pages → Source: **GitHub Actions**). Other hosts: see `site/OTHER-HOSTS.md`.
 
 ## Develop
-- Edit `src/app.html` (the whole app), `src/engine.js` (the battle engine) and the JSON in `data/`.
+- Edit `src/` (`app.html` shell and markup, `css/`, `js/` split by section, `engine.js` the battle engine) and the JSON in `data/`.
 - `python3 scripts/lint.py` (after `npm install`) and `python3 tests/run_all.py`
   (after `pip install playwright && python3 -m playwright install chromium`).
 - `CLAUDE.md` has the project map and the rules that keep saves and both art styles working.

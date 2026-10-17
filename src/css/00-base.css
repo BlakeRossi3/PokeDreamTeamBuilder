@@ -1,0 +1,90 @@
+/* Dream Team Dex
+   Screens: sign-in → title scene → main menu (hub) → Team Builder (#app) or a game screen (#screen: battle, quiz,
+   Pokémon Home, Shop, Hall of Fame gallery, trainer card, achievements, settings). Overlays: Hall of Fame scene, View team, modals.
+   Two looks share one markup: 3D = modern-console menus (slanted plates, yellow cursor, medallion portraits);
+   2D = handheld party menus (pixel borders, ▶ cursor). Each look has its own themes (data-t3 / data-t2) and accent.
+   Sprites live in binary packs (s/*.wasm, t/*.wasm) indexed by IDX and decoded on demand. */
+:root{
+  --bg:#0e1729; --bg-2:#13203a; --stripe:rgba(255,255,255,.028); --accent-d:#b8401f;
+  --panel:#16223c; --panel-solid:#16223c; --panel-2:#1c2b4b; --raised:#1d2c4c; --raised-2:#25375d;
+  --line:#2f4370; --line-2:#3e5791; --fg:#f2f5ff; --muted:#9fb0d6;
+  --accent:#ff6a3d; --accent-b:#ff9b4a; --accent-2:#8f6bff; --on-accent:#ffffff;
+  --hi:#ffd43b; --on-hi:#1b1400;
+  --good:#46d996; --warn:#ffc24a; --bad:#ff5d6c; --fav:#ff5d8f;
+  --platform:radial-gradient(closest-side, rgba(143,107,255,.5), rgba(143,107,255,.14) 60%, transparent);
+  --medal-bg:radial-gradient(circle at 50% 35%, #3a2f74, #161c3a 70%); --medal-r:50%; --medal-ring:0 0 0 3px #ffffff, 0 0 0 6px #8f6bff;
+  --slot-bg:#1d2c4c; --hover-bg:#25375d; --sel-bg:#2a2a3a;
+  --plate:#0b1222; --plate-fg:#ffffff;
+  --font-d:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-b:"Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* type scale 12/13/15/17/20/24/32 */
+  --fs:15px; --fs-sm:13px; --fs-xs:12px; --fs-h1:24px; --fs-h2:17px; --fs-lg:20px; --fs-xl:32px;
+  --r:18px; --r-sm:12px; --pill:999px; --bw:2px;
+  /* spacing on a 4px grid, two control heights */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --h-sm:32px; --h:40px;
+  /* elevation: card, raised, modal */
+  --e1:0 1px 2px rgba(0,0,0,.25), 0 4px 12px rgba(0,0,0,.18);
+  --e2:0 2px 4px rgba(0,0,0,.2), 0 12px 32px rgba(0,0,0,.34);
+  --e3:0 4px 8px rgba(0,0,0,.25), 0 24px 64px rgba(0,0,0,.55);
+  --shadow:var(--e2);
+  --focus:#ffd43b; --skel-a:rgba(255,255,255,.05); --skel-b:rgba(255,255,255,.12);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --inset:inset 0 1px 0 rgba(255,255,255,.07);
+  --slant:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%);
+  --pixel:auto;
+  color-scheme:dark;
+}
+:root[data-mode="2d"]{
+  --bg:#cddfd6; --bg-2:#cddfd6; --stripe:transparent;
+  --panel:#f8f8ec; --panel-solid:#f8f8ec; --panel-2:#f8f8ec; --raised:#e6efe9; --raised-2:#d6e6dd;
+  --line:#28323f; --line-2:#a7bcb2; --fg:#1d2631; --muted:#4f5d6b;
+  --accent:#d63a3a; --accent-b:#d63a3a; --accent-2:#3a68b8; --on-accent:#ffffff;
+  --hi:#ffe9a8; --on-hi:#1d2631;
+  --good:#1f7a3a; --warn:#8a5d00; --bad:#b52a2a; --fav:#c22e5e;
+  --platform:none;
+  --medal-bg:transparent; --medal-r:0; --medal-ring:none;
+  --slot-bg:#dcecf5; --hover-bg:#fff6cf; --sel-bg:#ffe9a8;
+  --plate:transparent; --plate-fg:#1d2631;
+  --font-d:"Pixelify Sans", "Courier New", monospace;
+  --font-b:"VT323", "Courier New", monospace;
+  --fs:20px; --fs-sm:18px; --fs-xs:16px; --fs-h1:28px; --fs-h2:20px;
+  --r:4px; --r-sm:2px; --pill:2px; --bw:3px;
+  --ink:#28323f; --paper:#f8f8ec; --hl:#ffffff; --frame:#a9cbe2; --dots:#c4d8ce; --accent-d:#9c2525;
+  --h-sm:34px; --h:42px;
+  --e1:3px 3px 0 var(--ink); --e2:4px 4px 0 var(--ink); --e3:6px 6px 0 var(--ink);
+  --shadow:var(--e2);
+  --focus:#3a68b8; --skel-a:#e3ece6; --skel-b:#f4f8f2;
+  --inset:inset 0 0 0 3px var(--frame);
+  --slant:none;
+  --pixel:pixelated;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+body{margin:0}
+.top, .tabs-wrap{flex:none}
+/* scrollbars: violet-to-orange pills on navy (3D), chunky pixel bars (2D) */
+:root{--sb-track:#0b1222; --sb-thumb:#6b5bd6; --sb-v:linear-gradient(#8f6bff, #ff6a3d); --sb-h:linear-gradient(90deg, #8f6bff, #ff6a3d); --sb-r:999px; --sb-pad:3px solid #0b1222}
+:root[data-mode="2d"]{--sb-track:var(--raised); --sb-thumb:var(--ink); --sb-v:var(--ink); --sb-h:var(--ink); --sb-r:0; --sb-pad:3px solid var(--raised)}
+@supports not selector(::-webkit-scrollbar){ *{scrollbar-width:thin; scrollbar-color:var(--sb-thumb) var(--sb-track)} }
+::-webkit-scrollbar{width:12px; height:12px}
+::-webkit-scrollbar-track{background:var(--sb-track)}
+::-webkit-scrollbar-thumb{background:var(--sb-v); border-radius:var(--sb-r); border:var(--sb-pad); min-height:40px}
+::-webkit-scrollbar-thumb:horizontal{background:var(--sb-h)}
+::-webkit-scrollbar-thumb:hover{border-width:2px}
+::-webkit-scrollbar-corner{background:transparent}
+.tabs-wrap::-webkit-scrollbar-track, .team-panel::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track{background:transparent; margin:6px}
+:root[data-mode="2d"] .tabs-wrap::-webkit-scrollbar-track{background:var(--raised); box-shadow:inset 0 0 0 2px var(--ink)}
+:root[data-mode="2d"] ::-webkit-scrollbar-thumb{box-shadow:inset 2px 2px 0 var(--muted)}
+html,body{min-height:100%}
+body{background:var(--bg); color:var(--fg); font-family:var(--font-b); font-size:var(--fs); line-height:1.4;
+  background-image:repeating-linear-gradient(135deg, var(--stripe) 0 14px, transparent 14px 28px), radial-gradient(70% 55% at 0% 0%, rgba(143,107,255,.18), transparent 70%), radial-gradient(60% 45% at 100% 0%, rgba(255,106,61,.12), transparent 70%);
+  background-attachment:fixed}
+:root[data-mode="2d"] body{background-image:radial-gradient(var(--dots) 1.6px, transparent 1.7px); background-size:12px 12px}
+:root[data-view="start"] body{background:#0e1729}
+h1,h2,h3{font-family:var(--font-d); margin:0; text-wrap:balance; letter-spacing:.01em}
+button,input,select{font:inherit; color:inherit}
+body{font-variant-numeric:tabular-nums}   /* numbers line up (stats, PokéPoints, HP) */
+:where(a, button, input, select, textarea, summary, [role=tab], [role=button], [tabindex]:not([tabindex="-1"]), .card, .slot):focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+:root[data-mode="2d"] :where(a, button, input, select, textarea, summary, [role=tab], [role=button], [tabindex]:not([tabindex="-1"]), .card, .slot):focus-visible{outline-style:dashed}
+
