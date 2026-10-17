@@ -1,5 +1,29 @@
 # What's new in Dream Team Dex
 
+## 🏡 A real house
+- **Front yard and back garden:** your Home now starts in the front yard, by the street. Out in a yard you see your house
+  from outside (roof, front wall, windows), and it opens up as you walk in through the door.
+- **House designs** in the Shop: the free Cozy cottage, a Brick townhouse, a Log cabin and a Seaside villa.
+- **A new room, the Kitchen**, with a stove, a retro fridge and a kitchen counter to furnish it. Rooms now run front yard →
+  bedroom → living room → kitchen → Grand hall → garden → pond, and your furniture moves along with its room.
+- **Nicer doorways** between rooms: carved door posts, a lantern-lit front door, rose-covered garden gates and doormats.
+- **Your PokéPoints stay in view** at the top of the Shop while you scroll.
+- **Decorating is easier:** drag the floor (or use the arrow keys) to look around, jump to any room, and tap a piece of
+  furniture for a toolbar right above it: Move, Flip, Turn, Put away. Drag it to slide it or nudge it with the arrow keys;
+  new pieces show up in view, ready to place, and Esc puts a moved piece back.
+- **Choose who lives here:** the new Trainer button picks the trainer you walk around your Home as (friends see them too).
+- **Beat a region's League, bring any team:** once you've beaten a region's Elite Four and Champion, its Gyms and League
+  take any of your teams.
+- **Pokémon switch style with you:** flipping between 2D and 3D now changes the sprites of everyone in your Home too.
+
+## 🎨 All-new Home art
+- **Every Home item redrawn** as detailed pixel art (2D), and nine more pieces animate: the fountain, fireplace, fish tank,
+  TV, arcade, grandfather clock, holiday tree, jack-o'-lantern and weather vane.
+- **Pokémon face the way they walk** in the Home (they used to walk backwards half the time). Your trainer too.
+- **Badge Cases show the real badges.** Walk up to one and press E (on a phone, the action button) to see each badge up close with its Gym
+  Leader. The Gym screen shows them too.
+- **Four new Hall of Fame backgrounds** in the Shop: Stadium lights, Sky Pillar, Blossom shrine and Coral reef.
+
 ## ✨ Furniture that moves (2D)
 - Twelve Home pieces that used to be simple drawings are now detailed, animated pixel art: the Tesla lamp crackles,
   the lava lamp's wax drifts, the lighthouse lamp glows, torches and the ghost lantern flicker, the crystal, cosmic

@@ -31,7 +31,9 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `docs/pmd-credits.md` (every artist). Napping Pokémon in the Home use them; others fall back to a squash.
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
-- `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
+- `python3 tests/run_all.py [group|name…] [--quick] [-j N] [--no-build] [-v]` — builds, serves dist/web on :8765 and runs the tests,
+  quietly: one line per test, the end of a failing test's output, full logs in `tests/out/logs/`. Groups: sweep (slow
+  whole-site checks), home, shop, battle, online, engine. Run only the groups you touched; the full run before a PR
   (`pip install playwright && python3 -m playwright install chromium` once; `npm install` for axe-core). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
 - `python3 tests/perf_load.py` — first / repeat / offline load times on a throttled phone (run after loading changes).
@@ -126,6 +128,16 @@ Boot code is at the very end of the script.
   Berries, feeding, gifts, `fedN` and `photos` live in `state.games.home` (validated in `cleanGames`). Seasonal events are
   data in `EVENTS` (dates, night tint, visitors, `furn` ids sold only while it runs: give the item `event:"<id>"`).
   Tests pin the time of day with `window.DTD_TOD = "night"`.
+- **Home layout.** `ROOMS` is in house order (front yard, bedroom, living room, kitchen, Grand hall, garden, pond). Item,
+  gift and berry-tree positions are absolute x along the house; `home.lay` records the room order they refer to and
+  `homeRelayout()` moves everything with its room when the owned rooms change (old saves without `lay` use
+  `LEGACY_ROOMS`). Never change a room's `w` without migrating. Out in a yard the house rooms are covered by
+  `drawFacade` (2D art `house/<design>`, canvas `facadeShapes` in 3D); `HS.outA` fades it. House designs are `HOUSES`
+  (cat `house`, `home.house`, `houseOf()`). `tests/test_home_layout.py` checks the migration.
+  Decorate mode has its own camera (`HS.dcam`: drag the floor, arrow keys, `data-hroom` buttons), a toolbar over the
+  selected piece (`decoFloat`), `decoNudge`, and `decoCancel` (a piece picked up with Move goes back). The trainer in the
+  Home is `homeTrainer()` (`home.tr`, null = the "All" team's trainer). Gyms take any team once `leagues[g]` is won
+  (`gymTeamsOpen`).
 - **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
