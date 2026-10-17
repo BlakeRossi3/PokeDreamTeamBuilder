@@ -1620,6 +1620,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 :root[data-mode="2d"] .hm-cnt{border-radius:0}
 .home-pp{margin-left:auto; display:inline-flex; align-items:center; gap:6px; min-height:var(--h-sm); box-sizing:border-box; padding:2px 14px 2px 4px; border-radius:var(--pill); font-family:var(--font-d); font-weight:700; background:var(--panel); border:var(--bw) solid var(--line); box-shadow:var(--e1)}
 :root[data-mode="2d"] .home-pp{border-radius:0; padding-left:6px; background:var(--paper)}
+.sc-pp{display:none} #screen[data-kind="shop"] .sc-pp{display:inline-flex; margin-left:0; flex:none}   /* the Shop keeps your PokéPoints in view while you scroll */
 @media (max-width:560px){ .hm-tb > span:not(.ic):not(.hm-cnt){display:none} .hm-tb{padding-inline:9px} .home-bar{gap:6px} .home-pp{padding-right:10px} }
 .home-stage{position:relative; overflow:hidden; border-radius:var(--r); border:var(--bw) solid var(--line); background:#1a1410}
 .home-stage canvas{display:block; width:100%; outline:none; cursor:pointer; touch-action:none; -webkit-user-select:none; user-select:none}
@@ -1732,7 +1733,7 @@ body:has(#toast:not([hidden])) .pp-chips{top:max(calc(64px + env(safe-area-inset
 
 <!-- ================= SCREENS (battle, quiz, settings…) ================= -->
 <section class="screen" id="screen" hidden>
-  <header class="sc-top"><button class="btn sm" type="button" id="scBack" aria-label="Back to the menu">←<span class="bk-t"> Menu</span></button><h2 id="scTitle"></h2><span class="sc-right"><button class="snd" type="button" data-snd aria-label="Sound"></button><button class="btn sm fsbtn" type="button" data-fs aria-label="Full screen" title="Full screen"><span class="fs-ic" aria-hidden="true"></span></button></span></header>
+  <header class="sc-top"><button class="btn sm" type="button" id="scBack" aria-label="Back to the menu">←<span class="bk-t"> Menu</span></button><h2 id="scTitle"></h2><span class="home-pp sc-pp" id="scPP" title="Your PokéPoints"></span><span class="sc-right"><button class="snd" type="button" data-snd aria-label="Sound"></button><button class="btn sm fsbtn" type="button" data-fs aria-label="Full screen" title="Full screen"><span class="fs-ic" aria-hidden="true"></span></button></span></header>
   <main class="sc-body" id="scBody"></main>
 </section>
 
@@ -6438,7 +6439,7 @@ function earn(n, why, quiet){
   const G = state.games; G.pp += n; G.ppTotal += n; save();
   if (!quiet) ppChip(`+${n.toLocaleString()}`, why);
   if (document.documentElement.dataset.view === "hub") renderHub();
-  const b = $("shopBal"); if (b) b.innerHTML = fmtPP(G.pp);
+  const b = $("shopBal"); if (b) { b.innerHTML = fmtPP(G.pp); $("scPP").innerHTML = fmtPP(G.pp); }
 }
 function ppChip(amount, why){
   let box = $("ppChips"); if (!box) { box = document.createElement("div"); box.id = "ppChips"; box.className = "pp-chips"; box.setAttribute("aria-live", "polite"); document.body.appendChild(box); }
@@ -6560,7 +6561,7 @@ function renderShop(){
     ${shopCat === "house" ? `<p class="note">How your house looks from the front yard and the garden.</p>` : ""}
     ${shopCat === "furn" || shopCat === "exp" || shopCat === "house" ? `<div class="actions"><button class="btn" type="button" data-go-home>Go to my Home</button></div>` : ""}
     ${shopCat === "icon" ? `<p class="note">Choose your profile icon on your Trainer card.</p>` : ""}</div>`;
-  paintThumbs($("scBody"));
+  paintThumbs($("scBody")); $("scPP").innerHTML = fmtPP(G.pp);
   nav.onClick = e => {
     const t = e.target.closest("[data-scat]"); if (t) { shopCat = t.dataset.scat; Sound.play("select"); renderShop(); return; }
     const b = e.target.closest("[data-buy]"); if (b) { const it = unlockOf(shopCat, b.dataset.buy); if (it && buy(it)) { if (it.cat === "house") { G.home.house = it.id; save(); } renderShop(); } return; }
@@ -6653,7 +6654,8 @@ const HOUSE_DRAW = {
   desk(K, it){ K.box(.05, .2, .12, .6, .72, it.col[1]); K.box(it.w - .17, .2, .12, .6, .72, it.col[1]); K.box(0, .15, it.w, .7, .1, it.col[0], .72); K.box(.55, .25, .9, .1, .62, "#22252e", .82); K.rect(.6, .35, .8, .48, "#59c2ff", 1.4); },
   tank(K, it){ K.box(0, .2, it.w, .7, .5, it.col[1]); K.box(.05, .25, it.w - .1, .6, .95, it.col[0], .5); K.rect(.05, .85, it.w - .1, .12, "#e7d7a6", .62); [[.5, 1.05, "#ff8a3d"], [1.2, 1.2, "#ffd43b"], [.9, .9, "#ff5a8a"]].forEach(([x, z, cc]) => K.oval(x, .85, .1, .05, cc, z)); },
   stove(K, it){ K.box(.05, .2, it.w - .1, .7, 1.05, it.col[0]); K.rect(.35, .9, 1.3, .55, "#3a3a44", .35); K.rect(.45, .9, 1.1, .35, "#6a6a78", .45);
-    for (const [x, y] of [[.5, .4], [1.5, .4], [.5, .7], [1.5, .7]]) K.disc(x, y, .14, it.col[1], 1.05); K.disc(.5, .4, .16, it.col[2], 1.3); K.rect(.42, .4, .16, .1, it.col[2], 1.45); },
+    for (const [x, y] of [[.55, .4], [1.45, .4], [.55, .72], [1.45, .72]]) K.oval(x, y, .2, .11, it.col[1], 1.05);
+    K.box(.38, .3, .34, .2, .26, it.col[2], 1.05); K.rect(.7, .38, .1, .04, it.col[2], 1.22); },   // a kettle on the back burner
   fridge(K, it){ K.box(.08, .25, .84, .6, 2.1, it.col[0]); K.rect(.12, .85, .76, .03, shadeHex(it.col[0], .7), 1.35); K.rect(.78, .85, .05, .45, it.col[1], 1.5); K.rect(.78, .85, .05, .3, it.col[1], .8);
     K.disc(.3, .85, .05, "#e2413b", 1.15); K.disc(.45, .85, .05, "#ffd43b", 1.0); K.rect(.2, .85, .22, .25, "#ffffff", .45); },
   counter(K, it){ K.box(0, .2, it.w, .7, .95, it.col[0]); K.box(-.03, .17, it.w + .06, .76, .1, it.col[1], .95); for (let i = 0; i < it.w*2; i++) K.rect(.08 + i*.5, .9, .38, .6, shadeHex(it.col[0], .93), .2);
@@ -6946,7 +6948,7 @@ function drawFacade(c, pixel, spans, a){
 function houseThumb(x, H, pixel){
   x.clearRect(0, 0, 160, 96);
   const img = pixel && artOf("house/" + H.id);
-  if (img) { const k = 96/img.height; x.imageSmoothingEnabled = true; x.drawImage(img, 0, 0, img.width, img.height, (160 - img.width*k)/2, 0, img.width*k, 96); return; }
+  if (img) { const k = 96/img.height; x.imageSmoothingEnabled = true; for (let X = 0; X < 160; X += img.width*k) x.drawImage(img, X, 0, img.width*k, 96); return; }   // repeated along, like the house
   x.fillStyle = "#bfe3ff"; x.fillRect(0, 0, 160, 96); facadeShapes(x, H, 8, 152, 16, 92, 13, pixel, 0);
 }
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
@@ -7007,7 +7009,7 @@ const friendOf = n => homeData().fr[n] | 0;
 const homeMons = () => homeData().mons.filter(n => NAT_BY.has(n)).slice(0, homeCap());
 
 function renderHome(){
-  homeLayout();
+  homeLayout(); HS.style = state.mode;
   const cap = homeCap(), mons = homeMons();
   $("scBody").innerHTML = `<div class="home">
     <div class="home-bar">
@@ -7061,7 +7063,8 @@ function homeSyncMons(){
   HS.evKey = vis.join(",");
   HS.followers = res.filter(n => friendOf(n) >= 50).sort((a, b) => friendOf(b) - friendOf(a)).slice(0, 2);
   HS.mons = want.map((n, i) => have.get(n) || (() => { const s = randomSpot(false) || {x:1 + i, y:4}; const m = NAT_BY.get(n); return {n, x:s.x, y:s.y, dir:Math.random() < .5 ? -1 : 1, st:"idle", t:Math.random()*2000, spd:1.2 + Math.random()*.8, fl:floatsOf(n), water:m.types.includes("Water"), sp:null, hop:0, emote:null, swim:false, z:0, visitor:vis.includes(n)}; })());
-  for (const m of HS.mons) if (!m.sp && !m.loading) { m.loading = true; getSprite(spKey(m.n, false, state.mode), m.n).then(sp => { m.sp = sp; m.loading = false; }).catch(() => { m.loading = false; }); }
+  for (const m of HS.mons) if (m.spMode !== state.mode) { m.sp = null; m.bk = null; m.bkLoad = false; m.loading = false; m.spMode = state.mode; }   // the style changed: everyone gets that style's sprite
+  for (const m of HS.mons) if (!m.sp && !m.loading) { const md = state.mode; m.loading = true; getSprite(spKey(m.n, false, md), m.n).then(sp => { if (md === m.spMode) m.sp = sp; m.loading = false; }).catch(() => { m.loading = false; }); }
   // visiting a friend, you walk around as yourself
   const tr = VISIT ? VISIT.myTr : trainerOf("all"); HS.trSp = null; getSprite(state.mode === "2d" ? "t2d" : "t3f", tr).then(sp => { HS.trSp = sp; }).catch(() => {});
 }
@@ -7103,6 +7106,7 @@ const scrX = x => x*HS.ts - (HS.camPx ?? Math.round(HS.cam*HS.ts)), scrY = y => 
 function homeFrame(now){
   if (!HS.cv || !HS.cv.isConnected) return;
   if (HS.offscreen) { HS.last = now; HS.raf = requestAnimationFrame(homeFrame); return; }   // scrolled out of view: nothing to draw
+  if (HS.style !== state.mode) { renderHome(); return; }   // the 2D/3D switch was flipped while the Home is open
   const dt = HS.dt = Math.min(.05, (now - HS.last)/1000); HS.last = now;
   const pixel = state.mode === "2d", c = pixel ? HS.lctx : HS.ctx, V = HS.V, ts = HS.ts, tod = clockTod();
   homeUpdate(dt, now);

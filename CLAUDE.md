@@ -126,6 +126,12 @@ Boot code is at the very end of the script.
   Berries, feeding, gifts, `fedN` and `photos` live in `state.games.home` (validated in `cleanGames`). Seasonal events are
   data in `EVENTS` (dates, night tint, visitors, `furn` ids sold only while it runs: give the item `event:"<id>"`).
   Tests pin the time of day with `window.DTD_TOD = "night"`.
+- **Home layout.** `ROOMS` is in house order (front yard, bedroom, living room, kitchen, Grand hall, garden, pond). Item,
+  gift and berry-tree positions are absolute x along the house; `home.lay` records the room order they refer to and
+  `homeRelayout()` moves everything with its room when the owned rooms change (old saves without `lay` use
+  `LEGACY_ROOMS`). Never change a room's `w` without migrating. Out in a yard the house rooms are covered by
+  `drawFacade` (2D art `house/<design>`, canvas `facadeShapes` in 3D); `HS.outA` fades it. House designs are `HOUSES`
+  (cat `house`, `home.house`, `houseOf()`). `tests/test_home_layout.py` checks the migration.
 - **Home walls.** Rooms sit side by side; between each pair `dividers()` puts a wall with a doorway (`DOOR` depth range)
   whose look comes from `divType` (indoor, house back door, hedge, Grand hall). `inWall` blocks walking, `fits` keeps
   furniture off walls, and Pokémon use `findPath` to cross rooms. 2D Homes are drawn at exactly 32 px per tile.
