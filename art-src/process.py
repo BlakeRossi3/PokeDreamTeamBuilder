@@ -312,6 +312,16 @@ for n in ["back_garden", "back_pond", "back_yard"]:
     im = rgba(R / f"{n}.png")
     W = im.width
     im = flood_clear(im, [(x, 0) for x in range(W)], 40)   # the sky above the hedge/reeds is see-through
+    # ...but not below it: the reeds and hedge stand in grass, so the bottom rows get the lawn behind them (the sky
+    # showed through as a dark band at night where the cut-out faded out)
+    grass, H = rgba(R / "floor_grass.png"), im.height
+    px = im.load()
+    top = next(y for y in range(H - 1, -1, -1) if all(px[x, y][3] == 255 for x in range(W)) or y < H - 24)
+    ground = Image.new("RGBA", im.size)
+    for y in range(top, H, grass.height):
+        for x in range(0, W, grass.width):
+            ground.paste(grass, (x, y))
+    im = Image.alpha_composite(ground, im)
     save(im, f"room/{n}.png")
 
 save(cutout(rgba(R / "pond.png")), "room/pond.png")

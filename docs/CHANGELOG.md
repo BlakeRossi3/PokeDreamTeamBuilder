@@ -10,6 +10,9 @@
   buttons) move between the garden, the house and the yard. Your furniture stays exactly where it was.
 - **Lighting:** dust drifts in the sunbeams from the windows, and at night the TV and arcade flicker while the stove
   and crystal ball glow.
+- **The pond fits its picture:** Pokémon only swim where the water is drawn, swim out in the open water rather than
+  at the edge (wading at the rim), and furniture keeps off the stones. The reeds and garden hedge no longer show a
+  strip of sky under them.
 - **Stacking:** small pieces (plants, globes, trophies, lamps…) stand on tables, desks and counters, and move with them.
 
 ## 🐟 Pokémon that act like themselves
