@@ -58,6 +58,8 @@ TESTS = [  # (group, file, args)
     ("home", "test_home_deco.py", ["3d", "390", "844"]),
     ("home", "test_home_habits.py", ["2d", "1280", "860"]),     # fish + water types in the pond, perches, type spots, bedtime, snacks, sizes
     ("home", "test_home_habits.py", ["3d", "390", "844"]),
+    ("home", "test_home_rows.py", ["2d", "1280", "860"]),       # garden / house / front yard rows joined by the front and back doors
+    ("home", "test_home_rows.py", ["3d", "390", "844"]),
     ("home", "test_home_games.py", ["2d", "390", "844"]),       # hammock, Berry Catch, Hide-and-seek
     ("home", "test_home_games.py", ["3d", "1280", "860"]),
     ("home", "test_home_anim.py", []),                          # animated furniture

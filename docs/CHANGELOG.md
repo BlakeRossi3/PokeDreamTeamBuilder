@@ -1,5 +1,17 @@
 # What's new in Dream Team Dex
 
+## 🚪 Front door, back door
+- **Rooms connect up and down, not just sideways:** the garden and pond are now behind the house and the front yard is
+  in front of it. Walk through the front door to go inside, and out through the back door in the bedroom to reach the
+  garden. The view slides up or down as you go, and your Pokémon use the doors too.
+- **New door art:** the house's front wall (in your chosen design) with a front door behind the yard, an open back door
+  showing the garden, a doormat, a front step and stepping stones. From a yard you see the house's roof.
+- Walk into a door, press E next to it or tap it to go through. In Decorate, the up and down arrows (or the room
+  buttons) move between the garden, the house and the yard. Your furniture stays exactly where it was.
+- **Lighting:** dust drifts in the sunbeams from the windows, and at night the TV and arcade flicker while the stove
+  and crystal ball glow.
+- **Stacking:** small pieces (plants, globes, trophies, lamps…) stand on tables, desks and counters, and move with them.
+
 ## 🐟 Pokémon that act like themselves
 - **Water Pokémon live in the pond:** Water types spend most of the day swimming and drifting (and sleep there too),
   and fish like Magikarp, Goldeen and Wailmer never leave it. On rainy days they head out into the garden. Pokémon

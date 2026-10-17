@@ -234,7 +234,7 @@ function cleanGames(g){
   const h = obj(g.home), num = v => Number.isFinite(v) ? v : 0;
   if (g.home) {
     o.home.mons = Array.isArray(h.mons) ? [...new Set(h.mons.filter(n => Number.isInteger(n) && NAT_BY.has(n)))].slice(0, 40) : [];
-    o.home.items = Array.isArray(h.items) ? h.items.filter(p => p && unlockOf("furn", p.id)).slice(0, 300).map(p => ({id:p.id, x:Math.max(0, Math.round(num(p.x))), y:Math.max(0, Math.round(num(p.y))), f:p.f ? 1 : 0, ...(p.r ? {r:1} : {})})) : [];
+    o.home.items = Array.isArray(h.items) ? h.items.filter(p => p && unlockOf("furn", p.id)).slice(0, 300).map(p => ({id:p.id, x:Math.max(0, Math.round(num(p.x))), y:Math.max(0, Math.round(num(p.y))), f:p.f ? 1 : 0, ...(p.r ? {r:1} : {}), ...(p.s ? {s:1} : {})})) : [];
     const day = v => typeof v === "string" && /^\d{4}-\d\d-\d\d$/.test(v);
     for (const [k, v] of Object.entries(obj(h.bag))) if (/^[a-z]{3,8}$/.test(k) && int(v)) o.home.bag[k] = Math.min(99, v);
     for (const [k, v] of Object.entries(obj(h.trees))) if (/^\d+,\d+$/.test(k) && v && day(v.d)) o.home.trees[k] = {d:v.d, n:Math.min(3, int(v.n))};

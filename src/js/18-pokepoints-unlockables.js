@@ -114,23 +114,26 @@ FURN.forEach(([id, name, price, w, d, kind, col]) => addItem({cat:"furn", id, na
 [["pumpkin", "Jack-o’-lantern", 300, 1, 1, "pumpkin", ["#f08a24", "#3a7a2a"], "halloween"], ["cobweb", "Spooky cobweb", 150, 1, 1, "cobweb", ["#e8e8f0", "#5a5a6a"], "halloween"],
  ["holtree", "Holiday tree", 900, 1, 1, "holtree", ["#2f8a4a", "#e2413b"], "winter"], ["giftpile", "Holiday gifts", 350, 1, 1, "giftpile", ["#e2413b", "#2f8a4a"], "winter"]].forEach(([id, name, price, w, d, kind, col, event]) => addItem({cat:"furn", id, name, price, w, d, kind, col, event}));
 // --- Home rooms (each adds space and room for more Pokémon) ---
-// In house order: the front yard, the rooms inside, then the back garden and pond.
+// In house order: the front yard, the rooms inside, then the back garden and pond. `row` is where the room lies, north
+// to south: the garden and pond behind the house (0), the house (1) and the front yard (2); the front and back doors
+// join the rows, and rooms in the same row are side by side.
 const ROOMS = [
-  {id:"yard", name:"Front yard", free:true, w:9, floor:"grass", wall:null, cap:2},
-  {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4},
-  {id:"living", name:"Living room", price:1500, w:11, floor:"carpet", wall:"#cfe3f7", cap:4},
-  {id:"kitchen", name:"Kitchen", price:2500, w:10, floor:"tile", wall:"#d9efe4", cap:3},
-  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5},
-  {id:"garden", name:"Garden", price:3000, w:12, floor:"grass", wall:null, cap:4},
-  {id:"pond", name:"Pond", price:4000, w:11, floor:"grass", wall:null, cap:3, pond:true},
+  {id:"yard", name:"Front yard", free:true, w:9, floor:"grass", wall:null, cap:2, row:2},
+  {id:"bedroom", name:"Bedroom", free:true, w:11, floor:"wood", wall:"#f2d7b4", cap:4, row:1},
+  {id:"living", name:"Living room", price:1500, w:11, floor:"carpet", wall:"#cfe3f7", cap:4, row:1},
+  {id:"kitchen", name:"Kitchen", price:2500, w:10, floor:"tile", wall:"#d9efe4", cap:3, row:1},
+  {id:"hall", name:"Grand hall", price:8000, w:13, floor:"marble", wall:"#e7e2f7", cap:5, row:1},
+  {id:"garden", name:"Garden", price:3000, w:12, floor:"grass", wall:null, cap:4, row:0},
+  {id:"pond", name:"Pond", price:4000, w:11, floor:"grass", wall:null, cap:3, pond:true, row:0},
 ];
 ROOMS.forEach(r => addItem({cat:"exp", id:r.id, name:r.name, price:r.price || 0, free:!!r.free, room:r}));
-// --- house designs: how the house looks from the yard (roof, walls, windows) ---
+// --- house designs: how the house looks from the yard (roof, walls, windows); door: where the front door goes in the 2D
+// front wall picture (house/<id>_front, x of its middle in px), between the windows ---
 const HOUSES = [
-  {id:"cottage", name:"Cozy cottage", free:true, roof:"#c8553a", roof2:"#8e3524", wall:"#f1e6c8", trim:"#4f8a4a", base:"#9a9aa2"},
-  {id:"brick", name:"Brick townhouse", price:2500, roof:"#4f5f7d", roof2:"#2c3850", wall:"#a8442f", trim:"#f4f4f4", base:"#8a8a92"},
-  {id:"cabin", name:"Log cabin", price:3000, roof:"#4f6b3a", roof2:"#2f4424", wall:"#8a5a34", trim:"#c9423a", base:"#7a7a6a"},
-  {id:"villa", name:"Seaside villa", price:3500, roof:"#2f8fd6", roof2:"#1a5a96", wall:"#f6f4ee", trim:"#2ab0a8", base:"#d8c49a"},
+  {id:"cottage", door:128, name:"Cozy cottage", free:true, roof:"#c8553a", roof2:"#8e3524", wall:"#f1e6c8", trim:"#4f8a4a", base:"#9a9aa2"},
+  {id:"brick", door:106, name:"Brick townhouse", price:2500, roof:"#4f5f7d", roof2:"#2c3850", wall:"#a8442f", trim:"#f4f4f4", base:"#8a8a92"},
+  {id:"cabin", door:66, name:"Log cabin", price:3000, roof:"#4f6b3a", roof2:"#2f4424", wall:"#8a5a34", trim:"#c9423a", base:"#7a7a6a"},
+  {id:"villa", door:13, name:"Seaside villa", price:3500, roof:"#2f8fd6", roof2:"#1a5a96", wall:"#f6f4ee", trim:"#2ab0a8", base:"#d8c49a"},
 ];
 HOUSES.forEach(h => addItem({cat:"house", id:h.id, name:h.name, price:h.price || 0, free:!!h.free, house:h}));
 

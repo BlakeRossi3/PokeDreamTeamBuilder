@@ -54,9 +54,9 @@ async def main():
         g = await pg.evaluate('(() => { const m = HS.mons.find(x => x.n === 25), n0 = homeData().gifts.length; homeGift(m, todayKey()); const n = homeData().gifts.length; openGift(n - 1); return [n - n0, homeData().gifts.length - n0]; })()')
         print('gift', g); assert g == [1, 0], g
         # decorating: drag the beanbag, undo it, turn the long rug
-        await pg.evaluate('HS.edit = true; renderHome(); HS.dcam = homeData().items.find(i => i.id === "bean").x - 2'); await pg.wait_for_timeout(1200)
+        await pg.evaluate('HS.edit = true; renderHome(); const bx = homeData().items.find(i => i.id === "bean").x; HS.drow = rowOf(bx).k; HS.dcam = bx - rowOf(bx).x0 - 2'); await pg.wait_for_timeout(1200)
         bx = await pg.evaluate('homeData().items.find(i => i.id === "bean").x')   # wherever the house layout put it
-        pt = await pg.evaluate(f'''(() => {{ const r = HS.cv.getBoundingClientRect(), c = (x, y) => ({{x:r.left + (x - HS.cam)*HS.ts*HS.k*r.width/HS.cv.width, y:r.top + (HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY)*HS.k*r.height/HS.cv.height}});
+        pt = await pg.evaluate(f'''(() => {{ const r = HS.cv.getBoundingClientRect(), k = (state.mode === "2d" ? HS.k : 1)*r.width/HS.cv.width, c = (x, y) => ({{x:r.left + scrX(x)*k, y:r.top + scrY(y)*k}});
           return [c({bx} + .5, 1.6), c({bx} + 3.5, 1.6)]; }})()''')
         await pg.mouse.move(pt[0]['x'], pt[0]['y']); await pg.mouse.down(); await pg.mouse.move(pt[1]['x'] - 20, pt[1]['y'], steps=6); await pg.mouse.move(pt[1]['x'], pt[1]['y'], steps=4); await pg.mouse.up(); await pg.wait_for_timeout(300)
         bean = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "bean"))'); print('dragged', bean); assert f'"x":{bx},' not in bean, bean

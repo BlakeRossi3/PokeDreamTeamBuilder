@@ -308,8 +308,8 @@ const roomKind = r => r.id === "hall" ? "hall" : r.wall ? "house" : "out";
 const divType = (a, b) => { const A = roomKind(a), B = roomKind(b); return A === "hall" || B === "hall" ? "hall" : A === "out" && B === "out" ? "hedge" : A === "house" && B === "house" ? "in" : "ext"; };
 const DIV = {in:{h:.45, cap:"#e9dcc4", face:"#9a7a55", col:"#efe2c6"}, ext:{h:.55, cap:"#9b9ba3", face:"#a8442f", col:"#f2eadb"},
   hedge:{h:.8, cap:"#4f9e58", face:"#2f6b3a", col:"#3f8f4f"}, hall:{h:.5, cap:"#f2f0f8", face:"#cfc8e0", col:"#ffffff"}};
-const dividers = () => HS.rooms.slice(1).map((r, i) => ({x:r.x0, t:divType(HS.rooms[i], r)}));
-const inWall = (x, y) => HS.rooms.some((r, i) => i && Math.abs(x - r.x0) < .6 && (y < DOOR[0] + .15 || y > DOOR[1] - .15));
+const dividers = () => HS.rooms.slice(1).map((r, i) => ({x:r.x0, t:divType(HS.rooms[i], r), row:r.row === HS.rooms[i].row})).filter(d => d.row);   // only between rooms in the same row
+const inWall = (x, y) => HS.rooms.some((r, i) => i && (r.row !== HS.rooms[i - 1].row ? Math.abs(x - r.x0) < .3 : Math.abs(x - r.x0) < .6 && (y < DOOR[0] + .15 || y > DOOR[1] - .15)));
 function paintDivider(c, d, ts, pixel, head){
   const T = DIV[d.t], R = v => pixel ? Math.round(v) : v, X0 = d.x*ts - ts/2, wallH = HM.WALL*ts, fy = y => wallH + y*ts*HM.SQ, h = T.h*ts, k = ts/32;
   const col = pixel && artOf(`div/${d.t}_col`), cap = pixel && artOf(`div/${d.t}_cap`), door = pixel && artOf(`div/${d.t}_door`);
@@ -330,17 +330,49 @@ function drawDivPost(c, d, y, pixel){   // door posts stand up, so they are draw
   if (img) { const w = img.width*ts/32, h = img.height*ts/32; c.drawImage(img, Math.round(X - w/2), Math.round(Y - h), Math.round(w), Math.round(h)); return; }
   const w = ts*.34, h = ts*1.25; c.fillStyle = T.face; c.fillRect(X - w/2, Y - h, w, h); c.fillStyle = T.cap; c.fillRect(X - w/2, Y - h, w, ts*.12);
 }
-// ---- the house from outside ----
-// Out in a yard you see the house as it really looks: its roof and front wall cover the rooms (and whoever is inside),
-// and fade away as you walk in through the door. The look comes from the house design (HOUSES, sold in the Shop).
-function houseSpans(){
-  const out = []; let s = null;
-  for (const r of HS.rooms) { if (roomKind(r) === "out") { s = null; continue; } if (s) s.x1 = r.x0 + r.w; else out.push(s = {x0:r.x0, x1:r.x0 + r.w}); }
-  return out;
+// ---- rows of rooms, joined by doors ----
+// The rooms lie in rows, north to south (ROOMS[].row): the garden and pond behind the house, the house, the front yard.
+// Positions are still saved along one strip of rooms in ROOMS order (each row is one stretch of it), so saves don't
+// change. On screen each row starts at the left, one above the other, and the doors (DOORX tiles in from each row's left
+// end) join them: the front door in the yard's back wall opens onto the house's front edge, and the back door in the
+// bedroom's back wall onto the garden's front edge. Going through moves you to the door's other end (a path waypoint
+// with `to`), and the view slides up or down to that row.
+const DOORX = 4.5;
+function homeRows(){
+  const rows = [];
+  for (const r of HS.rooms) { const R = rows.find(q => q.row === r.row); if (R) { R.rooms.push(r); R.x1 = r.x0 + r.w; } else rows.push({row:r.row, rooms:[r], x0:r.x0, x1:r.x0 + r.w}); }
+  rows.sort((a, b) => a.row - b.row).forEach((R, k) => { R.k = k; R.w = R.x1 - R.x0; R.out = R.rooms.every(r => roomKind(r) === "out"); });
+  HS.rows = rows; HS.pass = null;
+  HS.doors = rows.slice(1).map((S, i) => ({k:i, n:{x:rows[i].x0 + DOORX, y:HM.D - .35}, s:{x:S.x0 + DOORX, y:.45}}));   // between row k (its front edge) and row k + 1 (its back wall)
 }
-function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){
-  const R = v => pixel ? Math.round(v) : v, wallTop = bot - HM.WALL*ts*.95, W = X1 - X0;
-  let g = c.createLinearGradient(0, top, 0, wallTop); g.addColorStop(0, H.roof2); g.addColorStop(1, H.roof);   // the roof, seen from above
+const rowOf = x => HS.rows.find(R => x >= R.x0 && x < R.x1) || HS.rows[HS.rows.length - 1];
+const sameRow = (a, b) => rowOf(a) === rowOf(b);
+const doorWays = () => HS.doors.flatMap(d => [{at:d.s, to:d.n, up:true, k:d.k}, {at:d.n, to:d.s, up:false, k:d.k + 1}]);   // k: the row it leads to
+const nearDoor = (o, r = .8) => doorWays().find(w => Math.abs(o.x - w.at.x) < r && Math.abs(o.y - w.at.y) < r*.9) || null;
+const doorLabel = w => { const R = HS.rows[w.k]; return R.out ? `Go out to the ${R.rooms[0].name.toLowerCase()}` : "Go inside"; };
+function goThrough(o, w){ o.x = w.to.x; o.y = w.to.y < 1 ? w.to.y + .45 : w.to.y; o.path = null; if (o === HS.me) Sound.play("door"); }   // a step into the room, clear of the door
+// in a row's pass the camera is that row's: scrX/scrY place it on screen (HS.pass), one band above the next
+function rowCam(R){ HS.pass = R; HS.camY = HS.camY0 - Math.round((R.k - (HS.vy ?? R.k))*HS.bandH); }
+const HSKY = {night:["#0d1330", "#1f2b5a"], sunset:["#ff9a5a", "#ffd39a"], day:["#7cc4ff", "#d8f0ff"]};
+// past the ends of a row: a dim corridor beside the house rooms; more hedge, sky and lawn beside a yard
+function rowBackdrop(c, R, pixel, tod){
+  const ts = HS.ts, V = HS.V, top = R.k ? Math.round(scrY(0) - HM.WALL*ts) : 0, wy = Math.round(scrY(0)), bot = R.k === HS.rows.length - 1 ? V.H : Math.round(scrY(HM.D)), X0 = Math.round(scrX(R.x0));
+  const draw = out => {
+    if (!out) { c.fillStyle = "#3a2f2a"; c.fillRect(0, top, V.W, wy - top); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, bot - wy); c.fillStyle = "rgba(0,0,0,.25)"; for (let i = 0; i < 8; i++) c.fillRect(0, wy + Math.round(i*ts*HM.SQ), V.W, 1); return; }
+    const sk = HSKY[tod] || HSKY.day, g = c.createLinearGradient(0, top, 0, wy); g.addColorStop(0, sk[0]); g.addColorStop(1, sk[1]); c.fillStyle = g; c.fillRect(0, top, V.W, wy - top);
+    const back = pixel && artOf("room/back_" + R.rooms[0].id), grass = pixel && artOf("room/floor_grass");
+    if (back) { const w = back.width, h = back.height; for (let x = X0 - Math.ceil(X0/w)*w; x < V.W; x += w) c.drawImage(back, x, wy - h); }
+    else { c.fillStyle = tod === "night" ? "#1d3a2a" : "#3a8f4f"; for (let x = X0 % ts - ts; x < V.W + ts; x += ts) { c.beginPath(); c.arc(x + ts*.5, wy - HM.WALL*ts*.22, ts*.62, 0, 7); c.fill(); } c.fillRect(0, wy - HM.WALL*ts*.22, V.W, HM.WALL*ts*.22); }
+    if (grass) { const w = grass.width, h = grass.height; for (let y = wy; y < bot; y += h) for (let x = X0 - Math.ceil(X0/w)*w; x < V.W; x += w) c.drawImage(grass, x, y); }
+    else { c.fillStyle = "#7cc45a"; c.fillRect(0, wy, V.W, bot - wy); }
+    c.fillStyle = "rgba(16,28,24,.32)"; c.fillRect(0, top, V.W, bot - top);   // dimmer: you can't go there
+  };
+  draw(R.out); if (!R.out && HS.outA > .01) { c.save(); c.globalAlpha = HS.outA; draw(true); c.restore(); }
+}
+// ---- the house from outside: its front wall behind the front yard, and its roof over the house rows seen from a yard ----
+function roofShapes(c, H, X0, X1, top, wallTop, ts, pixel){
+  const R = v => pixel ? Math.round(v) : v, W = X1 - X0;
+  let g = c.createLinearGradient(0, top, 0, wallTop); g.addColorStop(0, H.roof2); g.addColorStop(1, H.roof);   // seen from above
   c.fillStyle = g; c.fillRect(R(X0), R(top), R(W), R(wallTop - top));
   const rowH = ts*.42;
   for (let y = top + ts*.5, i = 0; y < wallTop - ts*.1; y += rowH, i++) {   // rows of tiles, staggered joints
@@ -353,11 +385,15 @@ function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){
   for (let x = X0 + ts*2.2; x < X1 - ts*1.5; x += ts*13) {   // chimneys
     c.fillStyle = "#8a4a3a"; c.fillRect(R(x), R(top - ts*.4), R(ts*.8), R(ts*1.3)); c.fillStyle = "#5a3026"; c.fillRect(R(x - ts*.08), R(top - ts*.5), R(ts*.96), R(ts*.22));
   }
-  c.fillStyle = H.wall; c.fillRect(R(X0), R(wallTop), R(W), R(bot - wallTop));   // the front wall
+}
+function frontShapes(c, H, X0, X1, wallTop, bot, ts, pixel, night, door){   // door: the x of the front door, kept clear of windows
+  const R = v => pixel ? Math.round(v) : v, W = X1 - X0;
+  c.fillStyle = H.wall; c.fillRect(R(X0), R(wallTop), R(W), R(bot - wallTop));
   c.fillStyle = "rgba(0,0,0,.06)"; for (let y = wallTop + ts*.3; y < bot; y += ts*.3) c.fillRect(R(X0), R(y), R(W), Math.max(1, R(ts*.03)));
   c.fillStyle = "rgba(0,0,0,.28)"; c.fillRect(R(X0), R(wallTop), R(W), R(ts*.16));   // shadow under the eaves
   const wy = wallTop + ts*.45, wh = ts*1.1, ww = ts*1.2, glass = night > .3 ? "#ffd98a" : "#a9d4f5";
   for (let x = X0 + ts*1.6; x < X1 - ts*1.6; x += ts*3.2) {   // windows with shutters and a flower box
+    if (door != null && x - ts*.5 < door + ts*.8 && x + ww + ts*.5 > door - ts*.8) continue;
     c.fillStyle = H.trim; c.fillRect(R(x - ts*.5), R(wy), R(ts*.42), R(wh)); c.fillRect(R(x + ww + ts*.08), R(wy), R(ts*.42), R(wh));
     c.fillStyle = "#ffffff"; c.fillRect(R(x - ts*.06), R(wy - ts*.06), R(ww + ts*.12), R(wh + ts*.12));
     c.fillStyle = glass; c.fillRect(R(x), R(wy), R(ww), R(wh)); c.fillStyle = "#ffffff"; c.fillRect(R(x + ww/2 - ts*.03), R(wy), R(ts*.06), R(wh)); c.fillRect(R(x), R(wy + wh/2 - ts*.03), R(ww), R(ts*.06));
@@ -366,18 +402,66 @@ function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){
   }
   c.fillStyle = H.base; c.fillRect(R(X0), R(bot - ts*.38), R(W), R(ts*.38));   // foundation
   c.fillStyle = "rgba(0,0,0,.18)"; for (let x = X0 + ts*.2; x < X1; x += ts*.7) c.fillRect(R(x), R(bot - ts*.38), Math.max(1, R(ts*.04)), R(ts*.38));
-  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(R(X0), R(top), Math.max(1, R(ts*.06)), R(bot - top)); c.fillRect(R(X1 - ts*.06), R(top), Math.max(1, R(ts*.06)), R(bot - top));
 }
-function drawFacade(c, pixel, spans, a){
-  const ts = HS.ts, H = houseOf(), bot = Math.round(scrY(HM.D)), top = Math.round(scrY(0) - HM.WALL*ts), img = pixel && artOf("house/" + H.id), night = HS.light ? HS.light.night : 0;
-  c.save(); c.globalAlpha = a;
-  for (const s of spans) {
-    const X0 = Math.round(scrX(s.x0)), X1 = Math.round(scrX(s.x1)); if (X1 < 0 || X0 > HS.V.W) continue;
-    c.save(); c.beginPath(); c.rect(X0, top - ts, X1 - X0, bot - top + ts); c.clip();
-    if (img) for (let x = X0; x < X1; x += img.width) c.drawImage(img, x, bot - img.height);   // 2D: the house front repeats along the house
-    else facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night);
-    c.restore();
+function facadeShapes(c, H, X0, X1, top, bot, ts, pixel, night){   // the whole house front (the Shop's picture in 3D)
+  const wallTop = bot - HM.WALL*ts*.95;
+  roofShapes(c, H, X0, X1, top, wallTop, ts, pixel); frontShapes(c, H, X0, X1, wallTop, bot, ts, pixel, night);
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(X0, top, Math.max(1, ts*.06), bot - top); c.fillRect(X1 - ts*.06, top, Math.max(1, ts*.06), bot - top);
+}
+// 3D doors: the front door (closed, a fan light over it) and the back door standing open on the garden
+function doorShapes(c, open, x, yb, ts, tod){
+  const w = ts*1.15, h = ts*1.85, X = x - w/2, Y = yb - h;
+  c.fillStyle = "#f4efe4"; c.fillRect(X - ts*.12, Y - ts*.12, w + ts*.24, h + ts*.12); c.fillStyle = "rgba(0,0,0,.18)"; c.fillRect(X + w + ts*.06, Y - ts*.12, ts*.06, h + ts*.12);
+  if (open) {
+    const sk = HSKY[tod] || HSKY.day, g = c.createLinearGradient(0, Y, 0, yb); g.addColorStop(0, sk[0]); g.addColorStop(.55, sk[1]); g.addColorStop(.56, "#79b85a"); g.addColorStop(1, "#4f9a45"); c.fillStyle = g; c.fillRect(X, Y, w, h);
+    c.fillStyle = "#3f8f4f"; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(X + w*(.45 + i*.25), Y + h*.6, ts*.28, 0, 7); c.fill(); }
+    c.fillStyle = "#e48ac8"; for (let i = 0; i < 5; i++) c.fillRect(X + w*(.42 + i*.11), Y + h*(.5 + (i % 2)*.12), ts*.08, ts*.08);
+    c.fillStyle = "#8a5530"; c.beginPath(); c.moveTo(X, Y); c.lineTo(X + w*.36, Y + h*.06); c.lineTo(X + w*.36, yb - h*.03); c.lineTo(X, yb); c.closePath(); c.fill();   // the door, swung open
+    c.fillStyle = "rgba(0,0,0,.15)"; c.fillRect(X + w*.08, Y + h*.12, w*.2, h*.3); c.fillRect(X + w*.08, Y + h*.52, w*.2, h*.36); c.fillStyle = "#ffd43b"; c.fillRect(X + w*.3, Y + h*.52, ts*.08, ts*.08);
+    return;
   }
+  c.fillStyle = "#a8622f"; c.fillRect(X, Y, w, h);
+  c.fillStyle = "#8fc3ea"; c.beginPath(); c.arc(x, Y + h*.2, w*.3, Math.PI, 0); c.closePath(); c.fill(); c.fillStyle = "#f4efe4"; c.fillRect(x - ts*.02, Y + h*.2 - w*.3, ts*.04, w*.3);
+  c.fillStyle = "rgba(0,0,0,.2)"; for (const [a, b] of [[.12, .3], [.56, .3]]) for (const [u, v] of [[.28, .26], [.6, .3]]) c.fillRect(X + w*a, Y + h*u, w*b, h*v);
+  c.fillStyle = "#ffd43b"; c.beginPath(); c.arc(X + w*.86, Y + h*.58, ts*.06, 0, 7); c.fill();
+}
+// little marks on the floor at the doors: the step and mat outside the front door, a mat inside, stepping stones in the garden
+function doorMark(c, kind, x, y, pixel){
+  const ts = HS.ts, img = pixel && artOf({step:"div/ext_door", mat:"div/in_door", stones:"div/hedge_door"}[kind]), X = scrX(x), Y = scrY(y);
+  if (img) { c.drawImage(img, Math.round(X - img.width/2), Math.round(Y - img.height/2)); return; }
+  if (kind === "stones") { c.fillStyle = "#8f959d"; for (const [dx, dy] of [[-.1, -.5], [.15, .1], [-.05, .7]]) { c.beginPath(); c.ellipse(X + dx*ts, Y + dy*ts*HM.SQ, ts*.36, ts*.16, 0, 0, 7); c.fill(); } return; }
+  if (kind === "step") { c.fillStyle = "#9b9ba3"; c.fillRect(X - ts*.6, Y - ts*.32, ts*1.2, ts*.5); c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(X - ts*.6, Y + ts*.12, ts*1.2, ts*.06); }
+  c.fillStyle = "#b8473a"; c.fillRect(X - ts*.42, Y - ts*.22, ts*.84, ts*.32); c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(X - ts*.34, Y - ts*.16, ts*.68, ts*.04);
+}
+// a row's doors, drawn after its rooms: behind the front yard the house front (as wide as the house) with the front door,
+// the back door in the bedroom's back wall, and the marks on the floor where you come through
+function drawRowDoors(c, R, pixel, tod){
+  const ts = HS.ts, below = HS.doors[R.k], above = R.k ? HS.doors[R.k - 1] : null, wb = Math.round(scrY(0));
+  if (above && !HS.rows[R.k - 1].out && R.out) {   // the house is behind this yard
+    const HR = HS.rows[R.k - 1], H = houseOf(), X0 = Math.round(scrX(R.x0)), X1 = Math.round(scrX(R.x0 + HR.w)), wt = wb - Math.round(HM.WALL*ts), dx = Math.round(scrX(above.s.x));
+    const img = pixel && artOf(`house/${H.id}_front`), door = pixel && artOf("room/door_front");
+    c.save(); c.beginPath(); c.rect(X0, wt - ts, X1 - X0, wb - wt + ts); c.clip();
+    if (img) { const w = img.width; for (let x = dx - (H.door || 0) - Math.ceil((dx - (H.door || 0) - X0)/w)*w; x < X1; x += w) c.drawImage(img, x, wb - img.height); }
+    else frontShapes(c, H, X0, X1, wt, wb, ts, pixel, HS.light ? HS.light.night : 0, dx);
+    c.fillStyle = "rgba(0,0,0,.3)"; c.fillRect(X0, wt, Math.max(1, Math.round(ts*.06)), wb - wt); c.fillRect(X1 - Math.max(1, Math.round(ts*.06)), wt, Math.max(1, Math.round(ts*.06)), wb - wt);   // the corners
+    c.restore();
+    if (door) c.drawImage(door, dx - Math.round(door.width/2), wb - door.height - 3); else doorShapes(c, false, dx, wb - ts*.1, ts, tod);
+    doorMark(c, "step", above.s.x, .25, pixel);
+  } else if (above) {   // a back door out to the garden
+    const dx = Math.round(scrX(above.s.x)), door = pixel && artOf("room/door_back");
+    if (door) c.drawImage(door, dx - Math.round(door.width/2), wb - door.height); else doorShapes(c, true, dx, wb, ts, tod);
+    doorMark(c, "mat", above.s.x, .3, pixel);
+  }
+  if (below) doorMark(c, R.out ? "stones" : "mat", below.n.x, below.n.y - (R.out ? .35 : .05), pixel);
+}
+// out in a yard, the house's rooms are seen from above: the roof covers them (and whoever is inside)
+function drawRoof(c, pixel, R, a){
+  const ts = HS.ts, H = houseOf(), X0 = Math.round(scrX(R.x0)), X1 = Math.round(scrX(R.x1)), bot = Math.round(scrY(HM.D)), top = Math.round(scrY(0) - HM.WALL*ts), img = pixel && artOf(`house/${H.id}_roof`);
+  if (X1 < 0 || X0 > HS.V.W) return;
+  c.save(); c.globalAlpha = a; c.beginPath(); c.rect(X0, top - ts, X1 - X0, bot - top + ts); c.clip();
+  if (img) for (let x = X0; x < X1; x += img.width) c.drawImage(img, x, bot - img.height);
+  else roofShapes(c, H, X0, X1, top, bot, ts, pixel);
+  const e = Math.max(1, Math.round(ts*.06)); c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(X0, top, e, bot - top); c.fillRect(X1 - e, top, e, bot - top); c.fillRect(X0, bot - e, X1 - X0, e);
   c.restore();
 }
 function houseThumb(x, H, pixel){
@@ -389,7 +473,7 @@ function houseThumb(x, H, pixel){
 const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
 
 // ---- state of the running Home ----
-const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0};
+const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0, rows:[], doors:[], pass:null, vy:null, camY0:0, bandH:0};
 // Furniture, gifts and berry trees are saved at positions along the house, together with the room order they refer
 // to (home.lay). When the rooms change (one bought, or the order changed), everything moves along with its room.
 const LEGACY_ROOMS = ["bedroom", "living", "garden", "pond", "hall"];   // the order before the front yard and kitchen
@@ -408,25 +492,38 @@ function homeRelayout(){
 function homeLayout(){
   homeRelayout();
   let x = 0; HS.rooms = homeRooms().map(r => { const o = {...r, x0:x}; x += r.w; return o; }); HS.W = x;
+  homeRows();
 }
 const roomAt = x => HS.rooms.find(r => x >= r.x0 && x < r.x0 + r.w) || HS.rooms[HS.rooms.length - 1];
 function placedItems(){ return homeData().items.map(p => { const it = unlockOf("furn", p.id); return {...p, it:it && p.r && canRotate(it) ? rotItem(it, 1) : it}; }).filter(p => p.it && p.x + p.it.w <= HS.W); }
 function blocked(x, y, swim){
   if (x < .3 || x > HS.W - .3 || y < .35 || y > HM.D - .15 || inWall(x, y)) return true;
   const r = roomAt(x); if (inPond(r, x, y) && !swim) return true;
-  for (const p of placedItems()) { if (isFloorItem(p.it)) continue; if (x > p.x - .1 && x < p.x + p.it.w + .1 && y > p.y + .05 && y < p.y + p.it.d + .25) return true; }
+  if (HS.doors.some(d => [d.n, d.s].some(e => Math.abs(x - e.x) < .7 && Math.abs(y - e.y) < .6))) return false;   // the doorways stay open
+  for (const p of placedItems()) { if (isFloorItem(p.it) || p.s) continue; if (x > p.x - .1 && x < p.x + p.it.w + .1 && y > p.y + .05 && y < p.y + p.it.d + .25) return true; }
   return false;
 }
 function randomSpot(swim, near){
   for (let i = 0; i < 40; i++) {
     const x = near ? near.x + (Math.random() - .5)*5 : .5 + Math.random()*(HS.W - 1), y = .6 + Math.random()*(HM.D - 1.1);
+    if (near && !sameRow(x, near.x)) continue;   // near: in the same row
     if (swim === "only") { if (inPond(roomAt(x), x, y)) return {x, y}; continue; }
     if (!blocked(x, y, swim)) return {x, y};
   }
   return null;
 }
-// simple A* on a half-tile grid so the trainer walks around furniture
+// a path to anywhere: within a row, or to the doors and through them (a waypoint with `to` is a doorway)
 function findPath(from, to){
+  let a = rowOf(from.x).k; const b = rowOf(to.x).k; if (a === b) return gridPath(from, to);
+  const out = []; let cur = from;
+  for (; a !== b; a += Math.sign(b - a)) {
+    const d = b < a ? HS.doors[a - 1] : HS.doors[a], at = b < a ? d.s : d.n, nx = b < a ? d.n : d.s, seg = gridPath(cur, at); if (!seg) return null;
+    seg[seg.length - 1] = {x:at.x, y:at.y, to:{x:nx.x, y:nx.y}}; out.push(...seg); cur = nx;
+  }
+  const seg = gridPath(cur, to); return seg ? out.concat(seg) : null;
+}
+// simple A* on a half-tile grid so the trainer walks around furniture
+function gridPath(from, to){
   const S = .5, GW = Math.ceil(HS.W/S), GH = Math.ceil(HM.D/S), id = (i, j) => j*GW + i, cx = i => (i + .5)*S, cy = j => (j + .5)*S;
   const free = (i, j) => i >= 0 && j >= 0 && i < GW && j < GH && !blocked(cx(i), cy(j), false);
   const si = Math.floor(from.x/S), sj = Math.floor(from.y/S); let ti = Math.floor(to.x/S), tj = Math.floor(to.y/S);
@@ -444,7 +541,7 @@ const friendOf = n => homeData().fr[n] | 0;
 const homeMons = () => homeData().mons.filter(n => NAT_BY.has(n)).slice(0, homeCap());
 
 function renderHome(){
-  homeLayout(); HS.style = state.mode;
+  homeLayout(); HS.style = state.mode; HS.vy = null;
   const cap = homeCap(), mons = homeMons();
   $("scBody").innerHTML = `<div class="home">
     <div class="home-bar">
@@ -464,7 +561,7 @@ function renderHome(){
       ${HS.edit ? `<div class="hm-float" id="hmFloat" hidden></div><div class="hm-dhint" id="hmDHint"></div>` : ""}</div>
     ${HS.edit ? `<div class="home-deco" id="hmDecoBar"></div>` : `<div class="home-res" id="hmRes"></div>`}
     ${eventOn() && !HS.edit ? `<p class="hm-event" data-ev="${eventOn().id}"><span class="hm-ev-pill">${eventOn().id === "halloween" ? "🎃" : "❄"} ${esc(eventOn().name)}</span><span>Limited-time furniture in the Shop${eventOn().visitors ? ", and visitors after dark" : ""}.</span></p>` : ""}
-    <p class="note home-help">${HS.edit ? (matchMedia("(pointer:coarse)").matches ? "Drag the floor to look around. Tap a piece of furniture to move, flip, turn or put it away, or drag it to slide it. Pick something below to add it." : "Drag the floor or use the arrow keys to look around. Click a piece of furniture to move, flip, turn or put it away; drag it to slide it, or nudge it with the arrow keys (F flip, R turn, Delete put away, Esc cancel).") : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
+    <p class="note home-help">${HS.edit ? (matchMedia("(pointer:coarse)").matches ? "Drag the floor to look around. Tap a piece of furniture to move, flip, turn or put it away, or drag it to slide it. Pick something below to add it." : "Drag the floor or use the arrow keys to look around (up and down go between the garden, the house and the front yard). Click a piece of furniture to move, flip, turn or put it away; drag it to slide it, or nudge it with the arrow keys (F flip, R turn, Delete put away, Esc cancel).") : (matchMedia("(pointer:coarse)").matches ? "Tap the floor to walk, tap a door to go through it and tap a Pokémon to play with it." : "Walk with the arrow keys or WASD, or click the floor; the front and back doors lead outside. Get close to a Pokémon and press E, or click it, to play.") + " Each Pokémon gives PokéPoints the first time you play with it each day."}</p>
   </div>`;
   HS.cv = $("hmCv"); HS.ctx = HS.cv.getContext("2d");
   if (!HS.me || HS.me.x > HS.W) HS.me = {x:Math.min(3, HS.W/2), y:4.6, dir:1, path:null, walk:0, target:null};
@@ -483,8 +580,8 @@ function renderHome(){
   nav.cleanup = () => { if (HS.edit) decoCancel(); seekStop(true); cancelAnimationFrame(HS.raf); clearInterval(HS.tw); HS.hover = null; HS.acts = 0; ro.disconnect(); HS.ro = null; vis.disconnect(); HS.vis = null; HS.offscreen = false; HS.keys.clear(); HS.place = null; HS.sel = null; HS.drag = null; HS.photo = false; HS.hold = null; HS.joy = null; HS.introPending = true; HS.undo = []; save(); };
   nav.onClick = e => {
     if (e.target.closest("#hmPick")) { pickHomeMons(); return; }
-    if (e.target.closest("#hmDeco")) { decoCancel(); HS.edit = !HS.edit; HS.sel = null; HS.dcam = HS.cam; Sound.play("select"); renderHome(); return; }
-    const rm = e.target.closest("[data-hroom]"); if (rm) { const r = HS.rooms[+rm.dataset.hroom]; if (r) { HS.dcam = r.x0 + r.w/2 - HS.V.W/HS.ts/2; Sound.play("select"); } return; }
+    if (e.target.closest("#hmDeco")) { decoCancel(); HS.edit = !HS.edit; HS.sel = null; HS.dcam = HS.cam; HS.drow = rowOf(HS.me.x).k; Sound.play("select"); renderHome(); return; }
+    const rm = e.target.closest("[data-hroom]"); if (rm) { const r = HS.rooms[+rm.dataset.hroom]; if (r) { const R = rowOf(r.x0); HS.drow = R.k; HS.dcam = r.x0 - R.x0 + r.w/2 - HS.V.W/HS.ts/2; Sound.play("select"); } return; }
     if (e.target.closest("#hmShop")) { shopCat = "furn"; openScreen("shop"); return; }
     if (e.target.closest("#hmGames")) { if (HS.hide && !HS.hide.found) seekStop(); else homeGames(); return; }
     if (e.target.closest("#hmTr")) { pickHomeTrainer(); return; }
@@ -524,10 +621,10 @@ function homeResize(){
   if (pixel) {   // 2D: exactly 32 px per tile so the pixel art is drawn at its own size; spare height shows more wall or sky
     HS.k = Math.max(1, Math.round(HS.cv.height/(full*32)));
     HS.V = {W:Math.ceil(HS.cv.width/HS.k), H:Math.ceil(HS.cv.height/HS.k)}; HS.low = mkCanvas(HS.V.W, HS.V.H); HS.lctx = HS.low.getContext("2d");
-    HS.ts = 32; HS.camY = Math.round(full*32 - HS.V.H); HS.head = Math.max(0, -HS.camY); HS.layerKey = ""; return;
+    HS.ts = 32; HS.camY = HS.camY0 = Math.round(full*32 - HS.V.H); HS.head = Math.max(0, -HS.camY); HS.bandH = Math.round(HM.WALL*32) + Math.round(HM.D*32*HM.SQ); HS.layerKey = ""; return;
   }
-  let ts = HS.V.H/full; const fit = HS.V.W/Math.max(1, HS.W); if (fit > ts) ts = Math.min(fit, HS.V.H/(full - 1));
-  HS.ts = ts; HS.camY = Math.max(0, Math.round(full*ts - HS.V.H)); HS.head = 0; HS.layerKey = "";
+  let ts = HS.V.H/full; const fit = HS.V.W/Math.max(1, ...HS.rows.map(R => R.w)); if (fit > ts) ts = Math.min(fit, HS.V.H/(full - 1));   // the widest row fills the width
+  HS.ts = ts; HS.camY = HS.camY0 = Math.max(0, Math.round(full*ts - HS.V.H)); HS.head = 0; HS.bandH = full*ts; HS.layerKey = "";
 }
 function homeLayer(tod){
   const pixel = state.mode === "2d", head = HS.head || 0, key = [HS.ts, head, pixel, tod, HS.W, JSON.stringify(homeData().items.filter(p => { const it = unlockOf("furn", p.id); return it && isFloorItem(it); }))].join("|");
@@ -541,7 +638,7 @@ function homeLayer(tod){
   x.setTransform(1, 0, 0, 1, 0, 0);
   HS.layer = c; HS.layerKey = key; return c;
 }
-const scrX = x => x*HS.ts - (HS.camPx ?? Math.round(HS.cam*HS.ts)), scrY = y => HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY;
+const scrX = x => (x - (HS.pass ? HS.pass.x0 : 0))*HS.ts - (HS.camPx ?? Math.round(HS.cam*HS.ts)), scrY = y => HM.WALL*HS.ts + y*HS.ts*HM.SQ - HS.camY;
 function homeFrame(now){
   if (!HS.cv || !HS.cv.isConnected) return;
   if (HS.offscreen) { HS.last = now; HS.raf = requestAnimationFrame(homeFrame); return; }   // scrolled out of view: nothing to draw
@@ -549,60 +646,70 @@ function homeFrame(now){
   const dt = HS.dt = Math.min(.05, (now - HS.last)/1000); HS.last = now;
   const pixel = state.mode === "2d", c = pixel ? HS.lctx : HS.ctx, V = HS.V, ts = HS.ts, tod = clockTod();
   homeUpdate(dt, now);
-  // camera follows the trainer
-  const view = V.W/ts, fit = HS.W <= view, follow = fit ? (HS.W - view)/2 : Math.max(0, Math.min(HS.W - view, HS.me.x - view/2));
+  // the row in view: yours, or the one you're decorating; the camera follows you along it (x from the row's left end)
+  const VR = HS.rows[HS.edit ? Math.max(0, Math.min(HS.rows.length - 1, HS.drow ?? rowOf(HS.me.x).k)) : rowOf(HS.me.x).k], RW = VR.w; if (HS.edit) HS.drow = VR.k;
+  const view = V.W/ts, fit = RW <= view, follow = fit ? (RW - view)/2 : Math.max(0, Math.min(RW - view, HS.me.x - VR.x0 - view/2));
   let want = follow;
-  if (HS.photo) want = HS.pcam = fit ? follow : Math.max(0, Math.min(HS.W - view, HS.pcam));   // photo mode: you steer the camera
+  if (HS.photo) want = HS.pcam = fit ? follow : Math.max(0, Math.min(RW - view, HS.pcam));   // photo mode: you steer the camera
   else if (HS.edit) {   // decorating: the camera is yours too (drag the floor, arrow keys, the room buttons); carrying something to an edge scrolls
     if (HS.place && HS.ptrE && !fit) { const px = homeWorldPoint(HS.ptrE).px, edge = V.W*.08; if (px < edge) HS.dcam -= dt*7; else if (px > V.W - edge) HS.dcam += dt*7; if (px < edge || px > V.W - edge) homePointerMove(HS.ptrE); }
-    want = HS.dcam = fit ? follow : Math.max(0, Math.min(HS.W - view, HS.dcam ?? HS.cam));
+    want = HS.dcam = fit ? follow : Math.max(0, Math.min(RW - view, HS.dcam ?? HS.cam));
   }
-  else if (HS.intro) {   // walking in: a slow look across the whole house, then back to you
+  else if (HS.intro) {   // walking in: a slow look along the row, then back to you
     const t = (now - HS.intro.t0)/3200, ease = v => v*v*(3 - 2*v);
-    if (fit || t >= 1) HS.intro = null; else want = t < .55 ? ease(t/.55)*(HS.W - view) : (HS.W - view) + (follow - (HS.W - view))*ease((t - .55)/.45);
+    if (fit || t >= 1) HS.intro = null; else want = t < .55 ? ease(t/.55)*(RW - view) : (RW - view) + (follow - (RW - view))*ease((t - .55)/.45);
   }
-  if (!HS.intro && !HS.photo && !fit && HS.me.walk) want = Math.max(0, Math.min(HS.W - view, want + HS.me.dir*view*.12));   // look a little ahead of where you're walking
+  if (!HS.intro && !HS.photo && !fit && HS.me.walk) want = Math.max(0, Math.min(RW - view, want + HS.me.dir*view*.12));   // look a little ahead of where you're walking
   if (HS.intro || HS.photo || HS.edit) { HS.cam += (want - HS.cam)*Math.min(1, dt*12); HS.camV = 0; }
   else { const a = (want - HS.cam)*28 - (HS.camV || 0)*10.6; HS.camV = (HS.camV || 0) + a*dt; HS.cam += HS.camV*dt; }   // a critically damped spring: eases in and out, never overshoots
   if (Math.abs(want - HS.cam) < .001 && Math.abs(HS.camV || 0) < .01) { HS.cam = want; HS.camV = 0; }
   HS.camPx = Math.round(HS.cam*ts);   // one rounded camera offset for the room, the furniture and the Pokémon, so nothing shimmers against the floor
+  HS.vy = HS.vy == null ? VR.k : HS.vy + (VR.k - HS.vy)*Math.min(1, dt*7); if (Math.abs(VR.k - HS.vy) < .002) HS.vy = VR.k;   // and slides up or down to its row
   const L = HS.light = homeLight();
-  const outT = !HS.edit && !HS.intro && roomKind(roomAt(HS.me.x)) === "out" ? 1 : 0;   // out in a yard: the house shows its outside
+  const outT = !HS.edit && !HS.intro && VR.out ? 1 : 0;   // out in a yard: the house shows its roof
   HS.outA = HS.outA == null ? outT : HS.outA + (outT - HS.outA)*Math.min(1, dt*7);
-  const spans = HS.spans = HS.outA > .01 ? houseSpans() : null, inside = x => !!spans && spans.some(s => x > s.x0 && x < s.x1);
   c.imageSmoothingEnabled = !pixel;
-  if (HS.cam < 0 || HS.cam + V.W/ts > HS.W) {   // a dim corridor either side of a small house
-    const wy = Math.round(scrY(0)); c.fillStyle = "#3a2f2a"; c.fillRect(0, 0, V.W, wy); c.fillStyle = "#4a3426"; c.fillRect(0, wy, V.W, V.H - wy);
-    c.fillStyle = "rgba(0,0,0,.25)"; for (let i = 0; i < 8; i++) c.fillRect(0, wy + Math.round(i*ts*HM.SQ), V.W, 1);
+  // each row in view is drawn with its own camera, north to south, so the nearer row overlaps the one behind it
+  const rows = HS.rows.filter(R => { rowCam(R); return scrY(HM.D) > 0 && scrY(0) - HM.WALL*ts - (R.k ? 0 : HS.head || 0) < V.H; });
+  const layer = homeLayer(tod), head = HS.head || 0, hh = Math.ceil((HM.WALL + HM.D*HM.SQ)*ts), roofed = R => !R.out && HS.outA > .5;
+  for (const m of HS.mons) m.box = null;
+  for (const R of rows) {
+    rowCam(R);
+    const inR = x => x >= R.x0 && x < R.x1, hd = R.k ? 0 : head, sx = Math.round(R.x0*ts), sw = Math.min(layer.width - sx, Math.round(R.x1*ts) - sx);
+    if (HS.cam < 0 || HS.cam + view > R.w) rowBackdrop(c, R, pixel, tod);
+    c.drawImage(layer, sx, head - hd, sw, hh + hd, Math.round(scrX(R.x0)), -HS.camY - hd, sw, hh + hd);
+    drawWeather(c, now, pixel, "win");
+    drawWindowLight(c, pixel, L);
+    drawWeather(c, now, pixel, "far");
+    const bt = R.k ? scrY(0) - HM.WALL*ts : 0, bh = scrY(HM.D) - bt;
+    if (HS.cam < 0) { const g = c.createLinearGradient(scrX(R.x0) - ts*.5, 0, scrX(R.x0), 0); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); c.fillStyle = g; c.fillRect(scrX(R.x0) - ts*.5, bt, ts*.5, bh); }
+    if (HS.cam + view > R.w) { const g = c.createLinearGradient(scrX(R.x1), 0, scrX(R.x1) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(R.x1), bt, ts*.5, bh); }
+    drawRowDoors(c, R, pixel, tod);
+    // drawables sorted by depth
+    const list = [];
+    for (const p of placedItems()) if (!isFloorItem(p.it) && inR(p.x)) { const sf = surfOf(p), z = sf ? surfZ(sf) : 0;
+      list.push({y:sf ? sf.y + sf.it.d + .02 : p.y + p.it.d, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
+      if (z) { c.save(); c.translate(0, -Math.round(z*ts)); }   // standing on a table
+      if (!NO_SHADOW.has(p.it.kind) && !z) furnShadow(c, p, pixel);
+      c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
+      if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); }
+      if (z) c.restore(); }}); }
+    for (const d of dividers()) if (inR(d.x)) for (const y of DOOR) list.push({y, draw:() => drawDivPost(c, d, y, pixel)});
+    for (const m of HS.mons) if (inR(m.x)) list.push({y:m.depth || m.y, draw:() => drawHomeMon(c, m, now, pixel)});
+    for (const g of homeData().gifts) if (inR(g.x)) list.push({y:g.y, draw:() => drawGift(c, g, now, pixel)});
+    if (inR(HS.me.x)) list.push({y:HS.me.y + .01, draw:() => drawHomeTrainer(c, now, pixel)});
+    list.sort((a, b) => a.y - b.y);
+    for (const d of list) d.draw();
+    drawHomeFx(c, now, pixel);
+    if (!R.out && HS.outA > .01) drawRoof(c, pixel, R, HS.outA);
+    drawWeather(c, now, pixel, "out");
+    if (HS.edit && R === VR) drawDecoOverlay(c, pixel);
   }
-  c.drawImage(homeLayer(tod), -HS.camPx, -HS.camY - (HS.head || 0));
-  drawWeather(c, now, pixel, "win");
-  drawWindowLight(c, pixel, L);
-  drawWeather(c, now, pixel, "far");
-  if (HS.cam < 0) { const g = c.createLinearGradient(scrX(0) - ts*.5, 0, scrX(0), 0); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.35)"); c.fillStyle = g; c.fillRect(scrX(0) - ts*.5, 0, ts*.5, V.H); }
-  if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
-  // drawables sorted by depth
-  const list = [];
-  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, x:p.x + p.it.w/2, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
-    if (!NO_SHADOW.has(p.it.kind)) furnShadow(c, p, pixel);
-    c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
-    if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
-  for (const d of dividers()) for (const y of DOOR) list.push({y, x:d.x, draw:() => drawDivPost(c, d, y, pixel)});
-  for (const m of HS.mons) list.push({y:m.depth || m.y, x:m.x, draw:() => drawHomeMon(c, m, now, pixel)});
-  for (const g of homeData().gifts) list.push({y:g.y, x:g.x, draw:() => drawGift(c, g, now, pixel)});
-  list.push({y:HS.me.y + .01, x:HS.me.x, draw:() => drawHomeTrainer(c, now, pixel)});
-  list.sort((a, b) => a.y - b.y);
-  for (const d of list) if (inside(d.x)) d.draw();   // inside the house first, then its outside on top, then the yards
-  drawHomeFx(c, now, pixel);
-  if (spans) drawFacade(c, pixel, spans, HS.outA);
-  for (const d of list) if (!inside(d.x)) d.draw();
-  // prompts and emotes on top
-  drawWeather(c, now, pixel, "out");
-  if (HS.edit) drawDecoOverlay(c, pixel);
   // the light: a warm sunset tint and a night tint that fade in and out with the clock, then lamps and fires glowing
   if (L.dusk > .01) { c.fillStyle = `rgba(255,140,80,${(.1*L.dusk*(1 - L.night)).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); }
-  if (L.night > .01) { const ev = eventOn(), n = ev && ev.night || [20, 30, 80, .32]; c.fillStyle = `rgba(${n[0]},${n[1]},${n[2]},${(n[3]*L.night).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); drawGlows(c, now, pixel, L.night); }
-  for (const m of HS.mons) if (!(HS.outA > .5 && inside(m.x))) drawEmote(c, m, now, pixel);   // emotes stay bright at night
+  if (L.night > .01) { const ev = eventOn(), n = ev && ev.night || [20, 30, 80, .32]; c.fillStyle = `rgba(${n[0]},${n[1]},${n[2]},${(n[3]*L.night).toFixed(3)})`; c.fillRect(0, 0, V.W, V.H); for (const R of rows) if (!roofed(R)) { rowCam(R); drawGlows(c, now, pixel, L.night); } }
+  for (const R of rows) if (!roofed(R)) { rowCam(R); for (const m of HS.mons) if (m.x >= R.x0 && m.x < R.x1) drawEmote(c, m, now, pixel); }   // emotes stay bright at night
+  rowCam(VR);   // the overlay, the pointer and the decorating toolbar use the row in view
   if (pixel) { HS.ctx.imageSmoothingEnabled = false; HS.ctx.drawImage(HS.low, 0, 0, HS.low.width*HS.k, HS.low.height*HS.k); }
   homeOverlay(now, pixel);
   if (HS.edit) decoFloat(pixel);
@@ -804,9 +911,10 @@ function promptFor(c, t, pixel){
   if (t.k === "mon") { if (t.m.sp && t.m.box) keyChip(c, t.m.box.x + t.m.box.w/2, t.m.box.y, key, `${HS.hold && !t.m.visitor && !VISIT ? "Feed" : "Play with"} ${nickFor(t.m.n)}`, pixel); return; }
   if (t.k === "gift") { keyChip(c, scrX(t.x), scrY(t.y) - ts*.45, key, "Open gift", pixel); return; }
   if (t.k === "tree") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - 2.5*ts, key, treeLeft(p) > 0 ? "Pick a berry" : "No berries today", pixel); }
+  if (t.k === "door") { keyChip(c, scrX(t.w.at.x), t.w.up ? scrY(0) - 2.1*ts : scrY(HS.me.y) - 2.3*ts, key, doorLabel(t.w), pixel); return; }
   if (t.k === "case") { const p = t.p; keyChip(c, scrX(p.x + p.it.w/2), scrY(p.y + p.it.d*.5) - (pixel ? 2.6 : 1.9)*ts, key, `Look at the ${LEAGUES[p.it.region - 1].badge === "stamp" ? "stamps" : "badges"}`, pixel); }
 }
-function nearestMon(r){ let best = null, bd = r; for (const m of HS.mons) { const d = Math.hypot(m.x - HS.me.x, (m.y - HS.me.y)*1.4); if (d < bd) { bd = d; best = m; } } return best; }
+function nearestMon(r){ let best = null, bd = r; for (const m of HS.mons) { if (!sameRow(m.x, HS.me.x)) continue; const d = Math.hypot(m.x - HS.me.x, (m.y - HS.me.y)*1.4); if (d < bd) { bd = d; best = m; } } return best; }
 function homeUpdate(dt, now){
   const me = HS.me; let vx = 0, vy = 0;
   if (!HS.edit && $("modalWrap").hidden) {
@@ -818,10 +926,12 @@ function homeUpdate(dt, now){
   if (me.walk && now - HS.stepT > 320) { HS.stepT = now; Sound.play("step"); }
   if (now > HS.crackT) { HS.crackT = now + 350 + Math.random()*900; if (placedItems().some(p => p.it.kind === "fire" && Math.hypot(p.x + 1 - me.x, p.y + 1 - me.y) < 3.2)) Sound.play("crackle"); }
   if (now > HS.evT) { HS.evT = now + 5000; if (eventVisitors().filter(n => !homeMons().includes(n)).join(",") !== HS.evKey) homeSyncMons(); }   // visitors come at night and leave by day
-  if (vx || vy) { me.path = null; me.target = null; HS.pickAt = null; const l = Math.hypot(vx, vy), sp = 3.4*dt; tryMove(me, vx/l*sp, vy/l*sp*.8); if (vx) me.dir = vx; me.walk = 1; }
+  if (vx || vy) { me.path = null; me.target = null; HS.pickAt = null; const l = Math.hypot(vx, vy), sp = 3.4*dt; tryMove(me, vx/l*sp, vy/l*sp*.8); if (vx) me.dir = vx; me.walk = 1;
+    const w = vy && nearDoor(me, .7); if (w && (vy < 0) === w.up && (w.up ? me.y < w.at.y + .35 : me.y > w.at.y - .35)) goThrough(me, w);   // walking into a door goes through it
+  }
   else if (me.path && me.path.length) {
     const p = me.path[0], dx = p.x - me.x, dy = p.y - me.y, d = Math.hypot(dx, dy), sp = 3.4*dt;
-    if (d <= sp) { me.x = p.x; me.y = p.y; me.path.shift(); } else { me.x += dx/d*sp; me.y += dy/d*sp; if (Math.abs(dx) > .05) me.dir = Math.sign(dx); }
+    if (d <= sp) { me.x = p.x; me.y = p.y; me.path.shift(); if (p.to) { const rest = me.path; goThrough(me, {to:p.to}); me.path = rest; } } else { me.x += dx/d*sp; me.y += dy/d*sp; if (Math.abs(dx) > .05) me.dir = Math.sign(dx); }
     me.walk = 1;
     if (!me.path.length) { me.path = null; me.walk = 0; if (me.target) { const m = me.target; me.target = null; if (Math.hypot(m.x - me.x, (m.y - me.y)*1.4) < 2.2) homeUseThing({k:"mon", m}); }
       if (HS.pickAt) { const t = HS.pickAt; HS.pickAt = null; if (Math.hypot(t.x + t.it.w/2 - me.x, (t.y + t.it.d + .45 - me.y)*1.4) < 1.8) pickBerry(t); } }
@@ -834,9 +944,9 @@ function homeUpdate(dt, now){
     // followers trail a little behind you, and stop when you stop
     const fi = HS.followers.indexOf(m.n);
     if (fi >= 0 && !VISIT && !HS.edit && !(night && !isNocturnal(m.n)) && !m.plan && (m.st === "idle" || m.follow)) {
-      const tx = Math.max(.4, Math.min(HS.W - .4, me.x - me.dir*(1.05 + fi*.85))), ty = Math.max(.5, Math.min(HM.D - .3, me.y + (fi ? .3 : -.2))), d = Math.hypot(tx - m.x, (ty - m.y)*1.4);
+      const FR = rowOf(me.x), tx = Math.max(FR.x0 + .4, Math.min(FR.x1 - .4, me.x - me.dir*(1.05 + fi*.85))), ty = Math.max(.5, Math.min(HM.D - .3, me.y + (fi ? .3 : -.2))), d = Math.hypot(tx - m.x, (ty - m.y)*1.4);
       if (d > (me.walk ? .45 : 1.25) && !blocked(tx, ty, m.fl)) {
-        if (!m.follow || now > (m.pathT || 0)) { m.pathT = now + 600; m.path = dividers().some(dv => (dv.x - m.x)*(dv.x - tx) < 0) ? findPath(m, {x:tx, y:ty}) : null; }
+        if (!m.follow || now > (m.pathT || 0)) { m.pathT = now + 600; m.path = !sameRow(m.x, tx) || dividers().some(dv => (dv.x - m.x)*(dv.x - tx) < 0) ? findPath(m, {x:tx, y:ty}) : null; }
         m.follow = true; m.st = "walk"; m.tx = tx; m.ty = ty;
       }
     }
@@ -855,7 +965,7 @@ function homeUpdate(dt, now){
       m.v = Math.min(m.spd*(m.follow && me.walk ? 1.25 : 1), (m.v || 0) + m.spd*dt*3.5, last ? Math.max(.3, d*2.4) : 99);   // speeds up, and slows down as it arrives
       const sp = m.v*dt*(m.swim ? .55 : 1);   // drifting in the pond is slow
       if (d <= sp && Math.abs(dx) > .01) m.dir = Math.sign(dx);   // the last little step still turns it the right way
-      if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); }
+      if (d <= sp && m.path && m.path.length) { m.x = wp.x; m.y = wp.y; m.path.shift(); if (wp.to) { const p = m.path; goThrough(m, wp); m.path = p; } }   // through a door
       else if (d <= sp) { m.x = wp.x; m.y = wp.y; m.v = 0; if (m.plan) homeAct(m, m.plan, now); else if (m.follow) { m.follow = false; m.st = "idle"; m.t = 900; if (Math.abs(me.x - m.x) > .1) m.dir = Math.sign(me.x - m.x); } else { m.st = "idle"; m.t = 1500 + Math.random()*4000; } }
       else {
         const canSwim = isFlier(m) || (m.water && m.swimTrip) || m.swim, av = d > .5 ? steerAway(m) : {x:0, y:0};
@@ -969,24 +1079,27 @@ function decoFloat(pixel){
   if (hint) { const t = HS.place && !HS.place.drag ? (matchMedia("(pointer:coarse)").matches ? `Tap where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes` : `Click where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes · Esc to cancel`) : ""; if (hint.textContent !== t) hint.textContent = t; hint.hidden = !t; }
   const s = HS.sel; if (!s || fl.hidden) return;
   const it = s.it || unlockOf("furn", s.id), r = HS.cv.getBoundingClientRect(), k = (pixel ? HS.k : 1)*r.width/HS.cv.width, st = $("hmStage").getBoundingClientRect();
-  const top = (scrY(s.y) - (isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5))*HS.ts)*k + (r.top - st.top), bot = scrY(s.y + it.d)*k + (r.top - st.top), cx = scrX(s.x + it.w/2)*k + (r.left - st.left);
+  const top = (scrY(s.y) - (isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + (s.s ? liftOf(s) : 0))*HS.ts)*k + (r.top - st.top), bot = scrY(s.y + it.d)*k + (r.top - st.top), cx = scrX(s.x + it.w/2)*k + (r.left - st.left);
   const w = fl.offsetWidth, h = fl.offsetHeight, x = Math.max(4, Math.min(st.width - w - 4, cx - w/2)), y = top - h - 8 > 4 ? top - h - 8 : Math.min(st.height - h - 4, bot + 8);
   fl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
 }
 function decoCancel(){   // stop placing; a piece picked up with Move goes back where it was
   const P = HS.place; HS.place = null; HS.ghost = null;
-  if (P && P.from && !P.drag) { homeData().items.push({id:P.id, x:P.from.x, y:P.from.y, f:P.f, ...(P.r ? {r:1} : {})}); HS.undo.pop(); HS.layerKey = ""; save(); }
+  if (P && P.from && !P.drag) { const q = decoPut(P.id, P.from.x, P.from.y, P.f, P.r); decoRiders(P, q); HS.undo.pop(); HS.layerKey = ""; save(); }
 }
+// a table picked up takes what stands on it along (P.riders), and they go back on top wherever it lands
+function decoLift(q){ const D = homeData(), rs = ridersOf(q); D.items = D.items.filter(o => !rs.includes(o)); return rs.map(o => ({...o, dx:o.x - q.x})); }
+function decoRiders(P, q){ for (const o of (P && P.riders) || []) homeData().items.push({id:o.id, x:q.x + o.dx, y:q.y, f:o.f || 0, ...(o.r ? {r:1} : {}), s:1}); if (P) P.riders = null; }
 function decoNudge(dx, dy){
   const D = homeData(), s = HS.sel, i = D.items.findIndex(p => p.x === s.x && p.y === s.y && p.id === s.id); if (i < 0) return;
-  const q = D.items.splice(i, 1)[0], it = rotItem(unlockOf("furn", q.id), q.r ? 1 : 0), nx = q.x + dx, ny = q.y + dy, ok = fits(it, nx, ny);
-  if (ok) { decoSnap(); q.x = nx; q.y = ny; } D.items.splice(i, 0, q);
-  HS.sel = {...q, it}; HS.layerKey = ""; if (ok) { save(); Sound.play("select"); if (nx < HS.dcam + .5 || nx + it.w > HS.dcam + HS.V.W/HS.ts - .5) HS.dcam = nx + it.w/2 - HS.V.W/HS.ts/2; } else Sound.play("wrong");
+  const q = D.items.splice(i, 1)[0], it = rotItem(unlockOf("furn", q.id), q.r ? 1 : 0), rs = ridersOf({...q, it}).filter(o => o !== q), nx = q.x + dx, ny = q.y + dy, ok = fits(it, nx, ny, q);
+  if (ok) { decoSnap(); const sf = surfaceUnder(it, nx, ny); q.x = nx; q.y = sf ? sf.y : ny; if (sf) q.s = 1; else delete q.s; for (const o of rs) { o.x += dx; o.y += q.y - (ny - dy); } } D.items.splice(i, 0, q);
+  const lx = nx - rowOf(q.x).x0; HS.sel = {...q, it}; HS.layerKey = ""; if (ok) { save(); Sound.play("select"); if (lx < HS.dcam + .5 || lx + it.w > HS.dcam + HS.V.W/HS.ts - .5) HS.dcam = lx + it.w/2 - HS.V.W/HS.ts/2; } else Sound.play("wrong");
 }
 function decoGhostInView(){   // a piece picked from the tray shows up in the middle of the view right away (no hover on a phone)
   if (!HS.place) { HS.ghost = null; return; }
-  const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), view = HS.V.W/HS.ts, c = (HS.dcam ?? HS.cam) + view/2;
-  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(c - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(HM.D/2 - it.d/2)))};
+  const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), view = HS.V.W/HS.ts, R = HS.rows[HS.drow ?? rowOf(HS.me.x).k] || HS.rows[0], c = R.x0 + (HS.dcam ?? HS.cam) + view/2;
+  HS.ghost = snapGhost(it, {x:Math.max(R.x0, Math.min(R.x1 - it.w, Math.round(c - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(HM.D/2 - it.d/2)))});
 }
 function homeEditAct(a){
   const D = homeData(), s = HS.sel;
@@ -1000,31 +1113,53 @@ function homeEditAct(a){
     if (fits(it, q.x, q.y)) { if (r) q.r = 1; else delete q.r; } else { HS.undo.pop(); toast("There isn’t room to turn it here. Move it first."); }
     D.items.splice(i, 0, q); HS.sel = {...q, it};
   }
-  if (a === "store" && i >= 0) { D.items.splice(i, 1); HS.sel = null; }
-  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0, r:s.r || 0, from:{x:s.x, y:s.y}}; HS.ghost = {x:s.x, y:s.y}; HS.sel = null; }   // it waits where it was until you tap a new spot
+  if (a === "store" && i >= 0) { const q = D.items.splice(i, 1)[0], rs = decoLift(q); if (rs.length) toast(`What stood on it went back in storage too.`); HS.sel = null; }
+  if (a === "move" && i >= 0) { const q = D.items.splice(i, 1)[0]; HS.place = {id:s.id, f:s.f || 0, r:s.r || 0, from:{x:s.x, y:s.y}, riders:decoLift(q)}; HS.ghost = {x:s.x, y:s.y}; HS.sel = null; }   // it waits where it was until you tap a new spot
   HS.layerKey = ""; save(); Sound.play("select"); renderDecoBar();
 }
+// ---- stacking: small pieces stand on tables, desks and counters (saved with s:1, at the surface's y) ----
+const TOPPER = new Set(["plant", "globe", "orb", "trophy", "pot2", "pumpkin", "lamp2", "giftpile"]);
+const SURF = {tabler:.8, desk:.56, counter:.8};   // where the top is, as a share of the piece's height
+const canTop = it => !!it && TOPPER.has(it.kind) && it.w === 1 && it.d === 1;
+const sameItem = (a, b) => a && b && a.x === b.x && a.y === b.y && a.id === b.id;
+function surfaceUnder(it, x, y, ignore){   // the surface a small piece would stand on at x, y
+  if (!canTop(it)) return null;
+  return placedItems().find(p => !p.s && SURF[p.it.kind] != null && !sameItem(p, ignore) && x >= p.x && x + it.w <= p.x + p.it.w && y >= p.y && y < p.y + p.it.d) || null;
+}
+const surfOf = q => q.s ? placedItems().find(p => !p.s && SURF[p.it.kind] != null && q.x >= p.x && q.x < p.x + p.it.w && q.y === p.y) : null;   // what a stacked piece stands on
+function surfZ(p){ const img = state.mode === "2d" && artOf(furnArtKey(p.it)); return (img ? img.height*Math.min(1, p.it.w*32/img.width)/32 : (FURN_H[p.it.kind] || 1))*SURF[p.it.kind]; }
+const liftOf = q => { const sf = surfOf(q); return sf ? surfZ(sf) : 0; };
+const ridersOf = p => SURF[p.it ? p.it.kind : (unlockOf("furn", p.id) || {}).kind] == null ? [] : homeData().items.filter(q => q.s && q.y === p.y && q.x >= p.x && q.x < p.x + (p.it || unlockOf("furn", p.id)).w);
+function decoPut(id, x, y, f, r){   // add a piece; a small one over a table goes on top of it
+  const it = rotItem(unlockOf("furn", id), r ? 1 : 0), sf = surfaceUnder(it, x, y), q = {id, x, y:sf ? sf.y : y, f:f ? 1 : 0, ...(r ? {r:1} : {}), ...(sf ? {s:1} : {})};
+  homeData().items.push(q); return q;
+}
+function snapGhost(it, g){ const sf = g && surfaceUnder(it, g.x, g.y); if (sf) { g.y = sf.y; g.top = surfZ(sf); } else if (g) g.top = 0; return g; }
 function fits(it, x, y, ignore){
   if (x < 0 || y < 0 || x + it.w > HS.W || y + it.d > HM.D) return false;
+  const sf = surfaceUnder(it, x, y, ignore); if (sf) return !homeData().items.some(q => q.s && q.x === x && q.y === sf.y && !sameItem(q, ignore));   // on a table: one piece per spot
   for (const d of dividers()) if (x < d.x + .5 && x + it.w > d.x - .5) return false;   // keep walls and doorways clear
+  for (const R of HS.rows) if (x < R.x0 && x + it.w > R.x0) return false;   // a piece stays in one row
+  if (!isFloorItem(it)) for (const d of HS.doors) for (const e of [d.n, d.s]) if (x < e.x + .8 && x + it.w > e.x - .8 && y < e.y + .9 && y + it.d > e.y - .9) return false;   // and out of the doors' way
   for (const r of HS.rooms) if (r.pond) for (let dx = 0; dx <= it.w; dx += .5) for (let dy = 0; dy <= it.d; dy += .5) if (inPond(r, x + dx, y + dy)) return false;
   const floor = isFloorItem(it);
-  for (const p of placedItems()) { if (p === ignore || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
+  for (const p of placedItems()) { if (p === ignore || p.s || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
   return true;
 }
 function drawDecoOverlay(c, pixel){
-  const ts = HS.ts; c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1;
-  for (let x = Math.max(0, Math.floor(HS.cam)); x <= HS.W; x++) { c.beginPath(); c.moveTo(Math.round(scrX(x)) + .5, scrY(0)); c.lineTo(Math.round(scrX(x)) + .5, scrY(HM.D)); c.stroke(); }
-  for (let y = 0; y <= HM.D; y++) { c.beginPath(); c.moveTo(scrX(0), Math.round(scrY(y)) + .5); c.lineTo(scrX(HS.W), Math.round(scrY(y)) + .5); c.stroke(); }
+  const ts = HS.ts, R = HS.pass; c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1;
+  for (let x = R.x0 + Math.max(0, Math.floor(HS.cam)); x <= R.x1; x++) { c.beginPath(); c.moveTo(Math.round(scrX(x)) + .5, scrY(0)); c.lineTo(Math.round(scrX(x)) + .5, scrY(HM.D)); c.stroke(); }
+  for (let y = 0; y <= HM.D; y++) { c.beginPath(); c.moveTo(scrX(R.x0), Math.round(scrY(y)) + .5); c.lineTo(scrX(R.x1), Math.round(scrY(y)) + .5); c.stroke(); }
   const g = HS.ghost; if (HS.place && g) {
     const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), ok = fits(it, g.x, g.y), s = furnSprite(it, ts, pixel, !!HS.place.f);
-    c.globalAlpha = .7; c.drawImage(s.c, Math.round(scrX(g.x) - s.pad), Math.round(scrY(g.y) - s.pad - s.h*ts)); c.globalAlpha = 1;
-    c.fillStyle = ok ? "rgba(80,220,120,.25)" : "rgba(240,70,70,.35)"; c.fillRect(scrX(g.x), scrY(g.y), it.w*ts, it.d*ts*HM.SQ);
+    const up = Math.round((g.top || 0)*ts);
+    c.globalAlpha = .7; c.drawImage(s.c, Math.round(scrX(g.x) - s.pad), Math.round(scrY(g.y) - s.pad - s.h*ts) - up); c.globalAlpha = 1;
+    c.fillStyle = ok ? "rgba(80,220,120,.25)" : "rgba(240,70,70,.35)"; c.fillRect(scrX(g.x), scrY(g.y) - up, it.w*ts, it.d*ts*HM.SQ);
   }
 }
 function homeWorldPoint(e){
   const r = HS.cv.getBoundingClientRect(), px = (e.clientX - r.left)*HS.cv.width/r.width/HS.k, py = (e.clientY - r.top)*HS.cv.height/r.height/HS.k;
-  return {px, py, x:px/HS.ts + HS.cam, y:(py + HS.camY - HM.WALL*HS.ts)/(HS.ts*HM.SQ)};
+  return {px, py, x:px/HS.ts + HS.cam + (HS.pass ? HS.pass.x0 : 0), y:(py + HS.camY - HM.WALL*HS.ts)/(HS.ts*HM.SQ)};
 }
 function homePointerMove(e){
   if (!HS.edit && !HS.photo && e.pointerType === "mouse") { const p = homeWorldPoint(e); HS.hover = HS.mons.find(m => m.box && p.px >= m.box.x && p.px <= m.box.x + m.box.w && p.py >= m.box.y && p.py <= m.box.y + m.box.h) || null; HS.cv.style.cursor = HS.hover ? "pointer" : ""; }
@@ -1033,13 +1168,13 @@ function homePointerMove(e){
   if (HS.edit && HS.drag && !HS.place) { const p = homeWorldPoint(e); if (Math.abs(p.x - HS.drag.px) > .6 || Math.abs(p.y - HS.drag.py) > .9) decoDragStart(); }
   if (!HS.edit || !HS.place) return; const p = homeWorldPoint(e), it = rotItem(unlockOf("furn", HS.place.id), HS.place.r);
   const ox = HS.place.ox ?? it.w/2, oy = HS.place.oy ?? it.d/2;
-  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(p.x - ox))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - oy)))};
+  const R = HS.pass || rowOf(p.x); HS.ghost = snapGhost(it, {x:Math.max(R.x0, Math.min(R.x1 - it.w, Math.round(p.x - ox))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - oy)))});
 }
 // drag a placed item: it lifts off the floor once the pointer has moved, and lands where you let go (or back where it was)
 function decoDragStart(){
   const d = HS.drag, D = homeData(), i = D.items.findIndex(q => q.x === d.item.x && q.y === d.item.y && q.id === d.item.id); if (i < 0) { HS.drag = null; return; }
-  decoSnap(); D.items.splice(i, 1); HS.layerKey = "";
-  HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item}; HS.sel = null; Sound.play("select");
+  decoSnap(); const q = D.items.splice(i, 1)[0]; HS.layerKey = "";
+  HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item, riders:decoLift(q)}; HS.sel = null; Sound.play("select");
 }
 function homePointerUp(e){
   if (HS.pdrag) { const d = HS.pdrag; HS.pdrag = null; if (HS.edit && !d.moved && HS.sel) { HS.sel = null; renderDecoBar(); } return; }   // a tap on empty floor puts the selection down
@@ -1047,7 +1182,7 @@ function homePointerUp(e){
   if (!HS.edit || !HS.place || !HS.place.drag) return;
   homePointerMove(e);
   const P = HS.place, it = rotItem(unlockOf("furn", P.id), P.r), g = HS.ghost, ok = g && fits(it, g.x, g.y), at = ok ? {x:g.x, y:g.y} : {x:P.from.x, y:P.from.y};
-  homeData().items.push({id:P.id, x:at.x, y:at.y, f:P.f, ...(P.r ? {r:1} : {})});
+  const q = decoPut(P.id, at.x, at.y, P.f, P.r); decoRiders(P, q);
   if (!ok) HS.undo.pop();
   HS.place = null; HS.ghost = null; HS.layerKey = ""; save(); Sound.play(ok ? "add" : "back");
   HS.sel = ok ? {...homeData().items[homeData().items.length - 1], it} : null; renderDecoBar();
@@ -1055,12 +1190,12 @@ function homePointerUp(e){
 }
 function homePointerDown(e){
   HS.cv.focus({preventScroll:true});
-  const p = homeWorldPoint(e);
+  const p = homeWorldPoint(e); if (HS.pass) p.x = Math.max(HS.pass.x0, Math.min(HS.pass.x1 - .01, p.x));   // past the end of the row in view: its end
   if (HS.photo) { HS.pdrag = {x:e.clientX, cam:HS.pcam}; HS.cv.setPointerCapture(e.pointerId); return; }
   if (HS.edit) {
     if (HS.place && HS.place.drag) return;
-    if (HS.place) { homePointerMove(e); const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), g = HS.ghost; if (g && fits(it, g.x, g.y)) { decoSnap(); homeData().items.push({id:it.id, x:g.x, y:g.y, f:HS.place.f || 0, ...(HS.place.r ? {r:1} : {})}); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
-    const hit = placedItems().reverse().find(q => p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) && p.y <= q.y + q.it.d);
+    if (HS.place) { homePointerMove(e); const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), g = HS.ghost; if (g && fits(it, g.x, g.y)) { decoSnap(); const q = decoPut(it.id, g.x, g.y, HS.place.f, HS.place.r); decoRiders(HS.place, q); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
+    const hit = placedItems().reverse().find(q => { const up = q.s ? liftOf(q)/HM.SQ : 0; return p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) - up && p.y <= q.y + q.it.d - up; });
     HS.sel = hit ? homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id) && {...hit} : null; if (HS.sel) Sound.play("select"); renderDecoBar();
     if (hit) { HS.drag = {item:homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id), px:p.x, py:p.y}; HS.cv.setPointerCapture(e.pointerId); }
     else { HS.pdrag = {x:e.clientX, cam:HS.dcam ?? HS.cam, moved:false}; HS.cv.setPointerCapture(e.pointerId); }   // empty floor: drag to look around
@@ -1073,8 +1208,10 @@ function homePointerDown(e){
   if (hitMon) { homeGoTo(hitMon); return; }
   const tree = placedItems().find(q => q.it.kind === "tree" && p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - 3 && p.y <= q.y + q.it.d);
   if (tree) { const at = {x:tree.x + tree.it.w/2, y:Math.min(HM.D - .2, tree.y + tree.it.d + .45)}; if (Math.hypot(at.x - HS.me.x, (at.y - HS.me.y)*1.4) < 1.6) pickBerry(tree); else { HS.me.path = findPath(HS.me, at); HS.me.target = null; HS.pickAt = tree; } return; }
+  const w = doorWays().find(w => sameRow(w.at.x, p.x) && Math.abs(p.x - w.at.x) < .75 && (w.up ? p.y < .4 && p.y > -2.1/HM.SQ : p.y > HM.D - .9));   // a door: walk through it
+  if (w) { HS.me.path = findPath(HS.me, w.to); HS.me.target = null; return; }
   if (p.y < 0) return;
-  const to = {x:Math.max(.4, Math.min(HS.W - .4, p.x)), y:Math.max(.5, Math.min(HM.D - .2, p.y))};
+  const to = {x:Math.max(HS.pass ? HS.pass.x0 + .4 : .4, Math.min((HS.pass ? HS.pass.x1 : HS.W) - .4, p.x)), y:Math.max(.5, Math.min(HM.D - .2, p.y))};
   HS.me.path = findPath(HS.me, to); HS.me.target = null;
 }
 const HM_KEYS = {ArrowLeft:"left", a:"left", A:"left", ArrowRight:"right", d:"right", D:"right", ArrowUp:"up", w:"up", W:"up", ArrowDown:"down", s:"down", S:"down"};
@@ -1082,6 +1219,7 @@ document.addEventListener("keydown", e => {
   const inHome = nav.screen === "home" || (nav.screen === "friends" && nav.sub && nav.sub.startsWith("h:"));
   if (!inHome || $("screen").hidden || !$("modalWrap").hidden || e.target.closest("input, select, textarea")) return;
   if (HS.edit && HS.sel && HM_KEYS[e.key]) { e.preventDefault(); const k = HM_KEYS[e.key]; decoNudge(k === "left" ? -1 : k === "right" ? 1 : 0, k === "up" ? -1 : k === "down" ? 1 : 0); return; }   // the arrows nudge the selected piece
+  if (HS.edit && (HM_KEYS[e.key] === "up" || HM_KEYS[e.key] === "down")) { e.preventDefault(); const k = Math.max(0, Math.min(HS.rows.length - 1, (HS.drow ?? 0) + (HM_KEYS[e.key] === "up" ? -1 : 1))); if (k !== HS.drow) { HS.drow = k; Sound.play("select"); } return; }   // decorating: up and down go to the row behind or in front
   if (HM_KEYS[e.key]) { HS.keys.add(HM_KEYS[e.key]); e.preventDefault(); return; }
   if (HS.edit && (e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) { e.preventDefault(); decoUndo(); return; }
   if (HS.edit && e.key === "Escape" && (HS.place || HS.sel)) { e.preventDefault(); if (HS.place && HS.place.drag) return; decoCancel(); HS.sel = null; renderDecoBar(); return; }
