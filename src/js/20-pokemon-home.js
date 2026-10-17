@@ -295,7 +295,7 @@ function paintRoom(c, r, ts, pixel, tod, wTiles, head = 0){
   if (r.floor === "tile") { for (let y = 0; y < HM.D*2; y++) for (let x = 0; x < W/ts*2; x++) if ((x + y) % 2) { c.fillStyle = "#c9d9cf"; c.fillRect(R(X0 + x*ts/2), R(fy + y*ts*SQ/2), R(ts/2) + 1, R(ts*SQ/2) + 1); } }
   if (r.floor === "marble") { for (let y = 0; y < HM.D; y++) for (let x = 0; x < W/ts; x++) { c.fillStyle = (x + y) % 2 ? "#d9d4e8" : "#f2f0f8"; c.fillRect(R(X0 + x*ts), R(fy + y*ts*SQ), R(ts) + 1, R(ts*SQ) + 1); } }
   if (r.floor === "grass") { const Rn = rng(r.x0*7 + 3); c.fillStyle = "#6ab64c"; for (let i = 0; i < W/ts*6; i++) { const x = X0 + Rn()*W, y = fy + Rn()*floorH; c.fillRect(R(x), R(y), Math.max(1, R(ts*.06)), Math.max(1, R(ts*.18))); } }
-  if (r.pond) { const cx = X0 + W/2, cy = fy + floorH*.55; c.fillStyle = "#3f8f5a"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32 + ts*.15), R(floorH*.3 + ts*.12), 0, 0, 7); c.fill(); c.fillStyle = "#4aa8e0"; c.beginPath(); c.ellipse(R(cx), R(cy), R(W*.32), R(floorH*.3), 0, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.35)"; for (let i = 0; i < 6; i++) c.fillRect(R(cx - W*.2 + i*W*.07), R(cy - floorH*.1 + (i % 3)*floorH*.08), R(ts*.4), Math.max(1, R(ts*.04))); }
+  if (r.pond) { const cx = X0 + W/2, cy = fy + POND.cy*ts*SQ, rx = POND.rx*ts, ry = POND.ry*ts*SQ; c.fillStyle = "#3f8f5a"; c.beginPath(); c.ellipse(R(cx), R(cy), R(rx + ts*.45), R(ry + ts*.3), 0, 0, 7); c.fill(); c.fillStyle = "#4aa8e0"; c.beginPath(); c.ellipse(R(cx), R(cy), R(rx), R(ry), 0, 0, 7); c.fill(); c.fillStyle = "rgba(255,255,255,.35)"; for (let i = 0; i < 6; i++) c.fillRect(R(cx - W*.2 + i*W*.07), R(cy - floorH*.1 + (i % 3)*floorH*.08), R(ts*.4), Math.max(1, R(ts*.04))); }
   // back-wall shadow on the floor and the edge of the room
   if (!pixel) { const g = c.createLinearGradient(0, fy, 0, fy + ts*.6); g.addColorStop(0, "rgba(0,0,0,.18)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(R(X0), R(fy), R(W), R(ts*.6)); }
 }
@@ -470,7 +470,10 @@ function houseThumb(x, H, pixel){
   if (img) { const k = 96/img.height; x.imageSmoothingEnabled = true; for (let X = 0; X < 160; X += img.width*k) x.drawImage(img, X, 0, img.width*k, 96); return; }   // repeated along, like the house
   x.fillStyle = "#bfe3ff"; x.fillRect(0, 0, 160, 96); facadeShapes(x, H, 8, 152, 16, 92, 13, pixel, 0);
 }
-const inPond = (r, x, y) => r.pond && (((x - (r.x0 + r.w/2))/(r.w*.32))**2 + ((y - HM.D*.55)/(HM.D*.3))**2) < 1;
+// the pond's water (as drawn: the 2D picture's water, and the 3D ellipse), in tiles from the room's middle; k scales it:
+// swimmers head for the deep middle (k < 1), and furniture keeps off the stones round it (k > 1)
+const POND = {rx:3, ry:1.8, cy:HM.D*.55};
+const inPond = (r, x, y, k = 1) => r.pond && (((x - (r.x0 + r.w/2))/(POND.rx*k))**2 + ((y - POND.cy)/(POND.ry*k))**2) < 1;
 
 // ---- state of the running Home ----
 const HS = {camY:0, ro:null, cv:null, ctx:null, low:null, lctx:null, raf:0, ts:0, V:null, k:1, cam:0, camT:0, world:null, rooms:[], W:0, me:null, mons:[], keys:new Set(), edit:false, place:null, sel:null, ghost:null, msg:"", msgT:0, last:0, layerKey:"", pointer:null, followers:[], undo:[], hold:null, joy:null, photo:false, pcam:0, pdrag:null, weather:"sun", introPending:true, intro:null, evKey:"", evT:0, drag:null, stepT:0, crackT:0, rows:[], doors:[], pass:null, vy:null, camY0:0, bandH:0};
@@ -507,7 +510,7 @@ function randomSpot(swim, near){
   for (let i = 0; i < 40; i++) {
     const x = near ? near.x + (Math.random() - .5)*5 : .5 + Math.random()*(HS.W - 1), y = .6 + Math.random()*(HM.D - 1.1);
     if (near && !sameRow(x, near.x)) continue;   // near: in the same row
-    if (swim === "only") { if (inPond(roomAt(x), x, y)) return {x, y}; continue; }
+    if (swim === "only") { if (inPond(roomAt(x), x, y, .8)) return {x, y}; continue; }   // out in the water, not by the edge
     if (!blocked(x, y, swim)) return {x, y};
   }
   return null;
@@ -976,7 +979,7 @@ function homeUpdate(dt, now){
         else { const mx = nx - m.x; m.x = nx; m.y = ny; if (Math.abs(mx) > sp*.05) m.dir = Math.sign(mx); }   // always faces the way it's really moving (only straight up/down keeps its facing)
       }
     }
-    m.swim = !isFlier(m) && !m.z && inPond(roomAt(m.x), m.x, m.y);
+    m.swim = !isFlier(m) && !m.z && inPond(roomAt(m.x), m.x, m.y, .85);   // only past the shallows: at the edge it wades
   }
   if (HS.msgT && now > HS.msgT) { HS.msgT = 0; const el = $("hmMsg"); if (el) el.hidden = true; }
 }
@@ -1141,7 +1144,7 @@ function fits(it, x, y, ignore){
   for (const d of dividers()) if (x < d.x + .5 && x + it.w > d.x - .5) return false;   // keep walls and doorways clear
   for (const R of HS.rows) if (x < R.x0 && x + it.w > R.x0) return false;   // a piece stays in one row
   if (!isFloorItem(it)) for (const d of HS.doors) for (const e of [d.n, d.s]) if (x < e.x + .8 && x + it.w > e.x - .8 && y < e.y + .9 && y + it.d > e.y - .9) return false;   // and out of the doors' way
-  for (const r of HS.rooms) if (r.pond) for (let dx = 0; dx <= it.w; dx += .5) for (let dy = 0; dy <= it.d; dy += .5) if (inPond(r, x + dx, y + dy)) return false;
+  for (const r of HS.rooms) if (r.pond) for (let dx = 0; dx <= it.w; dx += .5) for (let dy = 0; dy <= it.d; dy += .5) if (inPond(r, x + dx, y + dy, 1.2)) return false;
   const floor = isFloorItem(it);
   for (const p of placedItems()) { if (p === ignore || p.s || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
   return true;
