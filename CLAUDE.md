@@ -31,7 +31,9 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   `docs/pmd-credits.md` (every artist). Napping Pokémon in the Home use them; others fall back to a squash.
 - `python3 scripts/gen_item_icons.py` — rebuild the item icon sheet `packs/items.png` + `data/item_icons.json` (needs Pillow;
   downloads PokéSprite and PokéAPI sprites into `.cache/`). Run after items are added to the data.
-- `python3 tests/run_all.py [name]` — builds, serves dist/web on :8765 and runs the Playwright tests
+- `python3 tests/run_all.py [group|name…] [--quick] [-j N] [--no-build] [-v]` — builds, serves dist/web on :8765 and runs the tests,
+  quietly: one line per test, the end of a failing test's output, full logs in `tests/out/logs/`. Groups: sweep (slow
+  whole-site checks), home, shop, battle, online, engine. Run only the groups you touched; the full run before a PR
   (`pip install playwright && python3 -m playwright install chromium` once; `npm install` for axe-core). Screenshots go to `tests/out/`;
   look at them after UI changes. Run lint + tests before every commit that touches `src/`.
 - `python3 tests/perf_load.py` — first / repeat / offline load times on a throttled phone (run after loading changes).
