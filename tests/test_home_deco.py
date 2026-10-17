@@ -43,6 +43,12 @@ async def main():
         gx, gy = await pt(g['x'] + 1, g['y'] + .5); await pg.mouse.click(gx, gy); await pg.wait_for_timeout(400)
         so = await pg.evaluate('JSON.stringify(homeData().items.find(i => i.id === "sofa"))'); print('sofa', so); assert so != 'undefined' and so != 'null'
         sw = await pg.evaluate('document.documentElement.scrollWidth'); assert sw <= W, sw
+        # stacking: a globe on the table rides along when the table moves, and goes back in storage with it
+        st = json.loads(await pg.evaluate('''(() => { grant(unlockOf("furn", "globe")); const t = homeData().items.find(i => i.id === "table"), g = decoPut("globe", t.x, t.y, 0, 0);
+          HS.sel = {...t}; homeEditAct("move"); const P = HS.place, q = decoPut(P.id, t.x, Math.min(HM.D - 1, t.y + 2), 0, 0); decoRiders(P, q); HS.place = null;
+          const after = homeData().items.find(i => i.id === "globe"); HS.sel = {...q}; homeEditAct("store");
+          return JSON.stringify({g, q, after, left:homeData().items.some(i => i.id === "globe"), clean:cleanGames(state.games).home.items.length}); })()'''))
+        print('stacking', st); assert st['g'].get('s') == 1 and st['after']['y'] == st['q']['y'] and st['after'].get('s') == 1 and not st['left']
         await pg.click('#hmDeco'); await pg.wait_for_timeout(600)
         # the trainer you walk around the Home as
         await pg.click('#hmTr'); await pg.wait_for_timeout(500); await pg.fill('#trSearch', 'Red'); await pg.wait_for_timeout(300); await pg.click('#trList [data-pick]'); await pg.wait_for_timeout(800)

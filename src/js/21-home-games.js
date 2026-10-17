@@ -3,7 +3,7 @@
 // them. Hide-and-seek: a Pokémon hides behind a piece of furniture; tap the right one to find it (friendship, 3 a day).
 const CATCH_KEEP = 5, GAMES_A_DAY = 3, catchSecs = () => window.DTD_CATCH || 30;   // tests shorten a round with window.DTD_CATCH
 function homeGamesDay(){ const D = homeData(), day = todayKey(); if (!D.games) D.games = {d:"", catchN:0, seekN:0, catchBest:0, found:0}; if (D.games.d !== day) Object.assign(D.games, {d:day, catchN:0, seekN:0}); return D.games; }
-const hideSpots = () => placedItems().filter(p => !isFloorItem(p.it));
+const hideSpots = () => placedItems().filter(p => !isFloorItem(p.it) && !p.s);
 const homeResidents = () => HS.mons.filter(m => !m.visitor && m.sp);
 function homeGames(){
   const Gd = homeGamesDay(), res = homeResidents(), spots = hideSpots(), canSeek = res.length && spots.length >= 2;

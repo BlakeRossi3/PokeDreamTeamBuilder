@@ -47,7 +47,7 @@ const ACT_EMO = {nap:"zz", sit:"note", watch:"star", warm:"heart", bounce:"note"
 function homeSpots(){
   const out = [];
   for (const p of placedItems()) {
-    const S = SPOT_OF[p.it.kind]; if (!S) continue;
+    const S = !p.s && SPOT_OF[p.it.kind]; if (!S) continue;   // (nothing to do with a piece that stands on a table)
     const pts = S.front ? [[p.it.w/2, p.it.d + .55]] : S.pts === "row" ? Array.from({length:p.it.w}, (_, i) => [i + .5, .6]) : S.pts;
     pts.forEach(([dx, dy], i) => {
       const s = {key:`${p.id}@${p.x},${p.y}#${i}`, act:S.act, kind:p.it.kind, x:p.x + (p.f && !S.front ? p.it.w - dx : dx), y:p.y + dy, z:S.front ? 0 : S.z, on:!S.front, depth:p.y + p.it.d + .02, ax:p.x + (p.f && !S.front ? p.it.w - dx : dx), ay:p.y + p.it.d + .45};
@@ -56,7 +56,7 @@ function homeSpots(){
       out.push(s);
     });
   }
-  for (const p of placedItems()) if (PERCH.has(p.it.kind)) {   // on top of tall furniture
+  for (const p of placedItems()) if (PERCH.has(p.it.kind) && !p.s) {   // on top of tall furniture
     const x = p.x + p.it.w/2, ay = Math.min(HM.D - .3, p.y + p.it.d + .5), z = perchZ(p);
     if (HM.WALL + (p.y + p.it.d)*HM.SQ - z < 1.3) continue;   // too tall against the back wall: a bird up there would be out of view
     if (!blocked(x, ay)) out.push({key:`${p.id}@${p.x},${p.y}#perch`, act:"perch", kind:p.it.kind, x, y:p.y + p.it.d, z, on:true, depth:p.y + p.it.d + .03, ax:x, ay});
@@ -350,9 +350,10 @@ function drawGlows(c, now, pixel, k){
   const ts = HS.ts; c.save(); c.globalCompositeOperation = "lighter";
   for (const p of placedItems()) { const G = GLOW[p.it.kind]; if (!G || HS.outA > .5 && HS.spans && HS.spans.some(s => p.x + p.it.w/2 > s.x0 && p.x + p.it.w/2 < s.x1)) continue;
     const screen = p.it.kind === "tv" || p.it.kind === "arcade";   // screens flicker as the picture changes
-    const fl = screen ? .82 + .18*Math.abs(Math.sin(now/170 + p.x)*Math.sin(now/530 + p.y)) : 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" || p.it.kind === "stove" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts, r = G[2]*ts*fl;
+    const up = p.s ? liftOf(p)*ts : 0;
+    const fl = screen ? .82 + .18*Math.abs(Math.sin(now/170 + p.x)*Math.sin(now/530 + p.y)) : 1 + .04*Math.sin(now/(p.it.kind === "fire" || p.it.kind === "pumpkin" || p.it.kind === "stove" ? 140 : 900) + p.x), x = scrX(p.x + G[0]), y = scrY(p.y + p.it.d*.5) - G[1]*ts - up, r = G[2]*ts*fl;
     // a warm pool on the floor under the light, then the glow itself
-    const fy = scrY(p.y + p.it.d) - ts*.1, pr = G[2]*ts*.85*fl;
+    const fy = scrY(p.y + p.it.d) - ts*.1 - up, pr = G[2]*ts*.85*fl;
     c.save(); c.translate(x, fy); c.scale(1, .34); let g = c.createRadialGradient(0, 0, 0, 0, 0, pr); g.addColorStop(0, `rgba(${G[3]},${(.3*k).toFixed(3)})`); g.addColorStop(1, `rgba(${G[3]},0)`); c.fillStyle = g; c.fillRect(-pr, -pr, pr*2, pr*2); c.restore();
     g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${G[3]},${(.42*k).toFixed(3)})`); g.addColorStop(1, `rgba(${G[3]},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r*2, r*2); }
   c.restore();

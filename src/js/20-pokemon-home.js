@@ -414,7 +414,7 @@ function placedItems(){ return homeData().items.map(p => { const it = unlockOf("
 function blocked(x, y, swim){
   if (x < .3 || x > HS.W - .3 || y < .35 || y > HM.D - .15 || inWall(x, y)) return true;
   const r = roomAt(x); if (inPond(r, x, y) && !swim) return true;
-  for (const p of placedItems()) { if (isFloorItem(p.it)) continue; if (x > p.x - .1 && x < p.x + p.it.w + .1 && y > p.y + .05 && y < p.y + p.it.d + .25) return true; }
+  for (const p of placedItems()) { if (isFloorItem(p.it) || p.s) continue; if (x > p.x - .1 && x < p.x + p.it.w + .1 && y > p.y + .05 && y < p.y + p.it.d + .25) return true; }
   return false;
 }
 function randomSpot(swim, near){
@@ -583,10 +583,13 @@ function homeFrame(now){
   if (HS.cam + V.W/ts > HS.W) { const g = c.createLinearGradient(scrX(HS.W), 0, scrX(HS.W) + ts*.5, 0); g.addColorStop(0, "rgba(0,0,0,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(scrX(HS.W), 0, ts*.5, V.H); }
   // drawables sorted by depth
   const list = [];
-  for (const p of placedItems()) if (!isFloorItem(p.it)) list.push({y:p.y + p.it.d, x:p.x + p.it.w/2, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
-    if (!NO_SHADOW.has(p.it.kind)) furnShadow(c, p, pixel);
+  for (const p of placedItems()) if (!isFloorItem(p.it)) { const sf = surfOf(p), z = sf ? surfZ(sf) : 0;
+    list.push({y:sf ? sf.y + sf.it.d + .02 : p.y + p.it.d, x:p.x + p.it.w/2, draw:() => { const s = furnSprite(p.it, ts, pixel, !!p.f, pixel ? furnFrame(p, now) : 0), X = scrX(p.x) - s.pad, Y = scrY(p.y) - s.pad - s.h*ts;
+    if (z) { c.save(); c.translate(0, -Math.round(z*ts)); }   // standing on a table
+    if (!NO_SHADOW.has(p.it.kind) && !z) furnShadow(c, p, pixel);
     c.drawImage(s.c, Math.round(X), Math.round(Y)); if (!s.art) homeItemFx(c, p, now, pixel); if (p.it.kind === "tree") drawTreeBerries(c, p, pixel);
-    if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); } }});
+    if (HS.edit && HS.sel === p) { c.strokeStyle = "#ffd43b"; c.lineWidth = pixel ? 1 : 3; c.setLineDash([6, 4]); c.strokeRect(scrX(p.x), scrY(p.y) - (FURN_H[p.it.kind] || 1)*ts, p.it.w*ts, p.it.d*ts*HM.SQ + (FURN_H[p.it.kind] || 1)*ts); c.setLineDash([]); }
+    if (z) c.restore(); }}); }
   for (const d of dividers()) for (const y of DOOR) list.push({y, x:d.x, draw:() => drawDivPost(c, d, y, pixel)});
   for (const m of HS.mons) list.push({y:m.depth || m.y, x:m.x, draw:() => drawHomeMon(c, m, now, pixel)});
   for (const g of homeData().gifts) list.push({y:g.y, x:g.x, draw:() => drawGift(c, g, now, pixel)});
@@ -969,24 +972,27 @@ function decoFloat(pixel){
   if (hint) { const t = HS.place && !HS.place.drag ? (matchMedia("(pointer:coarse)").matches ? `Tap where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes` : `Click where the ${unlockOf("furn", HS.place.id).name.toLowerCase()} goes · Esc to cancel`) : ""; if (hint.textContent !== t) hint.textContent = t; hint.hidden = !t; }
   const s = HS.sel; if (!s || fl.hidden) return;
   const it = s.it || unlockOf("furn", s.id), r = HS.cv.getBoundingClientRect(), k = (pixel ? HS.k : 1)*r.width/HS.cv.width, st = $("hmStage").getBoundingClientRect();
-  const top = (scrY(s.y) - (isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5))*HS.ts)*k + (r.top - st.top), bot = scrY(s.y + it.d)*k + (r.top - st.top), cx = scrX(s.x + it.w/2)*k + (r.left - st.left);
+  const top = (scrY(s.y) - (isFloorItem(it) ? 0 : (FURN_H[it.kind] || 1.5) + (s.s ? liftOf(s) : 0))*HS.ts)*k + (r.top - st.top), bot = scrY(s.y + it.d)*k + (r.top - st.top), cx = scrX(s.x + it.w/2)*k + (r.left - st.left);
   const w = fl.offsetWidth, h = fl.offsetHeight, x = Math.max(4, Math.min(st.width - w - 4, cx - w/2)), y = top - h - 8 > 4 ? top - h - 8 : Math.min(st.height - h - 4, bot + 8);
   fl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
 }
 function decoCancel(){   // stop placing; a piece picked up with Move goes back where it was
   const P = HS.place; HS.place = null; HS.ghost = null;
-  if (P && P.from && !P.drag) { homeData().items.push({id:P.id, x:P.from.x, y:P.from.y, f:P.f, ...(P.r ? {r:1} : {})}); HS.undo.pop(); HS.layerKey = ""; save(); }
+  if (P && P.from && !P.drag) { const q = decoPut(P.id, P.from.x, P.from.y, P.f, P.r); decoRiders(P, q); HS.undo.pop(); HS.layerKey = ""; save(); }
 }
+// a table picked up takes what stands on it along (P.riders), and they go back on top wherever it lands
+function decoLift(q){ const D = homeData(), rs = ridersOf(q); D.items = D.items.filter(o => !rs.includes(o)); return rs.map(o => ({...o, dx:o.x - q.x})); }
+function decoRiders(P, q){ for (const o of (P && P.riders) || []) homeData().items.push({id:o.id, x:q.x + o.dx, y:q.y, f:o.f || 0, ...(o.r ? {r:1} : {}), s:1}); if (P) P.riders = null; }
 function decoNudge(dx, dy){
   const D = homeData(), s = HS.sel, i = D.items.findIndex(p => p.x === s.x && p.y === s.y && p.id === s.id); if (i < 0) return;
-  const q = D.items.splice(i, 1)[0], it = rotItem(unlockOf("furn", q.id), q.r ? 1 : 0), nx = q.x + dx, ny = q.y + dy, ok = fits(it, nx, ny);
-  if (ok) { decoSnap(); q.x = nx; q.y = ny; } D.items.splice(i, 0, q);
+  const q = D.items.splice(i, 1)[0], it = rotItem(unlockOf("furn", q.id), q.r ? 1 : 0), rs = ridersOf({...q, it}).filter(o => o !== q), nx = q.x + dx, ny = q.y + dy, ok = fits(it, nx, ny, q);
+  if (ok) { decoSnap(); const sf = surfaceUnder(it, nx, ny); q.x = nx; q.y = sf ? sf.y : ny; if (sf) q.s = 1; else delete q.s; for (const o of rs) { o.x += dx; o.y += q.y - (ny - dy); } } D.items.splice(i, 0, q);
   HS.sel = {...q, it}; HS.layerKey = ""; if (ok) { save(); Sound.play("select"); if (nx < HS.dcam + .5 || nx + it.w > HS.dcam + HS.V.W/HS.ts - .5) HS.dcam = nx + it.w/2 - HS.V.W/HS.ts/2; } else Sound.play("wrong");
 }
 function decoGhostInView(){   // a piece picked from the tray shows up in the middle of the view right away (no hover on a phone)
   if (!HS.place) { HS.ghost = null; return; }
   const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), view = HS.V.W/HS.ts, c = (HS.dcam ?? HS.cam) + view/2;
-  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(c - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(HM.D/2 - it.d/2)))};
+  HS.ghost = snapGhost(it, {x:Math.max(0, Math.min(HS.W - it.w, Math.round(c - it.w/2))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(HM.D/2 - it.d/2)))});
 }
 function homeEditAct(a){
   const D = homeData(), s = HS.sel;
@@ -1000,16 +1006,35 @@ function homeEditAct(a){
     if (fits(it, q.x, q.y)) { if (r) q.r = 1; else delete q.r; } else { HS.undo.pop(); toast("There isn’t room to turn it here. Move it first."); }
     D.items.splice(i, 0, q); HS.sel = {...q, it};
   }
-  if (a === "store" && i >= 0) { D.items.splice(i, 1); HS.sel = null; }
-  if (a === "move" && i >= 0) { D.items.splice(i, 1); HS.place = {id:s.id, f:s.f || 0, r:s.r || 0, from:{x:s.x, y:s.y}}; HS.ghost = {x:s.x, y:s.y}; HS.sel = null; }   // it waits where it was until you tap a new spot
+  if (a === "store" && i >= 0) { const q = D.items.splice(i, 1)[0], rs = decoLift(q); if (rs.length) toast(`What stood on it went back in storage too.`); HS.sel = null; }
+  if (a === "move" && i >= 0) { const q = D.items.splice(i, 1)[0]; HS.place = {id:s.id, f:s.f || 0, r:s.r || 0, from:{x:s.x, y:s.y}, riders:decoLift(q)}; HS.ghost = {x:s.x, y:s.y}; HS.sel = null; }   // it waits where it was until you tap a new spot
   HS.layerKey = ""; save(); Sound.play("select"); renderDecoBar();
 }
+// ---- stacking: small pieces stand on tables, desks and counters (saved with s:1, at the surface's y) ----
+const TOPPER = new Set(["plant", "globe", "orb", "trophy", "pot2", "pumpkin", "lamp2", "giftpile"]);
+const SURF = {tabler:.8, desk:.56, counter:.8};   // where the top is, as a share of the piece's height
+const canTop = it => !!it && TOPPER.has(it.kind) && it.w === 1 && it.d === 1;
+const sameItem = (a, b) => a && b && a.x === b.x && a.y === b.y && a.id === b.id;
+function surfaceUnder(it, x, y, ignore){   // the surface a small piece would stand on at x, y
+  if (!canTop(it)) return null;
+  return placedItems().find(p => !p.s && SURF[p.it.kind] != null && !sameItem(p, ignore) && x >= p.x && x + it.w <= p.x + p.it.w && y >= p.y && y < p.y + p.it.d) || null;
+}
+const surfOf = q => q.s ? placedItems().find(p => !p.s && SURF[p.it.kind] != null && q.x >= p.x && q.x < p.x + p.it.w && q.y === p.y) : null;   // what a stacked piece stands on
+function surfZ(p){ const img = state.mode === "2d" && artOf(furnArtKey(p.it)); return (img ? img.height*Math.min(1, p.it.w*32/img.width)/32 : (FURN_H[p.it.kind] || 1))*SURF[p.it.kind]; }
+const liftOf = q => { const sf = surfOf(q); return sf ? surfZ(sf) : 0; };
+const ridersOf = p => SURF[p.it ? p.it.kind : (unlockOf("furn", p.id) || {}).kind] == null ? [] : homeData().items.filter(q => q.s && q.y === p.y && q.x >= p.x && q.x < p.x + (p.it || unlockOf("furn", p.id)).w);
+function decoPut(id, x, y, f, r){   // add a piece; a small one over a table goes on top of it
+  const it = rotItem(unlockOf("furn", id), r ? 1 : 0), sf = surfaceUnder(it, x, y), q = {id, x, y:sf ? sf.y : y, f:f ? 1 : 0, ...(r ? {r:1} : {}), ...(sf ? {s:1} : {})};
+  homeData().items.push(q); return q;
+}
+function snapGhost(it, g){ const sf = g && surfaceUnder(it, g.x, g.y); if (sf) { g.y = sf.y; g.top = surfZ(sf); } else if (g) g.top = 0; return g; }
 function fits(it, x, y, ignore){
   if (x < 0 || y < 0 || x + it.w > HS.W || y + it.d > HM.D) return false;
+  const sf = surfaceUnder(it, x, y, ignore); if (sf) return !homeData().items.some(q => q.s && q.x === x && q.y === sf.y && !sameItem(q, ignore));   // on a table: one piece per spot
   for (const d of dividers()) if (x < d.x + .5 && x + it.w > d.x - .5) return false;   // keep walls and doorways clear
   for (const r of HS.rooms) if (r.pond) for (let dx = 0; dx <= it.w; dx += .5) for (let dy = 0; dy <= it.d; dy += .5) if (inPond(r, x + dx, y + dy)) return false;
   const floor = isFloorItem(it);
-  for (const p of placedItems()) { if (p === ignore || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
+  for (const p of placedItems()) { if (p === ignore || p.s || isFloorItem(p.it) !== floor) continue; if (x < p.x + p.it.w && x + it.w > p.x && y < p.y + p.it.d && y + it.d > p.y) return false; }
   return true;
 }
 function drawDecoOverlay(c, pixel){
@@ -1018,8 +1043,9 @@ function drawDecoOverlay(c, pixel){
   for (let y = 0; y <= HM.D; y++) { c.beginPath(); c.moveTo(scrX(0), Math.round(scrY(y)) + .5); c.lineTo(scrX(HS.W), Math.round(scrY(y)) + .5); c.stroke(); }
   const g = HS.ghost; if (HS.place && g) {
     const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), ok = fits(it, g.x, g.y), s = furnSprite(it, ts, pixel, !!HS.place.f);
-    c.globalAlpha = .7; c.drawImage(s.c, Math.round(scrX(g.x) - s.pad), Math.round(scrY(g.y) - s.pad - s.h*ts)); c.globalAlpha = 1;
-    c.fillStyle = ok ? "rgba(80,220,120,.25)" : "rgba(240,70,70,.35)"; c.fillRect(scrX(g.x), scrY(g.y), it.w*ts, it.d*ts*HM.SQ);
+    const up = Math.round((g.top || 0)*ts);
+    c.globalAlpha = .7; c.drawImage(s.c, Math.round(scrX(g.x) - s.pad), Math.round(scrY(g.y) - s.pad - s.h*ts) - up); c.globalAlpha = 1;
+    c.fillStyle = ok ? "rgba(80,220,120,.25)" : "rgba(240,70,70,.35)"; c.fillRect(scrX(g.x), scrY(g.y) - up, it.w*ts, it.d*ts*HM.SQ);
   }
 }
 function homeWorldPoint(e){
@@ -1033,13 +1059,13 @@ function homePointerMove(e){
   if (HS.edit && HS.drag && !HS.place) { const p = homeWorldPoint(e); if (Math.abs(p.x - HS.drag.px) > .6 || Math.abs(p.y - HS.drag.py) > .9) decoDragStart(); }
   if (!HS.edit || !HS.place) return; const p = homeWorldPoint(e), it = rotItem(unlockOf("furn", HS.place.id), HS.place.r);
   const ox = HS.place.ox ?? it.w/2, oy = HS.place.oy ?? it.d/2;
-  HS.ghost = {x:Math.max(0, Math.min(HS.W - it.w, Math.round(p.x - ox))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - oy)))};
+  HS.ghost = snapGhost(it, {x:Math.max(0, Math.min(HS.W - it.w, Math.round(p.x - ox))), y:Math.max(0, Math.min(HM.D - it.d, Math.round(p.y - oy)))});
 }
 // drag a placed item: it lifts off the floor once the pointer has moved, and lands where you let go (or back where it was)
 function decoDragStart(){
   const d = HS.drag, D = homeData(), i = D.items.findIndex(q => q.x === d.item.x && q.y === d.item.y && q.id === d.item.id); if (i < 0) { HS.drag = null; return; }
-  decoSnap(); D.items.splice(i, 1); HS.layerKey = "";
-  HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item}; HS.sel = null; Sound.play("select");
+  decoSnap(); const q = D.items.splice(i, 1)[0]; HS.layerKey = "";
+  HS.place = {id:d.item.id, f:d.item.f || 0, r:d.item.r || 0, ox:d.px - d.item.x, oy:d.py - d.item.y, drag:true, from:d.item, riders:decoLift(q)}; HS.sel = null; Sound.play("select");
 }
 function homePointerUp(e){
   if (HS.pdrag) { const d = HS.pdrag; HS.pdrag = null; if (HS.edit && !d.moved && HS.sel) { HS.sel = null; renderDecoBar(); } return; }   // a tap on empty floor puts the selection down
@@ -1047,7 +1073,7 @@ function homePointerUp(e){
   if (!HS.edit || !HS.place || !HS.place.drag) return;
   homePointerMove(e);
   const P = HS.place, it = rotItem(unlockOf("furn", P.id), P.r), g = HS.ghost, ok = g && fits(it, g.x, g.y), at = ok ? {x:g.x, y:g.y} : {x:P.from.x, y:P.from.y};
-  homeData().items.push({id:P.id, x:at.x, y:at.y, f:P.f, ...(P.r ? {r:1} : {})});
+  const q = decoPut(P.id, at.x, at.y, P.f, P.r); decoRiders(P, q);
   if (!ok) HS.undo.pop();
   HS.place = null; HS.ghost = null; HS.layerKey = ""; save(); Sound.play(ok ? "add" : "back");
   HS.sel = ok ? {...homeData().items[homeData().items.length - 1], it} : null; renderDecoBar();
@@ -1059,8 +1085,8 @@ function homePointerDown(e){
   if (HS.photo) { HS.pdrag = {x:e.clientX, cam:HS.pcam}; HS.cv.setPointerCapture(e.pointerId); return; }
   if (HS.edit) {
     if (HS.place && HS.place.drag) return;
-    if (HS.place) { homePointerMove(e); const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), g = HS.ghost; if (g && fits(it, g.x, g.y)) { decoSnap(); homeData().items.push({id:it.id, x:g.x, y:g.y, f:HS.place.f || 0, ...(HS.place.r ? {r:1} : {})}); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
-    const hit = placedItems().reverse().find(q => p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) && p.y <= q.y + q.it.d);
+    if (HS.place) { homePointerMove(e); const it = rotItem(unlockOf("furn", HS.place.id), HS.place.r), g = HS.ghost; if (g && fits(it, g.x, g.y)) { decoSnap(); const q = decoPut(it.id, g.x, g.y, HS.place.f, HS.place.r); decoRiders(HS.place, q); HS.layerKey = ""; save(); Sound.play("add"); for (const m of HS.mons) if (blocked(m.x, m.y, m.fl)) { const s = randomSpot(m.fl); if (s) { m.x = s.x; m.y = s.y; } } if (blocked(HS.me.x, HS.me.y)) { const s = randomSpot(false); if (s) { HS.me.x = s.x; HS.me.y = s.y; } } const left = furnCount(it.id) - homeData().items.filter(q => q.id === it.id).length; if (left <= 0) HS.place = null; renderDecoBar(); checkAch(); } else Sound.play("wrong"); return; }
+    const hit = placedItems().reverse().find(q => { const up = q.s ? liftOf(q)/HM.SQ : 0; return p.x >= q.x && p.x <= q.x + q.it.w && p.y >= q.y - (isFloorItem(q.it) ? 0 : 1.6) - up && p.y <= q.y + q.it.d - up; });
     HS.sel = hit ? homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id) && {...hit} : null; if (HS.sel) Sound.play("select"); renderDecoBar();
     if (hit) { HS.drag = {item:homeData().items.find(q => q.x === hit.x && q.y === hit.y && q.id === hit.id), px:p.x, py:p.y}; HS.cv.setPointerCapture(e.pointerId); }
     else { HS.pdrag = {x:e.clientX, cam:HS.dcam ?? HS.cam, moved:false}; HS.cv.setPointerCapture(e.pointerId); }   // empty floor: drag to look around
