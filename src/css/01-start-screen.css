@@ -1,0 +1,42 @@
+/* ================= START SCREEN: your all-gen Hall of Fame scene ================= */
+html[data-view="start"], html[data-view="start"] body{height:100%; overflow:hidden}
+html[data-view="hub"], html[data-view="hub"] body{height:100%}
+html[data-view="hub"] .start{height:auto; min-height:100%}
+html[data-view="hub"] .start-ui{min-height:100vh; min-height:100dvh}
+.start{position:relative; height:100%; min-height:420px; overflow:hidden; background:#05070f; color:#fff}
+.start-canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+.start-shade{position:absolute; inset:0; pointer-events:none; background:linear-gradient(rgba(5,7,15,.55), rgba(5,7,15,0) 28%, rgba(5,7,15,0) 62%, rgba(5,7,15,.8))}
+.start-ui{position:relative; z-index:2; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding-block:clamp(16px,4vh,40px) 16px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); pointer-events:none}
+.start-ui > *{pointer-events:auto}
+.logo{position:relative; display:flex; align-items:center; justify-content:center; gap:clamp(8px,1.6vw,20px); flex-wrap:nowrap; padding-bottom:18px; align-self:center}
+.lw{font-size:clamp(30px, 7vw, 92px); line-height:.95; letter-spacing:.02em}
+.lw.l2{font-family:"Pixelify Sans", "Courier New", monospace; font-weight:700; color:#d63a3a; text-shadow:4px 4px 0 #28323f, -2px -2px 0 #f8f8ec}
+.lw.l3{font-family:"Chakra Petch", system-ui, sans-serif; font-weight:700; font-style:italic; color:#fff; text-shadow:3px 3px 0 #ff6a3d, 6px 6px 0 #8f6bff}
+.emblem{position:relative; width:clamp(44px,6.5vw,84px); aspect-ratio:1; flex:none; display:block}
+.emblem i{position:absolute; inset:0; display:block}
+.emblem .e2{background:linear-gradient(#d63a3a 0 45%, #28323f 45% 55%, #f8f8ec 55%); clip-path:polygon(30% 0,50% 0,50% 100%,30% 100%,0 70%,0 30%)}
+.emblem .e3{border-radius:50%; background:linear-gradient(#ff6a3d, #ff4d2e 45%, #0e1729 45% 55%, #f2f5ff 55%); clip-path:inset(0 0 0 50%); box-shadow:inset -6px -8px 14px rgba(0,0,0,.25)}
+.emblem::after{content:""; position:absolute; left:50%; top:50%; width:30%; height:30%; transform:translate(-50%,-50%); background:#f8f8ec; border-radius:50%; box-shadow:0 0 0 5px #28323f}
+.dex-tag{position:absolute; left:50%; bottom:-4px; transform:translateX(-50%); padding:4px 16px; background:#ffd43b; color:#1b1400; font-family:"Chakra Petch", system-ui, sans-serif; font-weight:700; font-style:italic; letter-spacing:.45em; font-size:13px; clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); white-space:nowrap}
+.start-bottom{display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center}
+.start-team{margin:0; font-family:"Rubik", system-ui, sans-serif; font-size:14px; color:rgba(255,255,255,.85); text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.start-ctrl{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center}
+.mode-switch{display:inline-flex; padding:5px; gap:4px; background:rgba(11,18,34,.82); border:2px solid rgba(255,255,255,.18); border-radius:999px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+.mode-switch button{display:flex; flex-direction:column; align-items:center; min-width:92px; padding:8px 18px; border:0; border-radius:999px; background:transparent; color:#c4cde6; cursor:pointer; line-height:1.1}
+.mode-switch button b{font-size:22px}
+.mode-switch button span{font-size:12px; opacity:.85}
+.mode-switch [data-sm="2d"] b{font-family:"Pixelify Sans", monospace}
+.mode-switch [data-sm="3d"] b{font-family:"Chakra Petch", sans-serif; font-style:italic}
+.mode-switch button[aria-pressed="true"]{background:#ffd43b; color:#1b1400}
+:root[data-mode="2d"] .mode-switch{border-radius:0; background:var(--paper); border:3px solid var(--ink)}
+:root[data-mode="2d"] .mode-switch button{border-radius:0; color:var(--muted)}
+:root[data-mode="2d"] .mode-switch button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+.play{display:inline-flex; align-items:center; gap:10px; padding:14px 34px; cursor:pointer; font-family:"Chakra Petch", sans-serif; font-style:italic; font-weight:700; font-size:22px; border:3px solid #fff; border-radius:999px; background:linear-gradient(100deg, #ff6a3d, #ff9b4a); color:#fff; box-shadow:0 8px 0 var(--accent-d), 0 14px 30px rgba(255,106,61,.35)}
+.play:active{transform:translateY(4px); box-shadow:0 4px 0 var(--accent-d)}
+.play .arr{transition:transform .2s}
+.play:hover .arr{transform:translateX(4px)}
+:root[data-mode="2d"] .play{font-family:"Pixelify Sans", monospace; font-style:normal; border-radius:0; border-color:var(--ink); background:var(--accent); box-shadow:4px 4px 0 var(--ink)}
+:root[data-mode="2d"] .play:active{transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink)}
+.start-foot{display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; justify-content:center; font-family:"Rubik", system-ui, sans-serif; font-size:13px; color:rgba(255,255,255,.8); text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.start-foot .linkbtn{background:none; border:0; color:#ffd43b; text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:4px; font-weight:600; font-family:inherit; font-size:inherit}
+

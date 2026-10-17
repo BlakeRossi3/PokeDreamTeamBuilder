@@ -4,7 +4,8 @@
     python3 scripts/build.py              # -> dist/web/  (the website: index.html + packs, ready for GitHub Pages)
     python3 scripts/build.py --artifact   # also -> dist/artifact/dream-team-dex.html (single-page claude.ai version)
 
-No third-party packages needed. The source of truth is src/app.html; data placeholders like /*DATA*/ in it are
+No third-party packages needed. The source is src/: app.html (the page shell and markup), css/*.css and js/*.js (joined in
+file-name order where app.html has /*@CSS*/ and /*@JS*/), and engine.js. Data placeholders like /*DATA*/ in the scripts are
 filled from data/ and packs/index.json.
 """
 import base64, hashlib, json, os, shutil, sys
@@ -25,20 +26,30 @@ DESC = ("Build Pokémon dream teams for every region, battle Gym Leaders, decora
         "Hall of Fame scenes, in 2D pixel art or 3D. A free fan project.")
 
 
-def assemble() -> str:
-    """src/app.html + data -> one page (the claude.ai artifact form: no <!doctype>, build id left as a placeholder)."""
-    page = (SRC / "app.html").read_text(encoding="utf-8")
-    for ph, f in PLACEHOLDERS:
-        tag = f"/*{ph}*/"
-        assert page.count(tag) == 1, f"{tag} appears {page.count(tag)} times in src/app.html"
-        page = page.replace(tag, f.read_text(encoding="utf-8").strip())
-    assert page.count("/*ENGINE*/") == 1, "/*ENGINE*/ must appear once in src/app.html"
-    page = page.replace("/*ENGINE*/", (SRC / "engine.js").read_text(encoding="utf-8").strip())
+def js_parts():
+    """src/js/*.js in order, each with its data placeholders filled: [(file, text)]. Joined, they are the page's script."""
     art = {p.relative_to(ART).with_suffix("").as_posix(): "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()
            for p in sorted(ART.rglob("*.png"))}
     assert art, "art/2d is empty"
-    assert page.count("/*ART2D*/") == 1, "/*ART2D*/ must appear once in src/app.html"
-    return page.replace("/*ART2D*/", json.dumps(art, separators=(",", ":")))
+    fill = [(f"/*{ph}*/", lambda f=f: f.read_text(encoding="utf-8").strip()) for ph, f in PLACEHOLDERS]
+    fill += [("/*ENGINE*/", lambda: (SRC / "engine.js").read_text(encoding="utf-8").strip()), ("/*ART2D*/", lambda: json.dumps(art, separators=(",", ":")))]
+    parts = [(p, p.read_text(encoding="utf-8")) for p in sorted((SRC / "js").glob("*.js"))]
+    for tag, get in fill:
+        n = sum(t.count(tag) for _, t in parts)
+        assert n == 1, f"{tag} appears {n} times in src/js/"
+        parts = [(p, t.replace(tag, get()) if tag in t else t) for p, t in parts]
+    return parts
+
+
+def assemble() -> str:
+    """src/ + data -> one page (the claude.ai artifact form: no <!doctype>, build id left as a placeholder)."""
+    page = (SRC / "app.html").read_text(encoding="utf-8")
+    css = "".join(p.read_text(encoding="utf-8") for p in sorted((SRC / "css").glob("*.css")))
+    js = "".join(t for _, t in js_parts())
+    for tag, text in (("/*@CSS*/\n", css), ("/*@JS*/\n", js)):
+        assert page.count(tag) == 1, f"{tag.strip()} must appear once in src/app.html"
+        page = page.replace(tag, text)
+    return page
 
 
 def split_art(page: str):

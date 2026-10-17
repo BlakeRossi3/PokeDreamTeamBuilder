@@ -158,7 +158,7 @@ Heal, Luxury, Nest, Quick, Timer and Repeat Balls. Unfound exclusives are collap
 
 ## Battle Tower (Roadmap 3)
 
-Streak rewards, exclusive like the Gym rewards (`TOWER_REWARD` in `src/app.html`, `it.tower` makes `isExclusive` true):
+Streak rewards, exclusive like the Gym rewards (`TOWER_REWARD` in `src/js/18-pokepoints-unlockables.js`, `it.tower` makes `isExclusive` true):
 - **21 wins in a row:** Tower Tycoon's Milotic (elite profile icon) and the **Battle Tower** Hall of Fame background.
 - **49 wins in a row:** the steel **Battle Tower trophy** for the Home and Tower Tycoon's Regigigas (elite profile icon).
 

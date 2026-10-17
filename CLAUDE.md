@@ -46,8 +46,11 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
   install the Playwright version that does (e.g. `pip install playwright==1.56.0` for `/opt/pw-browsers/chromium-1194`).
 
 ## Layout
-- `src/app.html` — **the whole app** (CSS, markup and JS in one file, ~7,900 lines). Source of truth.
-- `src/engine.js` — the battle engine (pure logic, no DOM), inlined into the page at `/*ENGINE*/`; Node tests load it
+- `src/` — **the app**, built into one page. `app.html` is the page shell and markup; `css/NN-*.css` and `js/NN-*.js` are
+  the styles and the script split by section, joined in file-name order where `app.html` has `/*@CSS*/` and `/*@JS*/`
+  (one shared script scope: plain files, not modules, so order matters and every name is global). Add a section as a
+  new numbered file; `scripts/lint.py` reports problems as `src/js/<file>:<line>`.
+- `src/engine.js` — the battle engine (pure logic, no DOM), inlined into the page at `/*ENGINE*/` (in `js/16-pokemon-sheet.js`); Node tests load it
   through `tests/engine_harness.mjs`. See `docs/battle-audit.md` for what it covers.
   Placeholders `/*DATA*/`, `/*IDX*/`, `/*TRAINERS*/`, `/*OLDTRAINERS*/`, `/*TAGS*/`, `/*HOFD*/`, `/*FORMS*/`, `/*FE*/`,
   `/*MOVES*/`, `/*BALLS*/`, `/*RIVALS*/`, `/*LEADERS*/`, `/*ITEMICONS*/`, `/*REWARDS*/`, `/*FAMILIES*/`, `/*ENGINE*/` (= `src/engine.js`) are filled from `data/` and `packs/index.json`;
@@ -72,8 +75,8 @@ Owner: Blake. It is deployed as a static site on GitHub Pages (see "Deploy").
 - `docs/` — roadmap, battle audit, rewards table, 3D sprite research, Supabase setup, changelog.
 - `scripts/` — build, lint and the data/asset generators. `tests/` — Playwright tests + runner. `dist/` — build output (git-ignored).
 
-## Map of src/app.html (search for these banners)
-CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overrides), then markup, then JS sections:
+## Map of src/ (one file per section banner)
+`css/` (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overrides), markup in `app.html`, then `js/`, in order:
 `ENVIRONMENT` · `DATA` · `SOUND` (chiptune synth; `Sound.play(name)`, names listed in its switch) · `SPRITES AT NATIVE SIZE`
 (`getSprite`, `spKey`, `natK` whole-number canvas scale, `hasBack`, `paintAll` for `<img class="spr" data-num>`) · `HALL OF FAME` (`SCENES`,
 `paintBg`, `renderScene`, `Stage`, `openHof`) · `UNDO` · `FILTERS` · `SHARE CODES` · `TEAM OPTIONS` · `CUSTOM TEAMS` ·
@@ -83,7 +86,7 @@ CSS first (themes via CSS variables; 2D look = `:root[data-mode="2d"] …` overr
 `nav.onClick/onChange/cleanup`) · `SETTINGS` · `ACHIEVEMENTS` (`ACH`, `checkAch`) · `TRAINER CARD` · `QUIZ` · `BATTLE ANIMATIONS` (`TYPE_FX`, `FXP`, `SIG_FX`, `moveRecipe`,
 `playMoveFx`) · `REPLAYS` (`rpNew`, `rpStep`, `rpEncode`/`rpDecode`, `runReplay`) · `BATTLE TOWER` (`towerFoe`, `towerBattle`,
 `TOWER_REWARD`) · `BATTLE SCREENS`.
-Boot code is at the very end of the script.
+Boot code is at the very end of `js/33-battle-screens.js` (the last file).
 
 ## Things that are easy to get wrong
 - **Saves.** `persisted()` is what gets stored; `applySaved` + `cleanGames`/`cleanMember`/`cleanUI` validate everything
