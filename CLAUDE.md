@@ -123,8 +123,9 @@ Boot code is at the very end of the script.
 - **Credits** (Settings → Credits) must stay complete: sprite sources, Pokémon © notice. Add credits for any new
   outside asset. The 2D Hall of Fame backgrounds and Home art are Retro Diffusion pixel art (credited); the 3D look and
   everything else drawn is canvas code. Keep both: the canvas versions are the fallback.
-- **Home life** (`HOME LIFE` section): Pokémon use furniture through `SPOT_OF` (kind → nap/sit/watch/… spots), weighted
-  by type and time in `spotWeight`/`homeDecide`; new furniture kinds that Pokémon should use need an entry there.
+- **Home life** (`HOME LIFE` section): Pokémon use furniture through `SPOT_OF` (kind → nap/sit/watch/… spots), plus perches
+  (`PERCH`, fliers) and sunny yard patches, weighted in `spotWeight` (`TYPE_FAV` per type, `placePref` in/out by type,
+  time and weather, sizes from `BIG`/`TINY`) and `homeDecide`; `FISH` never leave the pond, `needPath` walks round it; new furniture kinds that Pokémon should use need an entry there.
   Berries, feeding, gifts, `fedN` and `photos` live in `state.games.home` (validated in `cleanGames`). Seasonal events are
   data in `EVENTS` (dates, night tint, visitors, `furn` ids sold only while it runs: give the item `event:"<id>"`).
   Tests pin the time of day with `window.DTD_TOD = "night"`.

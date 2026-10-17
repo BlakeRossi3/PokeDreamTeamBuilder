@@ -1,5 +1,18 @@
 # What's new in Dream Team Dex
 
+## 🐟 Pokémon that act like themselves
+- **Water Pokémon live in the pond:** Water types spend most of the day swimming and drifting (and sleep there too),
+  and fish like Magikarp, Goldeen and Wailmer never leave it. On rainy days they head out into the garden. Pokémon
+  that can't swim walk round the pond instead of bumping into it.
+- **Fliers fly:** birds take off and flap when they go somewhere, floaters hover higher, and both perch on top of tall
+  furniture (bookshelves, statues, clocks, the fridge, trees) and sleep up there.
+- **Every type has favourite spots:** Fire types warm up at the fireplace and stove, Grass types sunbathe in the yard,
+  Ice types visit the snowman and keep away from the heat, Fighting types train on the punching bag and dummy, Electric
+  types watch TV and play the arcade, Psychic types gaze at crystal balls, and so on.
+- **Rooms make sense:** outdoor types go out in the morning and indoor types stay in; when it rains most come inside.
+  At bedtime everyone heads for the bedroom (or a sofa). Fed a berry, a Pokémon takes it to the table or counter to eat.
+- **Size matters:** big Pokémon like Snorlax don't squeeze onto chairs, sofas or cushions; tiny ones love cushions.
+
 ## 🏡 A real house
 - **Front yard and back garden:** your Home now starts in the front yard, by the street. Out in a yard you see your house
   from outside (roof, front wall, windows), and it opens up as you walk in through the door.
